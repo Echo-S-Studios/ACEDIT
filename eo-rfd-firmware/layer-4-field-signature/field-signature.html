@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layer 4 — Field Signature · 7-Channel Analog Computer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:            #050709;
+  --bg2:           #090b12;
+  --bg3:           #0d0f18;
+  --bg-panel:      rgba(9,11,18,0.85);
+  --border:        rgba(90,120,170,0.08);
+  --border-active: rgba(90,120,170,0.18);
+  --text:          #9aacca;
+  --text-dim:      #4a5a78;
+  --text-bright:   #dce6f4;
+  --registered:    #50fa7b;
+  --latent:        #8be9fd;
+  --suppressed:    #f1fa8c;
+  --aliased:       #ff5555;
+  --crystal:       #ffd866;
+  --accent:        #bd93f9;
+  --font-mono:     'IBM Plex Mono', monospace;
+  --font-serif:    'Crimson Pro', serif;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── FIRMWARE UTILITY CLASSES ── */
+.fw-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.fw-section-label {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(154,172,202,0.1);
+  padding-bottom: 4px;
+}
+
+.fw-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  padding: 2px 0;
+}
+.fw-metric .label { color: var(--text-dim); }
+.fw-metric .value { color: var(--text-bright); font-weight: 500; }
+
+.fw-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(154,172,202,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 3px 0;
+}
+
+.fw-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.15s ease;
+}
+
+.fw-button {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 5px 14px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.fw-button:hover { filter: brightness(1.2); }
+
+.fw-status-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(80,250,123,0.12);
+  color: var(--registered);
+  border: 1px solid rgba(80,250,123,0.25);
+}
+.fw-status-pill.warn {
+  background: rgba(241,250,140,0.12);
+  color: var(--suppressed);
+  border-color: rgba(241,250,140,0.25);
+}
+.fw-status-pill.error {
+  background: rgba(255,85,85,0.12);
+  color: var(--aliased);
+  border-color: rgba(255,85,85,0.25);
+}
+
+/* ── LAYOUT ── */
+.shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 22px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+header h1 {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.03em;
+}
+header .nav-back { font-size: 10px; }
+
+.controls-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.view-toggle {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.view-toggle.active {
+  background: rgba(189,147,249,0.15);
+}
+
+/* ── SLIDERS PANEL ── */
+.sliders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 16px;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.slider-row label {
+  min-width: 110px;
+  color: var(--text-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.slider-row input[type=range] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 4px;
+}
+.slider-row .slider-val {
+  min-width: 36px;
+  text-align: right;
+  color: var(--text-bright);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* ── METER BANK ── */
+.meter-bank {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.meter-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.meter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.02em;
+}
+
+.meter-wrap {
+  position: relative;
+  width: 36px;
+  height: 200px;
+  background: rgba(154,172,202,0.04);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 0 0 3px 3px;
+  transition: height 0.2s ease, background 0.2s ease;
+}
+
+.meter-threshold {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  pointer-events: none;
+}
+.meter-threshold.tau {
+  background: rgba(255,216,102,0.5);
+}
+.meter-threshold.zc {
+  background: rgba(189,147,249,0.5);
+}
+
+.meter-threshold-label {
+  position: absolute;
+  right: -22px;
+  font-size: 8px;
+  color: var(--text-dim);
+  transform: translateY(-50%);
+}
+
+.meter-value {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-bright);
+}
+
+.meter-mute {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.meter-mute.muted {
+  background: rgba(255,85,85,0.15);
+  color: var(--aliased);
+  border-color: rgba(255,85,85,0.3);
+}
+
+/* ── RADAR CHART ── */
+.radar-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.radar-canvas {
+  background: transparent;
+}
+
+/* ── REGISTERS READOUT ── */
+.registers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 16px;
+}
+
+.register-entry {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  background: rgba(154,172,202,0.03);
+}
+.register-entry .reg-name {
+  color: var(--accent);
+  font-weight: 500;
+}
+.register-entry .reg-val {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+/* ── ADDRESS READOUT ── */
+.address-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 10px;
+}
+.address-cell {
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(154,172,202,0.04);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.address-cell .addr-label {
+  color: var(--crystal);
+  font-weight: 600;
+}
+
+/* ── SELF-TEST ── */
+.self-test-line {
+  font-size: 10px;
+  padding: 2px 0;
+}
+.self-test-line .pass { color: var(--registered); }
+.self-test-line .fail { color: var(--aliased); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- HEADER -->
+  <header>
+    <h1>Layer 4 — Field Signature</h1>
+    <a class="nav-back" href="../index.html">&#8592; firmware index</a>
+  </header>
+
+  <!-- CONTROLS -->
+  <div class="controls-row">
+    <button class="fw-button view-toggle active" id="btnMeter" onclick="setView('meter')">Meter Bank</button>
+    <button class="fw-button view-toggle" id="btnRadar" onclick="setView('radar')">Radar Chart</button>
+    <span style="flex:1"></span>
+    <span class="fw-status-pill" id="selfTestPill">self-test</span>
+  </div>
+
+  <!-- STANDALONE SLIDERS -->
+  <div class="fw-panel" id="slidersPanel">
+    <div class="fw-section-label">Standalone Inputs (Layer 2)</div>
+    <div class="sliders-grid" id="slidersGrid"></div>
+  </div>
+
+  <!-- METER BANK VIEW -->
+  <div class="fw-panel" id="meterView">
+    <div class="fw-section-label">Meter Bank — 7-Channel Analog Computer</div>
+    <div class="meter-bank" id="meterBank"></div>
+  </div>
+
+  <!-- RADAR VIEW -->
+  <div class="fw-panel" id="radarView" style="display:none;">
+    <div class="fw-section-label">Radar / Spider Chart — Vector Shape</div>
+    <div class="radar-container">
+      <canvas class="radar-canvas" id="radarCanvas" width="460" height="460"></canvas>
+    </div>
+  </div>
+
+  <!-- REGISTERS -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Published Registers</div>
+    <div class="registers-grid" id="registersGrid"></div>
+  </div>
+
+  <!-- RRRR ADDRESS -->
+  <div class="fw-panel">
+    <div class="fw-section-label">RRRR Address Readout</div>
+    <div class="address-row" id="addressRow"></div>
+  </div>
+
+  <!-- SELF-TEST -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Self-Test</div>
+    <div id="selfTestOutput"></div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════════════════════════ */
+const PHI        = (1 + Math.sqrt(5)) / 2;          // 1.6180339...
+const TAU        = 1 / PHI;                          // 0.6180339...
+const SQRT3_HALF = Math.sqrt(3) / 2;                 // 0.8660254...
+const Z_C        = SQRT3_HALF;                       // crystallographic threshold
+const L4         = 7;                                // channel count
+const GAP        = 0.005;
+
+const THETA_PROFILES = [
+  { name: 'deltaObs', symbol: '\u03B4_obs', color: '--latent',     type: 'loss'      },
+  { name: 'etaN',     symbol: '\u03B7_N',   color: '--aliased',    type: 'loss'      },
+  { name: 'sigma',    symbol: '\u03C3',     color: '--suppressed', type: 'loss'      },
+  { name: 'gamma',    symbol: '\u03B3',     color: '--suppressed', type: 'loss'      },
+  { name: 'chi',      symbol: '\u03C7',     color: '--registered', type: 'coherence' },
+  { name: 'beta',     symbol: '\u03B2',     color: '--aliased',    type: 'loss'      },
+  { name: 'rho',      symbol: '\u03C1',     color: '--latent',     type: 'coherence' }
+];
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHTWEIGHT SIGNAL BUS
+   ═══════════════════════════════════════════════════════════ */
+const Bus = {
+  _subs: {},
+  on(evt, fn)   { (this._subs[evt] || (this._subs[evt] = [])).push(fn); },
+  off(evt, fn)  { this._subs[evt] = (this._subs[evt] || []).filter(f => f !== fn); },
+  emit(evt, data) { (this._subs[evt] || []).forEach(fn => fn(data)); }
+};
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════ */
+const SLIDER_DEFS = [
+  { key: 'interactions',       label: 'Interactions',        min: 0, max: 200, step: 1, init: 50  },
+  { key: 'registered',         label: 'Registered',          min: 0, max: 200, step: 1, init: 20  },
+  { key: 'latent',             label: 'Latent',              min: 0, max: 200, step: 1, init: 10  },
+  { key: 'suppressed',         label: 'Suppressed',          min: 0, max: 200, step: 1, init: 5   },
+  { key: 'aliased',            label: 'Aliased',             min: 0, max: 200, step: 1, init: 3   },
+  { key: 'namingDisruptions',  label: 'Naming Disruptions',  min: 0, max: 200, step: 1, init: 4   },
+  { key: 'O',                  label: 'O (observations)',    min: 0, max: 200, step: 1, init: 15  },
+  { key: 'Ostar',              label: 'O* (observation*)',   min: 0, max: 200, step: 1, init: 8   }
+];
+
+let inputs = {};
+SLIDER_DEFS.forEach(d => inputs[d.key] = d.init);
+
+let channelMuted = new Array(L4).fill(false);
+let currentView = 'meter';
+let signature = new Array(L4).fill(0);
+
+/* ═══════════════════════════════════════════════════════════
+   FIRMWARE — COMPUTE 7 FIELD SIGNATURE COMPONENTS
+   ═══════════════════════════════════════════════════════════ */
+function computeSignature(inp) {
+  const intCount  = inp.interactions;
+  const regCount  = inp.registered;
+  const latCount  = inp.latent;
+  const supCount  = inp.suppressed;
+  const aliCount  = inp.aliased;
+  const namCount  = inp.namingDisruptions;
+  const obsCount  = inp.O;
+  const osCount   = inp.Ostar;
+
+  const total = regCount + latCount + supCount + aliCount;
+
+  // delta_obs: (O + O*) / interactions
+  const deltaObs = intCount > 0 ? clamp01((obsCount + osCount) / intCount) : 0;
+
+  // eta_N: namingDisruptions / (total - latent)
+  const etaDenom = total - latCount;
+  const etaN = etaDenom > 0 ? clamp01(namCount / etaDenom) : 0;
+
+  // sigma: suppressed / total
+  const sigma = total > 0 ? clamp01(supCount / total) : 0;
+
+  // gamma: |latent - registered| / total
+  const gamma = total > 0 ? clamp01(Math.abs(latCount - regCount) / total) : 0;
+
+  // chi: EO-RFD formula
+  const chi = obsCount > 0
+    ? Math.min(0.99, 0.45 + Math.min(obsCount / Math.max(intCount, 1), 1) * 0.54)
+    : 0;
+
+  // beta: (O* + suppressed + namingDisruptions) / interactions
+  const beta = intCount > 0 ? clamp01((osCount + supCount + namCount) / intCount) : 0;
+
+  // rho: 1 - (aliased + suppressed) / total
+  const rho = total > 0 ? clamp01(1 - (aliCount + supCount) / total) : 1;
+
+  return [deltaObs, etaN, sigma, gamma, chi, beta, rho];
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SELF-TEST
+   ═══════════════════════════════════════════════════════════ */
+function runSelfTest(sig) {
+  const results = [];
+  let allPass = true;
+
+  // All 7 in [0,1]
+  sig.forEach((v, i) => {
+    const ok = v >= 0 && v <= 1;
+    if (!ok) allPass = false;
+    results.push({ text: `${THETA_PROFILES[i].symbol} = ${v.toFixed(4)} in [0,1]`, ok });
+  });
+
+  // rho check: rho = 1 - (aliased + suppressed) / total
+  const total = inputs.registered + inputs.latent + inputs.suppressed + inputs.aliased;
+  if (total > 0) {
+    const expectedRho = clamp01(1 - (inputs.aliased + inputs.suppressed) / total);
+    const rhoOk = Math.abs(sig[6] - expectedRho) < 1e-9;
+    if (!rhoOk) allPass = false;
+    results.push({ text: `\u03C1 = 1-(aliased+suppressed)/total  expected=${expectedRho.toFixed(4)} got=${sig[6].toFixed(4)}`, ok: rhoOk });
+  }
+
+  // chi bounded [0.45, 0.99] when O > 0
+  if (inputs.O > 0) {
+    const chiOk = sig[4] >= 0.45 && sig[4] <= 0.99;
+    if (!chiOk) allPass = false;
+    results.push({ text: `\u03C7 bounded [0.45,0.99] when O>0  value=${sig[4].toFixed(4)}`, ok: chiOk });
+  } else {
+    const chiOk = sig[4] === 0;
+    if (!chiOk) allPass = false;
+    results.push({ text: `\u03C7 = 0 when O=0  value=${sig[4].toFixed(4)}`, ok: chiOk });
+  }
+
+  return { allPass, results };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD UI — SLIDERS
+   ═══════════════════════════════════════════════════════════ */
+(function buildSliders() {
+  const grid = document.getElementById('slidersGrid');
+  SLIDER_DEFS.forEach(d => {
+    const row = document.createElement('div');
+    row.className = 'slider-row';
+    row.innerHTML =
+      `<label>${d.label}</label>` +
+      `<input type="range" min="${d.min}" max="${d.max}" step="${d.step}" value="${d.init}" id="sl_${d.key}">` +
+      `<span class="slider-val" id="sv_${d.key}">${d.init}</span>`;
+    grid.appendChild(row);
+
+    row.querySelector('input').addEventListener('input', function() {
+      inputs[d.key] = Number(this.value);
+      document.getElementById('sv_' + d.key).textContent = this.value;
+      Bus.emit('inputChanged');
+    });
+  });
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD UI — METER BANK
+   ═══════════════════════════════════════════════════════════ */
+(function buildMeterBank() {
+  const bank = document.getElementById('meterBank');
+  THETA_PROFILES.forEach((ch, i) => {
+    const col = document.createElement('div');
+    col.className = 'meter-col';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'meter-label';
+    lbl.textContent = ch.symbol;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'meter-wrap';
+
+    const fill = document.createElement('div');
+    fill.className = 'meter-fill';
+    fill.id = 'mfill_' + i;
+
+    // threshold lines
+    const tauLine = document.createElement('div');
+    tauLine.className = 'meter-threshold tau';
+    tauLine.style.bottom = (TAU * 100) + '%';
+    const tauLbl = document.createElement('span');
+    tauLbl.className = 'meter-threshold-label';
+    tauLbl.textContent = '\u03C4';
+    tauLbl.style.bottom = (TAU * 100) + '%';
+    tauLbl.style.position = 'absolute';
+    tauLbl.style.right = '-16px';
+
+    const zcLine = document.createElement('div');
+    zcLine.className = 'meter-threshold zc';
+    zcLine.style.bottom = (Z_C * 100) + '%';
+    const zcLbl = document.createElement('span');
+    zcLbl.className = 'meter-threshold-label';
+    zcLbl.textContent = 'z_c';
+    zcLbl.style.bottom = (Z_C * 100) + '%';
+    zcLbl.style.position = 'absolute';
+    zcLbl.style.left = '-22px';
+
+    wrap.appendChild(fill);
+    wrap.appendChild(tauLine);
+    wrap.appendChild(tauLbl);
+    wrap.appendChild(zcLine);
+    wrap.appendChild(zcLbl);
+
+    const val = document.createElement('div');
+    val.className = 'meter-value';
+    val.id = 'mval_' + i;
+    val.textContent = '0.0000';
+
+    const mute = document.createElement('button');
+    mute.className = 'meter-mute';
+    mute.id = 'mmute_' + i;
+    mute.textContent = 'mute';
+    mute.addEventListener('click', function() {
+      channelMuted[i] = !channelMuted[i];
+      this.classList.toggle('muted', channelMuted[i]);
+      this.textContent = channelMuted[i] ? 'muted' : 'mute';
+      Bus.emit('muteChanged');
+    });
+
+    col.appendChild(lbl);
+    col.appendChild(wrap);
+    col.appendChild(val);
+    col.appendChild(mute);
+    bank.appendChild(col);
+  });
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD UI — REGISTERS & ADDRESS
+   ═══════════════════════════════════════════════════════════ */
+(function buildRegisters() {
+  const grid = document.getElementById('registersGrid');
+  THETA_PROFILES.forEach((ch, i) => {
+    const entry = document.createElement('div');
+    entry.className = 'register-entry';
+    entry.innerHTML =
+      `<span class="reg-name">L4.${ch.name}</span>` +
+      `<span class="reg-val" id="reg_${i}">0.0000</span>`;
+    grid.appendChild(entry);
+  });
+
+  const addrRow = document.getElementById('addressRow');
+  THETA_PROFILES.forEach((ch, i) => {
+    const cell = document.createElement('span');
+    cell.className = 'address-cell';
+    cell.innerHTML = `<span class="addr-label">\u039B(0,${i},0,0)</span> ${ch.symbol}`;
+    addrRow.appendChild(cell);
+  });
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   METER COLORS
+   ═══════════════════════════════════════════════════════════ */
+function meterColor(ch, val) {
+  if (ch.type === 'loss') {
+    // warm colors for loss: interpolate from suppressed yellow to aliased red
+    if (val > TAU) return 'var(--aliased)';
+    if (val > 0.3) return 'var(--suppressed)';
+    return 'var(--latent)';
+  } else {
+    // cool colors for coherence
+    if (val > Z_C) return 'var(--registered)';
+    if (val > TAU) return 'var(--latent)';
+    return 'var(--text-dim)';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW TOGGLE
+   ═══════════════════════════════════════════════════════════ */
+function setView(v) {
+  currentView = v;
+  document.getElementById('meterView').style.display = v === 'meter' ? '' : 'none';
+  document.getElementById('radarView').style.display = v === 'radar' ? '' : 'none';
+  document.getElementById('btnMeter').classList.toggle('active', v === 'meter');
+  document.getElementById('btnRadar').classList.toggle('active', v === 'radar');
+  if (v === 'radar') drawRadar();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RADAR / SPIDER CHART
+   ═══════════════════════════════════════════════════════════ */
+function drawRadar() {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const R = Math.min(cx, cy) - 40;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const n = L4;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2;
+
+  function polar(i, r) {
+    const a = startAngle + i * angleStep;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  }
+
+  // grid rings
+  [0.25, 0.5, TAU, Z_C, 1.0].forEach(ring => {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const [x, y] = polar(i % n, ring * R);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(154,172,202,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // label tau and z_c
+    if (Math.abs(ring - TAU) < 0.001) {
+      const [lx, ly] = polar(0, ring * R);
+      ctx.fillStyle = '#ffd866';
+      ctx.font = '9px "IBM Plex Mono", monospace';
+      ctx.fillText('\u03C4=' + TAU.toFixed(3), lx + 4, ly - 3);
+    }
+    if (Math.abs(ring - Z_C) < 0.001) {
+      const [lx, ly] = polar(0, ring * R);
+      ctx.fillStyle = '#bd93f9';
+      ctx.font = '9px "IBM Plex Mono", monospace';
+      ctx.fillText('z_c=' + Z_C.toFixed(3), lx + 4, ly - 3);
+    }
+  });
+
+  // axis lines
+  for (let i = 0; i < n; i++) {
+    const [x, y] = polar(i, R);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = 'rgba(154,172,202,0.08)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // labels
+    const [lx, ly] = polar(i, R + 18);
+    ctx.fillStyle = '#dce6f4';
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(THETA_PROFILES[i].symbol, lx, ly);
+  }
+
+  // data polygon
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) {
+    const idx = i % n;
+    const v = channelMuted[idx] ? 0 : signature[idx];
+    const [x, y] = polar(idx, v * R);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(189,147,249,0.12)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(189,147,249,0.7)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // data points
+  for (let i = 0; i < n; i++) {
+    const v = channelMuted[i] ? 0 : signature[i];
+    const [x, y] = polar(i, v * R);
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+    const style = getComputedStyle(document.documentElement);
+    ctx.fillStyle = channelMuted[i] ? '#4a5a78' : style.getPropertyValue(THETA_PROFILES[i].color).trim();
+    ctx.fill();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UPDATE LOOP
+   ═══════════════════════════════════════════════════════════ */
+function update() {
+  signature = computeSignature(inputs);
+
+  // meters
+  signature.forEach((v, i) => {
+    const fill = document.getElementById('mfill_' + i);
+    const val = document.getElementById('mval_' + i);
+    const display = channelMuted[i] ? 0 : v;
+    fill.style.height = (display * 100) + '%';
+    fill.style.background = meterColor(THETA_PROFILES[i], v);
+    fill.style.opacity = channelMuted[i] ? '0.2' : '1';
+    val.textContent = v.toFixed(4);
+    val.style.opacity = channelMuted[i] ? '0.3' : '1';
+  });
+
+  // registers
+  signature.forEach((v, i) => {
+    document.getElementById('reg_' + i).textContent = v.toFixed(4);
+  });
+
+  // publish to bus
+  THETA_PROFILES.forEach((ch, i) => {
+    Bus.emit('L4.' + ch.name, signature[i]);
+  });
+
+  // radar
+  if (currentView === 'radar') drawRadar();
+
+  // self-test
+  const test = runSelfTest(signature);
+  const pill = document.getElementById('selfTestPill');
+  pill.textContent = test.allPass ? 'PASS' : 'FAIL';
+  pill.className = 'fw-status-pill' + (test.allPass ? '' : ' error');
+
+  const out = document.getElementById('selfTestOutput');
+  out.innerHTML = test.results.map(r =>
+    `<div class="self-test-line"><span class="${r.ok ? 'pass' : 'fail'}">${r.ok ? '\u2713' : '\u2717'}</span> ${r.text}</div>`
+  ).join('');
+}
+
+Bus.on('inputChanged', update);
+Bus.on('muteChanged', update);
+
+// initial
+update();
+</script>
+</body>
+</html>
