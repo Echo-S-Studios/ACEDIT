@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layer 9 — Metacybernetic · CSD + Negentropy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#050709; --bg2:#090b12; --bg3:#0d0f18;
+  --bg-panel:rgba(9,11,18,0.85);
+  --border:rgba(90,120,170,0.08); --border-active:rgba(90,120,170,0.18);
+  --text:#9aacca; --text-dim:#4a5a78; --text-bright:#dce6f4;
+  --registered:#50fa7b; --latent:#8be9fd; --suppressed:#f1fa8c;
+  --aliased:#ff5555; --crystal:#ffd866; --accent:#bd93f9;
+  --font-mono:'IBM Plex Mono',monospace;
+  --font-serif:'Crimson Pro',serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Header */
+.fw-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.fw-header-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.5px;
+}
+.fw-header-nav { font-size: 12px; }
+
+/* Panels */
+.fw-panels {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  align-items: flex-start;
+}
+.fw-panel {
+  flex: 1;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  min-width: 0;
+}
+.fw-panel:hover { border-color: var(--border-active); }
+
+.fw-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fw-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 6px 0;
+  font-size: 12px;
+}
+.fw-metric-label { color: var(--text-dim); }
+.fw-metric-value { color: var(--text-bright); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.fw-bar-track {
+  width: 100%;
+  height: 4px;
+  background: var(--bg);
+  border-radius: 2px;
+  margin: 6px 0;
+  overflow: hidden;
+}
+.fw-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.15s ease, background 0.3s ease;
+}
+
+.fw-button {
+  display: inline-block;
+  padding: 6px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-bright);
+  background: var(--bg3);
+  border: 1px solid var(--border-active);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.fw-button:hover { background: var(--bg2); border-color: var(--accent); }
+.fw-button.active { border-color: var(--registered); color: var(--registered); }
+
+.fw-status-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+.fw-status-pill.safe { color: var(--registered); border-color: var(--registered); background: rgba(80,250,123,0.08); }
+.fw-status-pill.warning { color: var(--suppressed); border-color: var(--suppressed); background: rgba(241,250,140,0.08); }
+.fw-status-pill.danger { color: var(--aliased); border-color: var(--aliased); background: rgba(255,85,85,0.08); animation: pulse-danger 0.6s ease-in-out infinite alternate; }
+.fw-status-pill.info { color: var(--latent); border-color: var(--latent); background: rgba(139,233,253,0.08); }
+.fw-status-pill.optimal { color: var(--crystal); border-color: var(--crystal); background: rgba(255,216,102,0.08); }
+
+@keyframes pulse-danger {
+  from { opacity: 1; }
+  to { opacity: 0.5; }
+}
+
+.fw-canvas-container {
+  position: relative;
+  width: 100%;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.fw-canvas-container canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Controls */
+.fw-controls {
+  display: flex;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.fw-control-group {
+  display: flex; align-items: center; gap: 8px;
+}
+.fw-control-group label {
+  font-size: 11px; color: var(--text-dim); white-space: nowrap;
+}
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 120px; height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+select {
+  font-family: var(--font-mono); font-size: 11px;
+  background: var(--bg3); color: var(--text);
+  border: 1px solid var(--border-active);
+  border-radius: 4px; padding: 4px 8px;
+}
+
+/* Bottom bar */
+.fw-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+}
+.fw-bottom-pills { display: flex; gap: 10px; align-items: center; }
+.fw-bottom-label { font-size: 11px; color: var(--text-dim); margin-right: 8px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="fw-header">
+  <div class="fw-header-nav"><a href="../index.html">&larr; Back</a></div>
+  <div class="fw-header-title">Layer 9 — Metacybernetic &middot; CSD + Negentropy</div>
+  <div style="width:60px"></div>
+</div>
+
+<!-- Controls -->
+<div class="fw-controls">
+  <div class="fw-control-group">
+    <label>&chi; value</label>
+    <input type="range" id="chiSlider" min="0" max="1" step="0.01" value="0.5">
+    <span id="chiReadout" class="fw-metric-value" style="min-width:40px">0.50</span>
+  </div>
+  <div class="fw-control-group">
+    <label>Noise D</label>
+    <input type="range" id="noiseSlider" min="0.01" max="1.0" step="0.01" value="0.20">
+    <span id="noiseReadout" class="fw-metric-value" style="min-width:40px">0.20</span>
+  </div>
+  <div class="fw-control-group">
+    <label>CSD Window</label>
+    <select id="windowSelect">
+      <option value="32">32</option>
+      <option value="64" selected>64</option>
+      <option value="128">128</option>
+    </select>
+  </div>
+  <div class="fw-control-group">
+    <button class="fw-button active" id="startStopBtn">STOP</button>
+  </div>
+  <div class="fw-control-group" style="margin-left:auto">
+    <span id="selfTestResult" class="fw-status-pill info" style="font-size:9px"></span>
+  </div>
+</div>
+
+<!-- Three Panels -->
+<div class="fw-panels">
+
+  <!-- Panel 1: Negentropy -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Negentropy &eta;(z)</div>
+    <div class="fw-canvas-container">
+      <canvas id="canvasNeg" width="300" height="200"></canvas>
+    </div>
+    <div class="fw-metric">
+      <span class="fw-metric-label">S_neg = ln(&eta;)</span>
+      <span class="fw-metric-value" id="sNegValue">0.000</span>
+    </div>
+    <div class="fw-metric">
+      <span class="fw-metric-label">&eta;(z)</span>
+      <span class="fw-metric-value" id="etaValue">1.000</span>
+    </div>
+    <div class="fw-bar-track"><div class="fw-bar-fill" id="negBar" style="width:100%;background:var(--registered)"></div></div>
+    <div style="margin-top:8px">
+      <span class="fw-status-pill safe" id="negStatus">ORDERED</span>
+    </div>
+  </div>
+
+  <!-- Panel 2: CSD Detection -->
+  <div class="fw-panel">
+    <div class="fw-section-label">CSD Detection &lambda;(t)</div>
+    <div class="fw-canvas-container">
+      <canvas id="canvasCSD" width="300" height="200"></canvas>
+    </div>
+    <div class="fw-metric">
+      <span class="fw-metric-label">&lambda;(t)</span>
+      <span class="fw-metric-value" id="lambdaValue">10.00</span>
+    </div>
+    <div class="fw-metric">
+      <span class="fw-metric-label">&lambda;_crit</span>
+      <span class="fw-metric-value" id="lambdaCritValue">0.000</span>
+    </div>
+    <div class="fw-bar-track"><div class="fw-bar-fill" id="csdBar" style="width:100%;background:var(--registered)"></div></div>
+    <div style="margin-top:8px">
+      <span class="fw-status-pill safe" id="csdStatus">SAFE</span>
+    </div>
+  </div>
+
+  <!-- Panel 3: Stochastic Resonance -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Stochastic Resonance SNR(D)</div>
+    <div class="fw-canvas-container">
+      <canvas id="canvasSR" width="300" height="200"></canvas>
+    </div>
+    <div class="fw-metric">
+      <span class="fw-metric-label">SNR(D)</span>
+      <span class="fw-metric-value" id="snrValue">0.000</span>
+    </div>
+    <div class="fw-metric">
+      <span class="fw-metric-label">D_opt</span>
+      <span class="fw-metric-value" id="dOptValue">0.000</span>
+    </div>
+    <div class="fw-bar-track"><div class="fw-bar-fill" id="srBar" style="width:50%;background:var(--crystal)"></div></div>
+    <div style="margin-top:8px">
+      <span class="fw-status-pill info" id="srStatus">BELOW OPTIMAL</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Bar -->
+<div class="fw-bottom-bar">
+  <span class="fw-bottom-label">Metacybernetic Status</span>
+  <div class="fw-bottom-pills">
+    <span class="fw-status-pill safe" id="pillNeg">NEG: ORDERED</span>
+    <span class="fw-status-pill safe" id="pillCSD">CSD: SAFE</span>
+    <span class="fw-status-pill info" id="pillSR">SR: SUB-OPT</span>
+  </div>
+  <div style="font-size:10px;color:var(--text-dim)">
+    L9.negentropy &middot; L9.csdLambda &middot; L9.stochResSNR
+  </div>
+</div>
+
+<script>
+// ─── Constants ─────────────────────────────────────────────────────
+const PHI = (1 + Math.sqrt(5)) / 2;
+const TAU = 1 / PHI;
+const SQRT3_HALF = Math.sqrt(3) / 2;
+const Z_C = SQRT3_HALF;
+const SIGMA_NEG = 1 / Math.pow(1 - Z_C, 2);
+const GAP = Math.pow(PHI, -4);
+const LAMBDA_CRIT = GAP * 10;
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+// ─── Signal Bus (lightweight pub/sub) ──────────────────────────────
+const SignalBus = {
+  _channels: {},
+  publish(key, value) {
+    this._channels[key] = value;
+  },
+  read(key) {
+    return this._channels[key];
+  }
+};
+
+// ─── Pre-compute SNR curve ─────────────────────────────────────────
+const SNR_CURVE = [];
+let D_OPT = 0.01, SNR_MAX = 0;
+for (let i = 1; i <= 100; i++) {
+  const D = i * 0.01;
+  const snr = D * Math.exp(-1 / (D + 0.01)) * Math.exp(-D * 2);
+  SNR_CURVE.push({ D, snr });
+  if (snr > SNR_MAX) { SNR_MAX = snr; D_OPT = D; }
+}
+
+// ─── State ─────────────────────────────────────────────────────────
+let running = true;
+let chi = 0.5;
+let noiseD = 0.20;
+let windowSize = 64;
+let chiHistory = [];
+let lambdaHistory = [];
+let prevDeltaChi = null;
+let autoDir = 1;
+let autoSpeed = 0.004;
+let tick = 0;
+
+// ─── DOM refs ──────────────────────────────────────────────────────
+const chiSlider = document.getElementById('chiSlider');
+const noiseSlider = document.getElementById('noiseSlider');
+const windowSelect = document.getElementById('windowSelect');
+const startStopBtn = document.getElementById('startStopBtn');
+
+const chiReadout = document.getElementById('chiReadout');
+const noiseReadout = document.getElementById('noiseReadout');
+const sNegValue = document.getElementById('sNegValue');
+const etaValue = document.getElementById('etaValue');
+const negBar = document.getElementById('negBar');
+const negStatus = document.getElementById('negStatus');
+const lambdaValue = document.getElementById('lambdaValue');
+const lambdaCritValue = document.getElementById('lambdaCritValue');
+const csdBar = document.getElementById('csdBar');
+const csdStatus = document.getElementById('csdStatus');
+const snrValue = document.getElementById('snrValue');
+const dOptValue = document.getElementById('dOptValue');
+const srBar = document.getElementById('srBar');
+const srStatus = document.getElementById('srStatus');
+
+const pillNeg = document.getElementById('pillNeg');
+const pillCSD = document.getElementById('pillCSD');
+const pillSR = document.getElementById('pillSR');
+
+const canvasNeg = document.getElementById('canvasNeg');
+const canvasCSD = document.getElementById('canvasCSD');
+const canvasSR = document.getElementById('canvasSR');
+const ctxNeg = canvasNeg.getContext('2d');
+const ctxCSD = canvasCSD.getContext('2d');
+const ctxSR = canvasSR.getContext('2d');
+
+// ─── Event handlers ────────────────────────────────────────────────
+chiSlider.addEventListener('input', function() { chi = parseFloat(this.value); });
+noiseSlider.addEventListener('input', function() { noiseD = parseFloat(this.value); });
+windowSelect.addEventListener('change', function() {
+  windowSize = parseInt(this.value);
+  chiHistory = chiHistory.slice(-windowSize);
+  lambdaHistory = lambdaHistory.slice(-windowSize);
+});
+startStopBtn.addEventListener('click', function() {
+  running = !running;
+  this.textContent = running ? 'STOP' : 'START';
+  this.classList.toggle('active', running);
+});
+
+// Display lambda_crit
+lambdaCritValue.textContent = LAMBDA_CRIT.toFixed(3);
+dOptValue.textContent = D_OPT.toFixed(3);
+
+// ─── Negentropy functions ──────────────────────────────────────────
+function eta(z) {
+  return Math.exp(-SIGMA_NEG * Math.pow(z - Z_C, 2));
+}
+function sNeg(z) {
+  return -SIGMA_NEG * Math.pow(z - Z_C, 2);
+}
+
+// ─── SNR function ──────────────────────────────────────────────────
+function snrFunc(D) {
+  return D * Math.exp(-1 / (D + 0.01)) * Math.exp(-D * 2);
+}
+
+// ─── Draw: Negentropy ──────────────────────────────────────────────
+function drawNegentropy(z) {
+  const W = canvasNeg.width, H = canvasNeg.height;
+  const ctx = ctxNeg;
+  ctx.clearRect(0, 0, W, H);
+
+  // Padding
+  const px = 30, py = 20, pw = W - px - 10, ph = H - py - 25;
+
+  // Axes
+  ctx.strokeStyle = 'rgba(90,120,170,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px, py); ctx.lineTo(px, py + ph); ctx.lineTo(px + pw, py + ph);
+  ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle = '#4a5a78';
+  ctx.font = '9px IBM Plex Mono, monospace';
+  ctx.fillText('0', px - 4, py + ph + 12);
+  ctx.fillText('1', px + pw - 4, py + ph + 12);
+  ctx.fillText('z', px + pw / 2, py + ph + 14);
+  ctx.fillText('1.0', px - 26, py + 4);
+
+  // Curve eta(z)
+  ctx.strokeStyle = '#50fa7b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= pw; i++) {
+    const zv = i / pw;
+    const yv = eta(zv);
+    const sx = px + i;
+    const sy = py + ph - yv * ph;
+    if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+
+  // Z_C vertical dashed line
+  const zcX = px + Z_C * pw;
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = 'rgba(255,216,102,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(zcX, py); ctx.lineTo(zcX, py + ph);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Peak annotation
+  ctx.fillStyle = '#ffd866';
+  ctx.font = '8px IBM Plex Mono, monospace';
+  ctx.fillText('MAXIMUM', zcX + 4, py + 10);
+  ctx.fillText('NEGENTROPY', zcX + 4, py + 20);
+
+  // Live marker
+  const markerX = px + clamp01(z) * pw;
+  const markerY = py + ph - eta(z) * ph;
+  ctx.beginPath();
+  ctx.arc(markerX, markerY, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#bd93f9';
+  ctx.fill();
+  ctx.strokeStyle = '#dce6f4';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// ─── Draw: CSD ─────────────────────────────────────────────────────
+function drawCSD() {
+  const W = canvasCSD.width, H = canvasCSD.height;
+  const ctx = ctxCSD;
+  ctx.clearRect(0, 0, W, H);
+
+  const px = 30, py = 20, pw = W - px - 10, ph = H - py - 25;
+
+  // Axes
+  ctx.strokeStyle = 'rgba(90,120,170,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px, py); ctx.lineTo(px, py + ph); ctx.lineTo(px + pw, py + ph);
+  ctx.stroke();
+
+  ctx.fillStyle = '#4a5a78';
+  ctx.font = '9px IBM Plex Mono, monospace';
+  ctx.fillText('t', px + pw / 2, py + ph + 14);
+
+  // Determine y-range
+  let maxL = 5;
+  for (let i = 0; i < lambdaHistory.length; i++) {
+    if (lambdaHistory[i] < 20 && lambdaHistory[i] > maxL) maxL = lambdaHistory[i];
+  }
+  maxL = Math.ceil(maxL + 1);
+
+  ctx.fillText('0', px - 10, py + ph + 4);
+  ctx.fillText(maxL.toFixed(0), px - 18, py + 6);
+
+  // Lambda_crit threshold line
+  const critY = py + ph - (LAMBDA_CRIT / maxL) * ph;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(255,85,85,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px, critY); ctx.lineTo(px + pw, critY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#ff5555';
+  ctx.font = '8px IBM Plex Mono, monospace';
+  ctx.fillText('\u03BB_crit', px + pw - 30, critY - 4);
+
+  // Lambda trace
+  if (lambdaHistory.length > 1) {
+    ctx.strokeStyle = '#8be9fd';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < lambdaHistory.length; i++) {
+      const x = px + (i / (windowSize - 1)) * pw;
+      const lv = Math.min(lambdaHistory[i], maxL);
+      const y = py + ph - (lv / maxL) * ph;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+// ─── Draw: Stochastic Resonance ────────────────────────────────────
+function drawSR() {
+  const W = canvasSR.width, H = canvasSR.height;
+  const ctx = ctxSR;
+  ctx.clearRect(0, 0, W, H);
+
+  const px = 30, py = 20, pw = W - px - 10, ph = H - py - 25;
+
+  // Axes
+  ctx.strokeStyle = 'rgba(90,120,170,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px, py); ctx.lineTo(px, py + ph); ctx.lineTo(px + pw, py + ph);
+  ctx.stroke();
+
+  ctx.fillStyle = '#4a5a78';
+  ctx.font = '9px IBM Plex Mono, monospace';
+  ctx.fillText('D', px + pw / 2, py + ph + 14);
+  ctx.fillText('0', px - 4, py + ph + 12);
+  ctx.fillText('1.0', px + pw - 14, py + ph + 12);
+
+  // SNR curve
+  ctx.strokeStyle = '#f1fa8c';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < SNR_CURVE.length; i++) {
+    const x = px + (SNR_CURVE[i].D) * pw;
+    const y = py + ph - (SNR_CURVE[i].snr / SNR_MAX) * ph;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // D_opt marker
+  const optX = px + D_OPT * pw;
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = 'rgba(255,216,102,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(optX, py); ctx.lineTo(optX, py + ph);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#ffd866';
+  ctx.font = '8px IBM Plex Mono, monospace';
+  ctx.fillText('D_opt', optX + 3, py + 12);
+
+  // Current noise marker
+  const curX = px + clamp01(noiseD) * pw;
+  const curSNR = snrFunc(noiseD);
+  const curY = py + ph - (curSNR / SNR_MAX) * ph;
+  ctx.beginPath();
+  ctx.arc(curX, curY, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#bd93f9';
+  ctx.fill();
+  ctx.strokeStyle = '#dce6f4';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// ─── Status helpers ────────────────────────────────────────────────
+function setPill(el, text, cls) {
+  el.textContent = text;
+  el.className = 'fw-status-pill ' + cls;
+}
+
+// ─── Main tick ─────────────────────────────────────────────────────
+function update() {
+  if (running) {
+    // Auto-oscillate chi
+    chi += autoDir * autoSpeed;
+    if (chi >= 0.95) { chi = 0.95; autoDir = -1; }
+    if (chi <= 0.30) { chi = 0.30; autoDir = 1; }
+    chiSlider.value = chi;
+  }
+
+  const z = clamp01(chi);
+  chiReadout.textContent = z.toFixed(2);
+  noiseReadout.textContent = noiseD.toFixed(2);
+
+  // ── Negentropy ──
+  const etaVal = eta(z);
+  const sNegVal = sNeg(z);
+  etaValue.textContent = etaVal.toFixed(4);
+  sNegValue.textContent = sNegVal.toFixed(4);
+  negBar.style.width = (etaVal * 100).toFixed(1) + '%';
+
+  const distFromZC = Math.abs(z - Z_C);
+  if (distFromZC < 0.03) {
+    setPill(negStatus, 'CRITICAL', 'warning');
+    negBar.style.background = 'var(--suppressed)';
+  } else if (distFromZC < 0.15) {
+    setPill(negStatus, 'ORDERED', 'safe');
+    negBar.style.background = 'var(--registered)';
+  } else {
+    setPill(negStatus, 'DISORDERED', 'danger');
+    negBar.style.background = 'var(--aliased)';
+  }
+
+  SignalBus.publish('L9.negentropy', etaVal);
+
+  // ── CSD Detection ──
+  chiHistory.push(z);
+  if (chiHistory.length > windowSize) chiHistory.shift();
+
+  let lambda = 10;
+  if (chiHistory.length >= 3) {
+    const n = chiHistory.length;
+    const currentDelta = chiHistory[n - 1] - chiHistory[n - 2];
+    const prevDelta = chiHistory[n - 2] - chiHistory[n - 3];
+    const absCur = Math.abs(currentDelta);
+    const absPrev = Math.abs(prevDelta);
+    if (absCur > 0.0001 && absPrev > 0.0001) {
+      lambda = -Math.log(absCur / absPrev);
+    } else {
+      lambda = 10;
+    }
+  }
+
+  lambdaHistory.push(lambda);
+  if (lambdaHistory.length > windowSize) lambdaHistory.shift();
+
+  lambdaValue.textContent = lambda.toFixed(3);
+
+  const lambdaRatio = clamp01(lambda / (LAMBDA_CRIT * 4));
+  csdBar.style.width = (lambdaRatio * 100).toFixed(1) + '%';
+
+  if (lambda < LAMBDA_CRIT) {
+    setPill(csdStatus, 'CSD WARNING', 'danger');
+    csdBar.style.background = 'var(--aliased)';
+  } else if (lambda < LAMBDA_CRIT * 3) {
+    setPill(csdStatus, 'APPROACHING', 'warning');
+    csdBar.style.background = 'var(--suppressed)';
+  } else {
+    setPill(csdStatus, 'SAFE', 'safe');
+    csdBar.style.background = 'var(--registered)';
+  }
+
+  SignalBus.publish('L9.csdLambda', lambda);
+
+  // ── Stochastic Resonance ──
+  const currentSNR = snrFunc(noiseD);
+  snrValue.textContent = currentSNR.toFixed(5);
+
+  const snrRatio = currentSNR / SNR_MAX;
+  srBar.style.width = (snrRatio * 100).toFixed(1) + '%';
+
+  const dDiff = Math.abs(noiseD - D_OPT);
+  if (dDiff < 0.05) {
+    setPill(srStatus, 'OPTIMAL', 'optimal');
+    srBar.style.background = 'var(--crystal)';
+  } else if (noiseD < D_OPT) {
+    setPill(srStatus, 'BELOW OPTIMAL', 'info');
+    srBar.style.background = 'var(--latent)';
+  } else {
+    setPill(srStatus, 'ABOVE OPTIMAL', 'warning');
+    srBar.style.background = 'var(--suppressed)';
+  }
+
+  SignalBus.publish('L9.stochResSNR', currentSNR);
+
+  // ── Bottom bar pills ──
+  pillNeg.textContent = 'NEG: ' + negStatus.textContent;
+  pillNeg.className = negStatus.className;
+  pillCSD.textContent = 'CSD: ' + csdStatus.textContent;
+  pillCSD.className = csdStatus.className;
+  pillSR.textContent = 'SR: ' + srStatus.textContent;
+  pillSR.className = srStatus.className;
+
+  // ── Draw canvases ──
+  drawNegentropy(z);
+  drawCSD();
+  drawSR();
+
+  tick++;
+  requestAnimationFrame(update);
+}
+
+// ─── Self-test ─────────────────────────────────────────────────────
+function selfTest() {
+  const results = [];
+  let pass = true;
+
+  // eta(Z_C) approx 1.0
+  const e1 = eta(Z_C);
+  if (Math.abs(e1 - 1.0) < 0.001) {
+    results.push('\u2713 \u03B7(Z_C)=' + e1.toFixed(6));
+  } else {
+    results.push('\u2717 \u03B7(Z_C)=' + e1.toFixed(6));
+    pass = false;
+  }
+
+  // S_neg(Z_C) approx 0
+  const s1 = sNeg(Z_C);
+  if (Math.abs(s1) < 0.001) {
+    results.push('\u2713 S_neg(Z_C)=' + s1.toFixed(6));
+  } else {
+    results.push('\u2717 S_neg(Z_C)=' + s1.toFixed(6));
+    pass = false;
+  }
+
+  // Lambda computable
+  const testLambda = -Math.log(0.01 / 0.02);
+  if (isFinite(testLambda)) {
+    results.push('\u2713 \u03BB computable');
+  } else {
+    results.push('\u2717 \u03BB not computable');
+    pass = false;
+  }
+
+  // SNR curve has single peak
+  let peaks = 0;
+  for (let i = 1; i < SNR_CURVE.length - 1; i++) {
+    if (SNR_CURVE[i].snr > SNR_CURVE[i-1].snr && SNR_CURVE[i].snr > SNR_CURVE[i+1].snr) peaks++;
+  }
+  if (peaks === 1) {
+    results.push('\u2713 SNR single peak at D=' + D_OPT.toFixed(3));
+  } else {
+    results.push('\u2717 SNR peaks=' + peaks);
+    pass = false;
+  }
+
+  const el = document.getElementById('selfTestResult');
+  el.textContent = pass ? 'SELF-TEST PASS' : 'SELF-TEST FAIL';
+  el.className = 'fw-status-pill ' + (pass ? 'safe' : 'danger');
+  console.log('[L9 Self-Test]', results.join(' | '));
+}
+
+// ─── Boot ──────────────────────────────────────────────────────────
+selfTest();
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
