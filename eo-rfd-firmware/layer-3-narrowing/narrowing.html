@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layer 3 — Narrowing · 7-Stage Resistive Divider</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   EO-RFD Layer 3 — Inline Theme
+   ═══════════════════════════════════════ */
+:root {
+  --bg:              #050709;
+  --bg2:             #090b12;
+  --bg3:             #0d0f18;
+  --bg-panel:        rgba(9,11,18,0.85);
+  --border:          rgba(90,120,170,0.08);
+  --border-active:   rgba(90,120,170,0.18);
+  --text:            #9aacca;
+  --text-dim:        #4a5a78;
+  --text-bright:     #dce6f4;
+  --registered:      #50fa7b;
+  --latent:          #8be9fd;
+  --suppressed:      #f1fa8c;
+  --aliased:         #ff5555;
+  --crystal:         #ffd866;
+  --accent:          #bd93f9;
+  --font-mono:       'IBM Plex Mono', monospace;
+  --font-serif:      'Crimson Pro', serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Utility classes ── */
+.fw-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+.fw-section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.fw-metric {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.fw-bar-track {
+  width: 100%;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.fw-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.fw-button {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.fw-button:hover {
+  background: var(--border);
+  border-color: var(--border-active);
+}
+.fw-button:active {
+  background: var(--border-active);
+}
+.fw-button.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.fw-status-pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  line-height: 1.6;
+}
+
+.fw-canvas-container {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Layout ── */
+.l3-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.l3-header h1 {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.02em;
+}
+.l3-header a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 11px;
+}
+.l3-header a:hover { text-decoration: underline; }
+
+.l3-body {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 48px);
+}
+
+.l3-sidebar {
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  background: var(--bg2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.l3-main {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* ── Controls ── */
+.control-group { margin-bottom: 10px; }
+.control-group label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.control-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.control-group .val {
+  font-size: 12px;
+  color: var(--text-bright);
+  float: right;
+}
+.control-group select {
+  width: 100%;
+  background: var(--bg3);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* ── View toggle ── */
+.view-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+/* ── Funnel view ── */
+.funnel-stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+.funnel-stage .stage-label {
+  width: 28px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-bright);
+  flex-shrink: 0;
+}
+.funnel-stage .stage-bar-wrap {
+  flex: 1;
+  position: relative;
+}
+.funnel-stage .stage-bar {
+  height: 22px;
+  border-radius: 3px;
+  background: var(--accent);
+  opacity: 0.75;
+  transition: width 0.3s ease;
+  position: relative;
+}
+.funnel-stage .stage-bar .stage-count {
+  position: absolute;
+  right: 6px;
+  top: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--bg);
+}
+.funnel-stage .stage-zone {
+  width: 56px;
+  text-align: left;
+  font-size: 9px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.loss-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2px;
+  padding-left: 38px;
+}
+.loss-row .loss-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.loss-row .loss-bar-wrap {
+  flex: 1;
+  max-width: 200px;
+}
+.loss-row .loss-bar-track {
+  width: 100%;
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.loss-row .loss-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--suppressed);
+  transition: width 0.3s ease;
+}
+.loss-row .loss-bar-fill.dominant {
+  background: var(--aliased);
+}
+.loss-row .loss-val {
+  font-size: 10px;
+  color: var(--text);
+  width: 50px;
+  flex-shrink: 0;
+}
+
+/* ── Resistor schematic ── */
+.resistor-view {
+  display: none;
+}
+.resistor-view.visible {
+  display: block;
+}
+.funnel-view.hidden {
+  display: none;
+}
+
+.resistor-svg {
+  width: 100%;
+  max-width: 700px;
+}
+
+/* ── Registers panel ── */
+.reg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+}
+.reg-entry {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--border);
+}
+.reg-entry .rk { color: var(--text-dim); }
+.reg-entry .rv { color: var(--text-bright); font-weight: 500; }
+
+/* ── Self-test ── */
+.test-result {
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+.test-result.pass { background: rgba(80,250,123,0.1); color: var(--registered); }
+.test-result.fail { background: rgba(255,85,85,0.1); color: var(--aliased); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════ -->
+<div class="l3-header">
+  <h1>Layer 3 — Narrowing &middot; 7-Stage Resistive Divider</h1>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span class="fw-status-pill" id="selfTestPill" style="color:var(--text-dim)">SELF-TEST</span>
+    <a href="../index.html">&larr; Index</a>
+  </div>
+</div>
+
+<div class="l3-body">
+  <!-- ═══ SIDEBAR ═══ -->
+  <div class="l3-sidebar">
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Standalone Controls</div>
+
+      <div class="control-group">
+        <label>&Theta; Profile <span class="val" id="thetaVal">standard</span></label>
+        <select id="thetaSelect">
+          <option value="open">&Theta;_open</option>
+          <option value="standard" selected>&Theta;_std</option>
+          <option value="restricted">&Theta;_res</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>Interactions (internal) <span class="val" id="interVal">500</span></label>
+        <input type="range" id="interSlider" min="10" max="5000" value="500" step="10">
+      </div>
+
+      <div class="control-group">
+        <label>Registered count (&Aopf;) <span class="val" id="regVal">42</span></label>
+        <input type="range" id="regSlider" min="0" max="2000" value="42" step="1">
+      </div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">View</div>
+      <div class="view-toggle">
+        <button class="fw-button active" id="btnFunnel" onclick="setView('funnel')">Funnel</button>
+        <button class="fw-button" id="btnResistor" onclick="setView('resistor')">Resistor</button>
+      </div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Published Registers</div>
+      <div class="reg-grid" id="regGrid"></div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Self-Test (L<sub>4</sub> = 7)</div>
+      <button class="fw-button" onclick="runSelfTest()" style="width:100%">Run Self-Test</button>
+      <div id="testOutput"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══ MAIN VIEW ═══ -->
+  <div class="l3-main">
+    <div class="funnel-view" id="funnelView"></div>
+    <div class="resistor-view" id="resistorView"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     INLINE JAVASCRIPT
+     ═══════════════════════════════════════ -->
+<script>
+/* ── Constants (inlined from shared/constants.js) ── */
+const PHI       = (1 + Math.sqrt(5)) / 2;
+const TAU       = 1 / PHI;
+const SQRT3     = Math.sqrt(3);
+const SQRT3_HALF = SQRT3 / 2;
+const Z_C       = SQRT3_HALF;
+const K_FORM    = 0.924;
+const L4        = 7;
+const GAP       = Math.pow(PHI, -4);
+
+const THETA = {
+  open:       { label: '\u0398_open',  apertureThreshold: 0.15, phaseThreshold: 0.4,
+                capacityMult: 0.95, namingSensitivity: 0.02, policyStrictness: 0.1 },
+  standard:   { label: '\u0398_std',   apertureThreshold: 0.30, phaseThreshold: 0.6,
+                capacityMult: 0.80, namingSensitivity: 0.08, policyStrictness: 0.3 },
+  restricted: { label: '\u0398_res',   apertureThreshold: 0.50, phaseThreshold: 0.8,
+                capacityMult: 0.50, namingSensitivity: 0.25, policyStrictness: 0.6 }
+};
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+/* ── Inline Signal Bus ── */
+const bus = (() => {
+  const _listeners = new Map();
+  const _registers = new Map();
+  return {
+    on(ch, fn) {
+      if (!_listeners.has(ch)) _listeners.set(ch, []);
+      _listeners.get(ch).push(fn);
+      return () => {
+        const a = _listeners.get(ch);
+        if (a) { const i = a.indexOf(fn); if (i !== -1) a.splice(i, 1); }
+      };
+    },
+    emit(ch, payload) {
+      const fns = _listeners.get(ch);
+      if (fns) fns.forEach(fn => { try { fn(payload); } catch(e) { console.error('[Bus]', ch, e); } });
+    },
+    writeReg(k, v) { _registers.set(k, v); },
+    readReg(k) { return _registers.get(k) ?? 0; },
+    dumpRegisters() {
+      const o = {};
+      for (const [k, v] of _registers) o[k] = v;
+      return o;
+    }
+  };
+})();
+
+/* ── Stage symbols and zone labels ── */
+const STAGES = [
+  { key: 'S', sym: 'S',  zone: 'L\u2084 zone 1' },
+  { key: 'R', sym: '\u211B', zone: 'L\u2084 zone 2' },
+  { key: 'K', sym: '\uD835\uDCA6', zone: 'L\u2084 zone 3' },
+  { key: 'C', sym: '\uD835\uDC9E', zone: 'L\u2084 zone 4' },
+  { key: 'P', sym: '\uD835\uDCAB', zone: 'L\u2084 zone 5' },
+  { key: 'F', sym: '\u2131', zone: 'L\u2084 zone 6' },
+  { key: 'A', sym: '\uD835\uDC9C', zone: 'L\u2084 zone 7' }
+];
+
+const LOSSES = [
+  { key: 'LR', label: 'L\u1D63', from: 0, to: 1 },
+  { key: 'LK', label: 'L\u2096', from: 1, to: 2 },
+  { key: 'LC', label: 'L\u1D04', from: 2, to: 3 },
+  { key: 'LP', label: 'L\u209A', from: 3, to: 4 },
+  { key: 'LF', label: 'L\u1DA0', from: 4, to: 5 },
+  { key: 'LA', label: 'L\u2090', from: 5, to: 6 }
+];
+
+/* ── State ── */
+let state = {
+  profile: 'standard',
+  interactions: 500,
+  registered: 42,
+  stages: [0,0,0,0,0,0,0],
+  losses: [0,0,0,0,0,0],
+  dominantLoss: '',
+  view: 'funnel'
+};
+
+/* ── Compute narrowing cascade ── */
+function compute() {
+  const th = THETA[state.profile];
+  const n  = state.interactions;
+
+  const S = Math.floor(n * (1.12 + th.namingSensitivity + th.policyStrictness * 0.18));
+  const R = n;
+  const K = Math.floor(R * 0.70);
+  const C = Math.floor(K * 0.55);
+  const P = Math.floor(C * (1 - th.policyStrictness * 0.30));
+  const F = Math.floor(P * th.capacityMult);
+  const A = state.registered;
+
+  state.stages = [S, R, K, C, P, F, A];
+
+  // Compute loss ratios (fraction lost at each transition relative to input of that transition)
+  const pairs = [[S,R],[R,K],[K,C],[C,P],[P,F],[F,A]];
+  state.losses = pairs.map(([a,b]) => a > 0 ? clamp01((a - b) / a) : 0);
+
+  // Dominant loss
+  let maxL = -1, maxIdx = 0;
+  state.losses.forEach((l, i) => { if (l > maxL) { maxL = l; maxIdx = i; } });
+  state.dominantLoss = LOSSES[maxIdx].key;
+
+  // Publish registers
+  STAGES.forEach((s, i) => bus.writeReg('L3.' + s.key, state.stages[i]));
+  LOSSES.forEach((l, i) => bus.writeReg('L3.' + l.key, state.losses[i]));
+  bus.writeReg('L3.dominantLoss', state.dominantLoss);
+
+  bus.emit('narrowing:update', state);
+}
+
+/* ── Render funnel ── */
+function renderFunnel() {
+  const el = document.getElementById('funnelView');
+  const maxVal = Math.max(1, state.stages[0]);
+  let html = '';
+
+  for (let i = 0; i < 7; i++) {
+    const s = STAGES[i];
+    const val = state.stages[i];
+    const pct = (val / maxVal * 100).toFixed(1);
+
+    // Stage colors: gradient from accent toward registered
+    const hue = 250 - i * 22;
+    const barColor = `hsl(${hue}, 60%, 55%)`;
+
+    html += `<div class="funnel-stage">
+      <div class="stage-label" title="${s.key}">${s.sym}</div>
+      <div class="stage-bar-wrap">
+        <div class="stage-bar" style="width:${pct}%;background:${barColor}">
+          <span class="stage-count">${val}</span>
+        </div>
+      </div>
+      <div class="stage-zone">${s.zone}</div>
+    </div>`;
+
+    // Loss indicator between stages
+    if (i < 6) {
+      const l = LOSSES[i];
+      const lv = state.losses[i];
+      const isDom = l.key === state.dominantLoss;
+      const lpct = (lv * 100).toFixed(1);
+      html += `<div class="loss-row">
+        <div class="loss-label">${l.label}</div>
+        <div class="loss-bar-wrap">
+          <div class="loss-bar-track">
+            <div class="loss-bar-fill${isDom ? ' dominant' : ''}" style="width:${lpct}%"></div>
+          </div>
+        </div>
+        <div class="loss-val" style="color:${isDom ? 'var(--aliased)' : 'var(--text)'}">${lpct}%${isDom ? ' \u25C0' : ''}</div>
+      </div>`;
+    }
+  }
+
+  el.innerHTML = html;
+}
+
+/* ── Render resistor schematic (SVG) ── */
+function renderResistor() {
+  const el = document.getElementById('resistorView');
+  const maxVal = Math.max(1, state.stages[0]);
+  const W = 680, H = 420;
+  const xStart = 40, xEnd = W - 40;
+  const segW = (xEnd - xStart) / 7;
+  const yMid = H / 2;
+
+  let svg = `<svg class="resistor-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // background
+  svg += `<rect width="${W}" height="${H}" fill="var(--bg)" rx="6"/>`;
+
+  // Title
+  svg += `<text x="${W/2}" y="28" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="10" text-anchor="middle" letter-spacing="0.1em">7-STAGE RESISTIVE DIVIDER SCHEMATIC</text>`;
+
+  // Draw the chain
+  for (let i = 0; i < 7; i++) {
+    const x = xStart + i * segW;
+    const val = state.stages[i];
+    const sym = STAGES[i].sym;
+
+    // Node circle
+    svg += `<circle cx="${x + segW/2}" cy="${yMid}" r="14" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.7"/>`;
+    svg += `<text x="${x + segW/2}" y="${yMid + 4}" fill="var(--text-bright)" font-family="var(--font-mono)" font-size="13" text-anchor="middle" font-weight="600">${sym}</text>`;
+    // Value below node
+    svg += `<text x="${x + segW/2}" y="${yMid + 32}" fill="var(--text)" font-family="var(--font-mono)" font-size="10" text-anchor="middle">${val}</text>`;
+    // Zone label above
+    svg += `<text x="${x + segW/2}" y="${yMid - 24}" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="8" text-anchor="middle">${STAGES[i].zone}</text>`;
+
+    // Resistor between nodes
+    if (i < 6) {
+      const rx1 = x + segW/2 + 14;
+      const rx2 = x + segW + segW/2 - 14;
+      const rmid = (rx1 + rx2) / 2;
+      const rw = rx2 - rx1;
+      const loss = state.losses[i];
+      const isDom = LOSSES[i].key === state.dominantLoss;
+      const rColor = isDom ? 'var(--aliased)' : 'var(--suppressed)';
+
+      // Connection wire
+      svg += `<line x1="${rx1}" y1="${yMid}" x2="${rx1 + rw*0.15}" y2="${yMid}" stroke="var(--text-dim)" stroke-width="1"/>`;
+      svg += `<line x1="${rx2 - rw*0.15}" y1="${yMid}" x2="${rx2}" y2="${yMid}" stroke="var(--text-dim)" stroke-width="1"/>`;
+
+      // Zigzag resistor symbol
+      const zStart = rx1 + rw * 0.15;
+      const zEnd = rx2 - rw * 0.15;
+      const zLen = zEnd - zStart;
+      const teeth = 6;
+      const tW = zLen / teeth;
+      const tH = 8;
+      let path = `M ${zStart} ${yMid}`;
+      for (let t = 0; t < teeth; t++) {
+        const tx = zStart + t * tW;
+        path += ` L ${tx + tW*0.25} ${yMid - tH}`;
+        path += ` L ${tx + tW*0.75} ${yMid + tH}`;
+        path += ` L ${tx + tW} ${yMid}`;
+      }
+      svg += `<path d="${path}" fill="none" stroke="${rColor}" stroke-width="1.5"/>`;
+
+      // Resistance value label (loss %)
+      const rLabel = (loss * 100).toFixed(1) + '%';
+      svg += `<text x="${rmid}" y="${yMid + 54}" fill="${rColor}" font-family="var(--font-mono)" font-size="9" text-anchor="middle" font-weight="500">${LOSSES[i].label} = ${rLabel}</text>`;
+
+      // Equivalent resistance annotation
+      const rOhm = loss > 0 ? (loss / (1 - loss + 1e-9)).toFixed(3) : '0.000';
+      svg += `<text x="${rmid}" y="${yMid + 66}" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="8" text-anchor="middle">R\u2248${rOhm}</text>`;
+
+      // Ground tap line (resistive divider tap to ground)
+      const tapY = yMid + 80;
+      svg += `<line x1="${rmid}" y1="${yMid + 8}" x2="${rmid}" y2="${tapY}" stroke="var(--text-dim)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.4"/>`;
+    }
+  }
+
+  // Input/output arrows
+  svg += `<line x1="10" y1="${yMid}" x2="${xStart + segW/2 - 14}" y2="${yMid}" stroke="var(--registered)" stroke-width="1.5" marker-end="url(#arrowG)"/>`;
+  svg += `<text x="10" y="${yMid - 10}" fill="var(--registered)" font-family="var(--font-mono)" font-size="9">IN</text>`;
+
+  svg += `<line x1="${xStart + 6*segW + segW/2 + 14}" y1="${yMid}" x2="${W - 10}" y2="${yMid}" stroke="var(--registered)" stroke-width="1.5" marker-end="url(#arrowG)"/>`;
+  svg += `<text x="${W - 28}" y="${yMid - 10}" fill="var(--registered)" font-family="var(--font-mono)" font-size="9">OUT</text>`;
+
+  // Arrow marker
+  svg += `<defs><marker id="arrowG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0,0 8,3 0,6" fill="var(--registered)"/>
+  </marker></defs>`;
+
+  // Ground rail
+  svg += `<line x1="${xStart}" y1="${H - 40}" x2="${xEnd}" y2="${H - 40}" stroke="var(--text-dim)" stroke-width="1"/>`;
+  svg += `<text x="${xEnd + 4}" y="${H - 37}" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="8">GND</text>`;
+
+  // K_FORM annotation
+  svg += `<text x="${W/2}" y="${H - 14}" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="9" text-anchor="middle">K_FORM=${K_FORM}  |  L\u2084=${L4}  |  GAP=\u03C6\u207B\u2074\u2248${GAP.toFixed(4)}  |  Z_C=\u221A3/2\u2248${Z_C.toFixed(4)}</text>`;
+
+  svg += '</svg>';
+  el.innerHTML = svg;
+}
+
+/* ── Render registers panel ── */
+function renderRegisters() {
+  const grid = document.getElementById('regGrid');
+  let html = '';
+
+  STAGES.forEach((s, i) => {
+    html += `<div class="reg-entry"><span class="rk">L3.${s.key}</span><span class="rv">${state.stages[i]}</span></div>`;
+  });
+  LOSSES.forEach((l, i) => {
+    html += `<div class="reg-entry"><span class="rk">L3.${l.key}</span><span class="rv">${state.losses[i].toFixed(4)}</span></div>`;
+  });
+  html += `<div class="reg-entry"><span class="rk">L3.dom</span><span class="rv" style="color:var(--aliased)">${state.dominantLoss}</span></div>`;
+
+  grid.innerHTML = html;
+}
+
+/* ── View toggle ── */
+function setView(v) {
+  state.view = v;
+  document.getElementById('funnelView').classList.toggle('hidden', v !== 'funnel');
+  document.getElementById('resistorView').classList.toggle('visible', v === 'resistor');
+  document.getElementById('btnFunnel').classList.toggle('active', v === 'funnel');
+  document.getElementById('btnResistor').classList.toggle('active', v === 'resistor');
+  render();
+}
+
+/* ── Self-test ── */
+function runSelfTest() {
+  const t0 = performance.now();
+  const errors = [];
+
+  // Check monotonic narrowing: S >= R >= K >= C >= P >= F >= 0
+  for (let i = 0; i < 6; i++) {
+    if (state.stages[i] < state.stages[i + 1]) {
+      errors.push(`${STAGES[i].key}(${state.stages[i]}) < ${STAGES[i+1].key}(${state.stages[i+1]})`);
+    }
+  }
+  if (state.stages[6] < 0) errors.push('\uD835\uDC9C < 0');
+
+  // All losses in [0,1]
+  state.losses.forEach((l, i) => {
+    if (l < 0 || l > 1) errors.push(`${LOSSES[i].key}=${l} out of [0,1]`);
+  });
+
+  // Exactly 7 stages (L4 check)
+  if (state.stages.length !== L4) {
+    errors.push(`Stage count ${state.stages.length} !== L\u2084=${L4}`);
+  }
+
+  const dt = (performance.now() - t0).toFixed(2);
+  const ok = errors.length === 0;
+  const pill = document.getElementById('selfTestPill');
+  pill.style.color = ok ? 'var(--registered)' : 'var(--aliased)';
+  pill.textContent = ok ? 'PASS' : 'FAIL';
+
+  const out = document.getElementById('testOutput');
+  if (ok) {
+    out.innerHTML = `<div class="test-result pass">All checks passed (${dt}ms)<br>
+      Monotonic: S\u2265\u211B\u2265\uD835\uDCA6\u2265\uD835\uDC9E\u2265\uD835\uDCAB\u2265\u2131\u22650 \u2714<br>
+      Losses: all \u2208 [0,1] \u2714<br>
+      Stages: ${state.stages.length} = L\u2084 \u2714<br>
+      Latency: ${dt}ms</div>`;
+  } else {
+    out.innerHTML = `<div class="test-result fail">FAILED (${dt}ms)<br>${errors.join('<br>')}</div>`;
+  }
+
+  // Publish to bus
+  bus.emit('self-test', { module: 'L3_narrowing', ok, latency: parseFloat(dt), details: errors.join('; ') });
+}
+
+/* ── Master render ── */
+function render() {
+  compute();
+  renderFunnel();
+  renderResistor();
+  renderRegisters();
+}
+
+/* ── Wire up controls ── */
+document.getElementById('thetaSelect').addEventListener('change', e => {
+  state.profile = e.target.value;
+  document.getElementById('thetaVal').textContent = e.target.value;
+  render();
+});
+
+document.getElementById('interSlider').addEventListener('input', e => {
+  state.interactions = parseInt(e.target.value);
+  document.getElementById('interVal').textContent = e.target.value;
+  render();
+});
+
+document.getElementById('regSlider').addEventListener('input', e => {
+  state.registered = parseInt(e.target.value);
+  document.getElementById('regVal').textContent = e.target.value;
+  render();
+});
+
+/* ── Listen for upstream bus events (when connected) ── */
+bus.on('narrowing:input', data => {
+  if (data.interactions != null) state.interactions = data.interactions;
+  if (data.registered != null) state.registered = data.registered;
+  if (data.profile != null) state.profile = data.profile;
+  render();
+});
+
+/* ── Initial render + auto self-test ── */
+render();
+runSelfTest();
+</script>
+</body>
+</html>
