@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⟐ ACEDIT Triangularity · Geometric Containment Architecture · PRCS-A</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Crimson+Pro:wght@400;600;700;800&family=Noto+Sans+Math&display=swap');
+
+  :root {
+    --bg: #050709;
+    --bg2: #090b12;
+    --bg3: #0d0f18;
+    --bg-panel: rgba(9,11,18,0.85);
+    --border: rgba(90,120,170,0.08);
+    --border-active: rgba(90,120,170,0.18);
+    --text: #9aacca;
+    --text-dim: #4a5a78;
+    --text-bright: #dce6f4;
+    --registered: #50fa7b;
+    --latent: #8be9fd;
+    --suppressed: #f1fa8c;
+    --aliased: #ff5555;
+    --crystal: #ffd866;
+    --accent: #bd93f9;
+    --mirror: rgba(140,180,255,0.12);
+    --glow-reg: rgba(80,250,123,0.25);
+    --glow-lat: rgba(139,233,253,0.2);
+    --glow-sup: rgba(241,250,140,0.15);
+    --glow-ali: rgba(255,85,85,0.2);
+    --glow-acc: rgba(189,147,249,0.2);
+    /* ACEDIT register text colors */
+    --reg-kael: #DAA520;
+    --reg-ace: #DAA520;
+    --reg-grey: #9370DB;
+    --reg-umbral: #9370DB;
+    --reg-ultra: #4169E1;
+    --reg-ucf: #4169E1;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans Math', 'STIX Two Math', 'Cambria Math', 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 42px 1fr;
+  }
+
+  /* ── HEADER ──────────────────────────────────────────────── */
+  header {
+    background: linear-gradient(90deg, var(--bg3), rgba(13,15,24,0.97) 50%, var(--bg3));
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    position: relative;
+    z-index: 10;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.15;
+  }
+
+  .title-group { display: flex; align-items: center; gap: 14px; }
+
+  .title {
+    font-family: 'Crimson Pro', serif;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text-bright);
+    letter-spacing: 2.5px;
+  }
+
+  .title .glyph {
+    color: var(--accent);
+    display: inline-block;
+    animation: glyph-breathe 5s ease-in-out infinite;
+  }
+
+  @keyframes glyph-breathe {
+    0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 0px transparent); }
+    50% { opacity: 1; filter: drop-shadow(0 0 6px rgba(189,147,249,0.4)); }
+  }
+
+  .subtitle {
+    font-size: 8.5px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .controls { display: flex; gap: 6px; align-items: center; }
+
+  .controls .status-pill {
+    font-size: 8px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    border: 1px solid transparent;
+  }
+
+  .controls button {
+    background: rgba(15,20,35,0.7);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 9px;
+    padding: 4px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .controls button:hover {
+    border-color: rgba(189,147,249,0.3);
+    color: var(--accent);
+    box-shadow: 0 0 8px rgba(189,147,249,0.08);
+  }
+
+  .controls button.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(189,147,249,0.25);
+  }
+
+  /* ── MAIN GRID ───────────────────────────────────────────── */
+  main {
+    display: grid;
+    grid-template-columns: 262px 1fr 280px;
+    grid-template-rows: 1fr 210px;
+    gap: 1px;
+    overflow: hidden;
+    background: rgba(30,40,60,0.04);
+  }
+
+  /* ── PANELS ──────────────────────────────────────────────── */
+  .panel {
+    background: var(--bg-panel);
+    padding: 10px 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    backdrop-filter: blur(8px);
+    position: relative;
+  }
+
+  .panel::-webkit-scrollbar { width: 2px; }
+  .panel::-webkit-scrollbar-track { background: transparent; }
+  .panel::-webkit-scrollbar-thumb { background: rgba(90,120,170,0.12); border-radius: 2px; }
+
+  .section-label {
+    font-size: 7.5px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .section-label:first-child { margin-top: 0; }
+
+  .section-label::before {
+    content: '';
+    width: 3px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.4;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* ── METRIC ROW WITH MICRO-BAR ───────────────────────────── */
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+    font-size: 9.5px;
+    position: relative;
+  }
+
+  .metric-row .label { color: var(--text-dim); font-weight: 300; }
+
+  .metric-row .value {
+    color: var(--text-bright);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 10px;
+  }
+
+  /* ── GAUGE CONTAINER ─────────────────────────────────────── */
+  .gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0;
+  }
+
+  .gauge-row svg { flex-shrink: 0; }
+
+  .gauge-row .gauge-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .gauge-row .gauge-label {
+    font-size: 8px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+
+  .gauge-row .gauge-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-bright);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── ADMISSIBILITY RING ──────────────────────────────────── */
+  .adm-ring-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0;
+  }
+
+  .adm-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .adm-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+  }
+
+  .adm-legend-item .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+  }
+
+  .adm-legend-item .count {
+    font-weight: 600;
+    color: var(--text-bright);
+    min-width: 24px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── NARROWING FUNNEL ────────────────────────────────────── */
+  .funnel-container {
+    margin: 6px 0;
+  }
+
+  .funnel-stage {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+    height: 16px;
+  }
+
+  .funnel-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(20,25,40,0.6);
+    border-radius: 1px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .funnel-bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    transition: width 0.25s ease-out;
+    position: relative;
+  }
+
+  .funnel-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 2px;
+    height: 100%;
+    background: rgba(255,255,255,0.25);
+  }
+
+  .funnel-label {
+    font-size: 8px;
+    color: var(--text-dim);
+    min-width: 14px;
+    text-align: right;
+  }
+
+  .funnel-count {
+    font-size: 8.5px;
+    color: var(--text-bright);
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .funnel-name {
+    font-size: 7.5px;
+    color: var(--text-dim);
+    min-width: 50px;
+  }
+
+  /* ── NAMING TOKENS ───────────────────────────────────────── */
+  .naming-token {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 9px;
+    margin: 2px 3px 2px 0;
+    font-weight: 500;
+  }
+
+  .naming-token.canonical {
+    background: rgba(80,250,123,0.12);
+    color: var(--registered);
+    border: 1px solid rgba(80,250,123,0.2);
+  }
+
+  .naming-token.safe {
+    background: rgba(139,233,253,0.08);
+    color: var(--latent);
+    border: 1px solid rgba(139,233,253,0.15);
+  }
+
+  .naming-token.invalid {
+    background: rgba(255,85,85,0.08);
+    color: var(--aliased);
+    border: 1px solid rgba(255,85,85,0.15);
+  }
+
+  .naming-token .tag {
+    font-size: 7px;
+    opacity: 0.6;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── EQUATION BLOCK ──────────────────────────────────────── */
+  .equation {
+    font-family: 'Crimson Pro', serif;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--text-bright);
+    text-align: center;
+    padding: 6px 8px;
+    background: linear-gradient(135deg, rgba(15,20,40,0.5), rgba(20,28,50,0.3));
+    border-radius: 3px;
+    margin: 5px 0;
+    border: 1px solid rgba(90,120,170,0.06);
+    letter-spacing: 0.5px;
+  }
+
+  /* ── BAR METER ───────────────────────────────────────────── */
+  .bar-meter {
+    height: 5px;
+    background: rgba(20,25,40,0.8);
+    border-radius: 2px;
+    margin: 3px 0 5px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-meter::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 2px;
+    border: 1px solid rgba(90,120,170,0.04);
+  }
+
+  .bar-meter-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.2s;
+    box-shadow: 0 0 6px currentColor;
+    opacity: 0.85;
+  }
+
+  /* ── FOLD POINT ──────────────────────────────────────────── */
+  .fold-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+  }
+
+  .fold-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .fold-dot::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: 0.2;
+    animation: fold-ring 3s ease-in-out infinite;
+  }
+
+  @keyframes fold-ring {
+    0%, 100% { transform: scale(1); opacity: 0.15; }
+    50% { transform: scale(1.4); opacity: 0.05; }
+  }
+
+  .fold-info { flex: 1; }
+
+  .fold-info .fold-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+
+  .fold-info .fold-sub {
+    font-size: 7.5px;
+    color: var(--text-dim);
+  }
+
+  .fold-value {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── PROPERTIES ──────────────────────────────────────────── */
+  .property-item {
+    font-size: 9px;
+    line-height: 1.7;
+    padding-left: 10px;
+    position: relative;
+    transition: color 0.2s;
+  }
+
+  .property-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 1px;
+    background: currentColor;
+    opacity: 0.3;
+    transition: all 0.2s;
+  }
+
+  .property-item.active { color: var(--text-bright); }
+
+  .property-item.active::before {
+    opacity: 1;
+    background: var(--accent);
+    box-shadow: 0 0 4px var(--glow-acc);
+  }
+
+  /* ── ANTI-EQUIVALENCE ────────────────────────────────────── */
+  .anti-eq-item {
+    font-size: 8.5px;
+    line-height: 1.8;
+    color: var(--suppressed);
+    opacity: 0.5;
+    transition: opacity 0.5s;
+  }
+
+  .anti-eq-item.active {
+    opacity: 1;
+  }
+
+  /* ── EVENT LEDGER ────────────────────────────────────────── */
+  .event-line {
+    font-size: 8.5px;
+    padding: 1.5px 0;
+    border-left: 2px solid transparent;
+    padding-left: 6px;
+    margin-bottom: 1px;
+    opacity: 0.7;
+  }
+
+  .event-line.registered { border-color: var(--registered); color: var(--registered); }
+  .event-line.latent { border-color: var(--latent); color: var(--latent); }
+  .event-line.suppressed { border-color: var(--suppressed); color: var(--suppressed); }
+  .event-line.aliased { border-color: var(--aliased); color: var(--aliased); }
+
+  /* ── RAY LOG ─────────────────────────────────────────────── */
+  .ray-log-line {
+    font-size: 8px;
+    color: var(--text-dim);
+    padding: 1px 0 1px 5px;
+    border-left: 1px solid rgba(90,120,170,0.06);
+  }
+
+  /* ── CENTER CANVAS ───────────────────────────────────────── */
+  .center-canvas {
+    background: var(--bg);
+    position: relative;
+    grid-row: 1/2;
+  }
+
+  canvas { display: block; }
+
+  /* ── BOTTOM PANEL ────────────────────────────────────────── */
+  .bottom-panel {
+    grid-column: 1/-1;
+    background: var(--bg3);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    overflow: hidden;
+  }
+
+  .bottom-section {
+    padding: 10px;
+    overflow: hidden;
+    background: var(--bg-panel);
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bottom-section canvas {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    border-radius: 2px;
+  }
+
+  .bottom-section #eventLedger {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* ── FIELD METRIC BARS ───────────────────────────────────── */
+  .field-metric {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 9px;
+  }
+
+  .field-metric .fm-label {
+    min-width: 56px;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  .field-metric .fm-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(20,25,40,0.8);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .field-metric .fm-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.25s;
+  }
+
+  .field-metric .fm-value {
+    min-width: 38px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-bright);
+    font-variant-numeric: tabular-nums;
+    font-size: 9px;
+  }
+
+  /* ── SPARKLINE ───────────────────────────────────────────── */
+  .sparkline-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sparkline-container canvas {
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-group">
+    <div class="title"><span class="glyph">⟐</span> <span id="aceTitle"></span></div>
+    <div class="subtitle"><span id="aceSubtitle"></span> · <span id="acePRCSA"></span></div>
+  </div>
+  <div class="controls">
+    <div id="thetaStatus" class="status-pill" style="background:rgba(189,147,249,0.1);color:var(--reg-umbral);border-color:rgba(189,147,249,0.15);" data-acedit="umbral">Θ_std</div>
+    <button onclick="setUserClass('open')" data-acedit="umbral">Θ_open</button>
+    <button onclick="setUserClass('standard')" class="active" data-acedit="umbral">Θ_std</button>
+    <button onclick="setUserClass('restricted')" data-acedit="umbral">Θ_res</button>
+    <div style="width:1px;height:16px;background:var(--border);margin:0 4px;"></div>
+    <div id="bounceStatus" class="status-pill" style="background:rgba(255,85,85,0.1);color:var(--aliased);">BOUNCES: 0</div>
+    <div id="phaseStatus" class="status-pill" style="background:rgba(139,233,253,0.1);color:var(--latent);">PROPAGATING</div>
+    <button id="btnRun" onclick="toggleRun()">▶ PROPAGATE</button>
+    <button id="btnMoire" onclick="toggleMoire()" style="color:var(--reg-grey)">MOIRÉ</button>
+    <button id="btnReset" onclick="resetSystem()" style="color:var(--reg-kael)">RESET</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ════════════════════ LEFT PANEL ════════════════════ -->
+  <div class="panel" id="leftPanel">
+
+    <!-- STATE VECTOR -->
+    <div class="section-label" style="color:var(--reg-umbral)">STATE VECTOR S_t</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;">
+      <!-- Radial gauge for intensity -->
+      <svg id="svgGaugeIntensity" width="58" height="58" viewBox="0 0 58 58" style="flex-shrink:0;">
+        <circle cx="29" cy="29" r="24" fill="none" stroke="rgba(20,30,50,0.5)" stroke-width="3"/>
+        <circle id="gaugeIntArc" cx="29" cy="29" r="24" fill="none" stroke="var(--latent)" stroke-width="3"
+          stroke-dasharray="0 151" stroke-linecap="round" transform="rotate(-90 29 29)"
+          style="transition:stroke-dasharray 0.2s;filter:drop-shadow(0 0 3px rgba(139,233,253,0.3));"/>
+        <text x="29" y="27" text-anchor="middle" fill="var(--text-bright)" font-size="10" font-weight="700" font-family="'Noto Sans Math','IBM Plex Mono',monospace" id="gaugeIntVal">—</text>
+        <text x="29" y="37" text-anchor="middle" fill="var(--reg-ace)" font-size="6" font-family="'Noto Sans Math','IBM Plex Mono',monospace">INTENSITY</text>
+      </svg>
+      <div style="flex:1;">
+        <div class="metric-row"><span class="label" style="color:var(--reg-grey)">θ ⟮dir⟯</span><span class="value" id="mTheta">—</span></div>
+        <div class="metric-row"><span class="label" style="color:var(--reg-ultra)">x ⟮pos⟯</span><span class="value" id="mPos">—</span></div>
+        <div class="metric-row"><span class="label" style="color:var(--reg-ace)">φ ⟮phase⟯</span><span class="value" id="mPhase">—</span></div>
+        <div class="metric-row"><span class="label" style="color:var(--reg-umbral)">b ⟮bound⟯</span><span class="value" id="mBoundary">—</span></div>
+        <div class="metric-row"><span class="label" style="color:var(--reg-ace)">δ ⟮defect⟯</span><span class="value" id="mDefect">—</span></div>
+      </div>
+    </div>
+
+    <!-- FOLD POINTS -->
+    <div class="section-label" style="color:var(--reg-grey)">FOLD POINTS ⟮D₃ SYMMETRY⟯</div>
+    <div class="fold-row">
+      <div class="fold-dot" style="background:var(--registered);color:var(--registered);"></div>
+      <div class="fold-info"><div class="fold-label" style="color:var(--reg-umbral)">𝔄 ⟮₀， ₀⟯</div><div class="fold-sub" style="color:var(--reg-umbral)">𝔢-𝔢𝔫𝔱𝔯𝔶</div></div>
+      <div class="fold-value" id="foldAVal">—</div>
+    </div>
+    <div class="fold-row">
+      <div class="fold-dot" style="background:var(--latent);color:var(--latent);"></div>
+      <div class="fold-info"><div class="fold-label" style="color:var(--reg-umbral)">𝔅 ⟮₁， ₀⟯</div><div class="fold-sub" style="color:var(--reg-umbral)">ℭ-𝔯𝔢𝔱𝔲𝔯𝔫</div></div>
+      <div class="fold-value" id="foldBVal">—</div>
+    </div>
+    <div class="fold-row">
+      <div class="fold-dot" style="background:var(--accent);color:var(--accent);"></div>
+      <div class="fold-info"><div class="fold-label" style="color:var(--reg-ultra)">ℂ ⟮½， √𝟛⁄𝟚⟯</div><div class="fold-sub" style="color:var(--reg-ultra)">√𝟛-𝕒𝕡𝕖𝕩</div></div>
+      <div class="fold-value" id="foldCVal">—</div>
+    </div>
+
+    <!-- EXTENSION–CLOSURE -->
+    <div class="section-label" style="color:var(--reg-umbral)">EXTENSION–CLOSURE</div>
+    <div class="equation" style="color:var(--reg-umbral)">𝔢⟮𝔵⟯ ≡ √𝔵 · ℭ⟮𝔵⟯ ≡ 𝔵²</div>
+    <div class="equation" style="font-size:11px;color:var(--reg-umbral)">ℭ⟮𝔢⟮₃⟯⟯ ≡ ℭ⟮√₃⟯ ≡ ₃</div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-ultra)">Extension √𝟛</span><span class="value" style="color:var(--reg-ultra)">𝟙．𝟟𝟛𝟚𝟘𝟝𝟙</span></div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-ultra)">Closure ⟮√𝟛⟯²</span><span class="value" style="color:var(--reg-ultra)">𝟛</span></div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-ace)">Rupture ℛ⟮x⟯</span><span class="value" id="mRupture" style="color:var(--registered)">0</span></div>
+    <div class="bar-meter"><div class="bar-meter-fill" id="ruptureBar" style="width:0%;background:var(--aliased);color:var(--aliased);"></div></div>
+
+    <!-- ADMISSIBILITY RING -->
+    <div class="section-label" style="color:var(--reg-ucf)">ADMISSIBILITY OPERATOR</div>
+    <div class="adm-ring-container">
+      <svg id="svgAdmRing" width="70" height="70" viewBox="0 0 70 70">
+        <circle cx="35" cy="35" r="27" fill="none" stroke="rgba(20,30,50,0.5)" stroke-width="5"/>
+        <circle id="admArcReg" cx="35" cy="35" r="27" fill="none" stroke="var(--registered)" stroke-width="5"
+          stroke-dasharray="0 170" stroke-linecap="butt" transform="rotate(-90 35 35)"
+          style="transition:stroke-dasharray 0.3s;filter:drop-shadow(0 0 3px var(--glow-reg));"/>
+        <circle id="admArcLat" cx="35" cy="35" r="27" fill="none" stroke="var(--latent)" stroke-width="5"
+          stroke-dasharray="0 170" stroke-linecap="butt" transform="rotate(-90 35 35)"
+          style="transition:stroke-dasharray 0.3s;filter:drop-shadow(0 0 3px var(--glow-lat));"/>
+        <circle id="admArcSup" cx="35" cy="35" r="27" fill="none" stroke="var(--suppressed)" stroke-width="5"
+          stroke-dasharray="0 170" stroke-linecap="butt" transform="rotate(-90 35 35)"
+          style="transition:stroke-dasharray 0.3s;filter:drop-shadow(0 0 3px var(--glow-sup));"/>
+        <circle id="admArcAli" cx="35" cy="35" r="27" fill="none" stroke="var(--aliased)" stroke-width="5"
+          stroke-dasharray="0 170" stroke-linecap="butt" transform="rotate(-90 35 35)"
+          style="transition:stroke-dasharray 0.3s;filter:drop-shadow(0 0 3px var(--glow-ali));"/>
+        <text x="35" y="33" text-anchor="middle" fill="var(--reg-ucf)" font-size="11" font-weight="700" font-family="'Noto Sans Math','IBM Plex Mono',monospace" id="admTotal">0</text>
+        <text x="35" y="42" text-anchor="middle" fill="var(--reg-ucf)" font-size="6" font-family="'Noto Sans Math','IBM Plex Mono',monospace">TOTAL</text>
+      </svg>
+      <div class="adm-legend">
+        <div class="adm-legend-item"><div class="dot" style="background:var(--registered);box-shadow:0 0 4px var(--glow-reg);"></div><span class="count" id="mRegistered">0</span><span style="color:var(--text-dim)">reg</span></div>
+        <div class="adm-legend-item"><div class="dot" style="background:var(--latent);box-shadow:0 0 4px var(--glow-lat);"></div><span class="count" id="mLatent">0</span><span style="color:var(--text-dim)">lat</span></div>
+        <div class="adm-legend-item"><div class="dot" style="background:var(--suppressed);box-shadow:0 0 4px var(--glow-sup);"></div><span class="count" id="mSuppressed">0</span><span style="color:var(--text-dim)">sup</span></div>
+        <div class="adm-legend-item"><div class="dot" style="background:var(--aliased);box-shadow:0 0 4px var(--glow-ali);"></div><span class="count" id="mAliased">0</span><span style="color:var(--text-dim)">ali</span></div>
+      </div>
+    </div>
+
+    <!-- NARROWING FUNNEL -->
+    <div class="section-label" style="color:var(--reg-umbral)">NARROWING REGIME 𝒩</div>
+    <div class="funnel-container" id="narrowingDisplay"></div>
+
+    <!-- NAMING OPERATOR -->
+    <div class="section-label" style="color:var(--reg-grey)">NAMING OPERATOR N</div>
+    <div>
+      <span class="naming-token canonical" style="color:var(--reg-ultra)">𝔸ℂ𝔼𝔻𝕀𝕋 𝕋𝕣𝕚𝕒𝕟𝕘𝕦𝕝𝕒𝕣𝕚𝕥𝕪 <span class="tag">canonical</span></span>
+      <span class="naming-token safe" style="color:var(--reg-ultra)">𝔸ℂ𝔼𝔻𝕀𝕋—𝕋𝕣𝕚𝕒𝕟𝕘𝕦𝕝𝕒𝕣𝕚𝕥𝕪 <span class="tag">safe-eq</span></span>
+      <span class="naming-token invalid">Acedit triangularity <span class="tag">trigger</span></span>
+    </div>
+
+    <!-- FIELD METRICS -->
+    <div class="section-label" style="color:var(--reg-kael)">FIELD METRICS</div>
+    <div class="field-metric"><span class="fm-label" style="color:var(--reg-kael)">Red⟮q⟯</span><div class="fm-bar"><div class="fm-fill" id="fmRedBar" style="width:0%;background:var(--registered);"></div></div><span class="fm-value" id="mRed">—</span></div>
+    <div class="field-metric"><span class="fm-label" style="color:var(--reg-ace)">δ_obs⟮q⟯</span><div class="fm-bar"><div class="fm-fill" id="fmObsBar" style="width:0%;background:var(--aliased);"></div></div><span class="fm-value" id="mObsDef">—</span></div>
+    <div class="field-metric"><span class="fm-label" style="color:var(--reg-ultra)">Gap⟮q⟯</span><div class="fm-bar"><div class="fm-fill" id="fmGapBar" style="width:0%;background:var(--latent);"></div></div><span class="fm-value" id="mGap">—</span></div>
+    <div class="field-metric"><span class="fm-label" style="color:var(--reg-ace)">AliasPer</span><div class="fm-bar"><div class="fm-fill" id="fmAliasBar" style="width:0%;background:var(--aliased);"></div></div><span class="fm-value" id="mAlias">—</span></div>
+    <div class="field-metric"><span class="fm-label" style="color:var(--reg-grey)">NameSens</span><div class="fm-bar"><div class="fm-fill" id="fmNameBar" style="width:0%;background:var(--accent);"></div></div><span class="fm-value" id="mNameSens">—</span></div>
+    <div class="field-metric"><span class="fm-label" style="color:var(--reg-ace)">Supp_τ</span><div class="fm-bar"><div class="fm-fill" id="fmSuppBar" style="width:0%;background:var(--suppressed);"></div></div><span class="fm-value" id="mSupp">—</span></div>
+  </div>
+
+  <!-- ════════════════════ CENTER CANVAS ════════════════════ -->
+  <div class="center-canvas" id="centerArea">
+    <canvas id="mainCanvas"></canvas>
+  </div>
+
+  <!-- ════════════════════ RIGHT PANEL ════════════════════ -->
+  <div class="panel" id="rightPanel">
+
+    <!-- SYSTEM CLASS -->
+    <div class="section-label">SYSTEM CLASS</div>
+    <div id="sysClassLabel" style="color:var(--reg-ucf);font-size:13px;font-weight:700;font-family:'Crimson Pro',serif;letter-spacing:1px;"></div>
+    <div id="sysClassDesc" style="font-size:8px;color:var(--reg-ucf);line-height:1.5;margin-top:2px;"></div>
+
+    <!-- SIX PROPERTIES -->
+    <div class="section-label" style="color:var(--reg-ucf)">SIX DEFINING PROPERTIES</div>
+    <div id="propertiesList"></div>
+
+    <!-- DEFECT PROPAGATION -->
+    <div class="section-label" style="color:var(--reg-ace)">DEFECT PROPAGATION</div>
+    <div class="equation" style="color:var(--reg-umbral)">𝔇_{𝔱⊕₁} ≡ 𝔗⟮𝔇_𝔱⟯ ⊕ 𝔢_𝔱</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-top:4px;">
+      <svg id="svgGaugeDefect" width="50" height="50" viewBox="0 0 50 50" style="flex-shrink:0;">
+        <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(20,30,50,0.5)" stroke-width="3"/>
+        <circle id="gaugeDefArc" cx="25" cy="25" r="20" fill="none" stroke="var(--aliased)" stroke-width="3"
+          stroke-dasharray="0 126" stroke-linecap="round" transform="rotate(-90 25 25)"
+          style="transition:stroke-dasharray 0.2s;filter:drop-shadow(0 0 3px var(--glow-ali));"/>
+        <text x="25" y="28" text-anchor="middle" fill="var(--text-bright)" font-size="8" font-weight="600" font-family="'Noto Sans Math','IBM Plex Mono',monospace" id="gaugeDefVal">—</text>
+      </svg>
+      <div style="flex:1;">
+        <div class="metric-row"><span class="label" style="color:var(--reg-ace)">Δ_t</span><span class="value" id="mDefectProp">—</span></div>
+        <div class="metric-row"><span class="label" style="color:var(--reg-ace)">ε ⟮perturb⟯</span><span class="value" id="mPerturbation">—</span></div>
+      </div>
+    </div>
+
+    <!-- OMISSION DOMINANCE -->
+    <div class="section-label" style="color:var(--reg-umbral)">OMISSION DOMINANCE δ_obs</div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-umbral)">O ≡ S ⧵ S'</span><span class="value" id="mOmissionO">0</span></div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-umbral)">O✶ ≡ S' ⧵ Y</span><span class="value" id="mOmissionOstar">0</span></div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-ace)">δ_obs</span><span class="value" id="mDeltaObs">0</span></div>
+    <div class="bar-meter"><div class="bar-meter-fill" id="obsDefBar" style="width:0%;background:var(--accent);color:var(--accent);"></div></div>
+
+    <!-- RAY TRACE LOG -->
+    <div class="section-label" style="color:var(--reg-kael)">RAY TRACE LOG</div>
+    <div id="rayLog" style="max-height:120px;overflow-y:auto;"></div>
+
+    <!-- PROJECTION OPERATOR -->
+    <div class="section-label" style="color:var(--reg-umbral)">PROJECTION OPERATOR P</div>
+    <div class="equation" style="font-size:11px;color:var(--reg-umbral)">𝔓: 𝔖 ↦ 𝔖' ⟮𝔩𝔬𝔰𝔰𝔶， 𝔫𝔬𝔫-𝔦𝔫𝔧𝔢𝔠𝔱𝔦𝔳𝔢⟯</div>
+    <div style="display:flex;gap:4px;margin:4px 0;align-items:center;">
+      <svg width="100%" height="28" viewBox="0 0 220 28" id="svgProjection">
+        <defs>
+          <linearGradient id="projGrad" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stop-color="var(--latent)" stop-opacity="0.4"/>
+            <stop offset="50%" stop-color="var(--accent)" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="var(--registered)" stop-opacity="0.5"/>
+          </linearGradient>
+        </defs>
+        <rect x="0" y="8" width="70" height="12" rx="2" fill="rgba(139,233,253,0.1)" stroke="rgba(139,233,253,0.2)" stroke-width="0.5"/>
+        <text x="35" y="17" text-anchor="middle" fill="var(--reg-ultra)" font-size="7" font-family="'Noto Sans Math','IBM Plex Mono',monospace">|S| <tspan id="projS" font-weight="600">0</tspan></text>
+        <polygon points="72,14 82,10 82,18" fill="var(--text-dim)" opacity="0.3"/>
+        <rect x="84" y="9" width="52" height="10" rx="2" fill="rgba(189,147,249,0.08)" stroke="rgba(189,147,249,0.15)" stroke-width="0.5"/>
+        <text x="110" y="17" text-anchor="middle" fill="var(--reg-grey)" font-size="7" font-family="'Noto Sans Math','IBM Plex Mono',monospace">|S'| <tspan id="projSp" font-weight="600">0</tspan></text>
+        <polygon points="138,14 148,10 148,18" fill="var(--text-dim)" opacity="0.3"/>
+        <rect x="150" y="10" width="40" height="8" rx="2" fill="rgba(80,250,123,0.1)" stroke="rgba(80,250,123,0.2)" stroke-width="0.5"/>
+        <text x="170" y="17" text-anchor="middle" fill="var(--reg-kael)" font-size="7" font-family="'Noto Sans Math','IBM Plex Mono',monospace">|Y| <tspan id="projY" font-weight="600">0</tspan></text>
+      </svg>
+    </div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-ace)">Collapse ratio</span><span class="value" id="mCollapse">—</span></div>
+
+    <!-- CAPACITY OPERATOR -->
+    <div class="section-label" style="color:var(--reg-ace)">CAPACITY OPERATOR 𝒦</div>
+    <div class="equation" style="font-size:10.5px;color:var(--reg-umbral)">ℭ_𝔨⟮𝔮⟯ ≡ 𝒦⟮ℭ_𝔨⟮𝔮⟯； 𝔨⟯</div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-ace)">κ ⟮bandwidth⟯</span><span class="value" id="mKappa">—</span></div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-ucf)">Tokens admitted</span><span class="value" id="mAdmitted">—</span></div>
+    <div class="metric-row"><span class="label" style="color:var(--reg-ace)">Tokens dropped</span><span class="value" id="mDropped">—</span></div>
+
+    <!-- REALITY SURFACE -->
+    <div class="section-label" style="color:var(--reg-ucf)">REALITY SURFACE Y_u</div>
+    <div class="equation" style="font-size:10px;">
+      <span style="color:var(--reg-umbral)">ℜ</span><span style="color:var(--reg-ucf)">✶</span><span style="color:var(--reg-umbral)">⟮𝔮⟯</span> ≡
+      <span style="color:var(--reg-ucf)">𝒜</span>⟮<span style="color:var(--reg-ace)">ℱ</span>⟮<span style="color:var(--reg-umbral)">𝒫</span>⟮<span style="color:var(--reg-grey)">𝒞</span>⟮<span style="color:var(--reg-ace)">𝒦</span>⟮<span style="color:var(--reg-umbral)">ℜ</span>⟮<span style="color:var(--reg-ultra)">𝔖</span>⟯⟯⟯⟯⟯⟯
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+      <svg id="svgGaugeSurface" width="46" height="46" viewBox="0 0 46 46" style="flex-shrink:0;">
+        <circle cx="23" cy="23" r="18" fill="none" stroke="rgba(20,30,50,0.5)" stroke-width="3"/>
+        <circle id="gaugeSurfArc" cx="23" cy="23" r="18" fill="none" stroke="var(--registered)" stroke-width="3"
+          stroke-dasharray="0 113" stroke-linecap="round" transform="rotate(-90 23 23)"
+          style="transition:stroke-dasharray 0.2s;filter:drop-shadow(0 0 4px var(--glow-reg));"/>
+        <text x="23" y="26" text-anchor="middle" fill="var(--text-bright)" font-size="8" font-weight="600" font-family="'Noto Sans Math','IBM Plex Mono',monospace" id="gaugeSurfVal">—</text>
+      </svg>
+      <div>
+        <div class="metric-row"><span class="label" style="color:var(--reg-ucf)">Coherence</span><span class="value" id="mSurface">—</span></div>
+        <div class="metric-row"><span class="label" style="color:var(--reg-umbral)">Θ⟮u⟯</span><span class="value" id="mActiveTheta" style="color:var(--reg-umbral)">Θ_std</span></div>
+      </div>
+    </div>
+
+    <!-- ANTI-EQUIVALENCE -->
+    <div class="section-label" style="color:var(--reg-umbral)">ANTI-EQUIVALENCE CONSTRAINTS</div>
+    <div id="antiEquiv"></div>
+  </div>
+
+  <!-- ════════════════════ BOTTOM PANEL ════════════════════ -->
+  <div class="bottom-panel">
+    <div class="bottom-section">
+      <div class="section-label" style="color:var(--reg-ucf)">ADMISSIBILITY EVENT LEDGER</div>
+      <div id="eventLedger" style="font-size:9px;line-height:1.4;"></div>
+    </div>
+    <div class="bottom-section">
+      <div class="section-label" style="color:var(--reg-grey)">MOIRÉ STRATIGRAPHY</div>
+      <canvas id="moireCanvas"></canvas>
+    </div>
+    <div class="bottom-section">
+      <div class="section-label" style="color:var(--reg-ucf)">COHERENCE ⁄ INTENSITY TRACE</div>
+      <canvas id="traceCanvas"></canvas>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ═════════════════════════════════════════════════════════════════
+// ACEDIT TRIANGULARITY GEOMETRIC CONTAINMENT ENGINE
+// Tiered Admissibility · Differential Reality Allocation
+// ═════════════════════════════════════════════════════════════════
+
+const SQRT3 = Math.sqrt(3);
+const SQRT3_HALF = SQRT3 / 2;
+
+// ── Θ(u) — Differential Admissibility Profiles ───────────────
+const THETA = {
+  open: {
+    label: "Θ_open",
+    apertureThreshold: 0.15,
+    phaseThreshold: 0.4,
+    capacityMult: 0.95,
+    namingSensitivity: 0.02,
+    policyStrictness: 0.1,
+  },
+  standard: {
+    label: "Θ_std",
+    apertureThreshold: 0.3,
+    phaseThreshold: 0.6,
+    capacityMult: 0.8,
+    namingSensitivity: 0.08,
+    policyStrictness: 0.3,
+  },
+  restricted: {
+    label: "Θ_res",
+    apertureThreshold: 0.5,
+    phaseThreshold: 0.8,
+    capacityMult: 0.5,
+    namingSensitivity: 0.25,
+    policyStrictness: 0.6,
+  }
+};
+
+// ── ACEDIT Typographic Converter (inline, zero-dependency) ───
+const ACEDIT = (() => {
+  // Register base codepoints (uppercase A)
+  const REG_UPPER = {
+    KAEL:    0x1D400, // Math Bold
+    ACE:     0x1D5D4, // Math Sans-Serif Bold
+    GREY:    0x1D4D0, // Math Script Bold
+    UMBRAL:  0x1D504, // Math Fraktur
+    ULTRA:   0x1D538, // Math Double-Struck
+    UCF:     0x1D63C, // Math Sans-Serif Bold Italic
+  };
+  const REG_LOWER = {
+    KAEL:    0x1D41A, ACE: 0x1D5EE, GREY: 0x1D4EA,
+    UMBRAL:  0x1D51E, ULTRA: 0x1D552, UCF: 0x1D656,
+  };
+  // Fraktur exceptions: C→ℭ, H→ℌ, I→ℑ, R→ℜ, Z→ℨ
+  const FRAKTUR_UPPER_EX = { C:0x212D, H:0x210C, I:0x2111, R:0x211C, Z:0x2128 };
+  // Double-struck exceptions: C→ℂ, H→ℍ, N→ℕ, P→ℙ, Q→ℚ, R→ℝ, Z→ℤ
+  const DS_UPPER_EX = { C:0x2102, H:0x210D, N:0x2115, P:0x2119, Q:0x211A, R:0x211D, Z:0x2124 };
+
+  function mapUpper(ch, reg) {
+    const off = ch.charCodeAt(0) - 65; // A=0
+    if (reg === 'UMBRAL' && FRAKTUR_UPPER_EX[ch]) return String.fromCodePoint(FRAKTUR_UPPER_EX[ch]);
+    if (reg === 'ULTRA' && DS_UPPER_EX[ch]) return String.fromCodePoint(DS_UPPER_EX[ch]);
+    return String.fromCodePoint(REG_UPPER[reg] + off);
+  }
+  function mapLower(ch, reg) {
+    const off = ch.charCodeAt(0) - 97; // a=0
+    return String.fromCodePoint(REG_LOWER[reg] + off);
+  }
+
+  // Digit mappings
+  const DIGIT_BASE = {
+    KAEL: 0x1D7CE, ACE: 0x1D7EC, ULTRA: 0x1D7D8,
+  };
+  const GREY_DIGITS = ['\u24EA','\u2460','\u2461','\u2462','\u2463','\u2464','\u2465','\u2466','\u2467','\u2468'];
+  const UMBRAL_DIGITS = ['\u2080','\u2081','\u2082','\u2083','\u2084','\u2085','\u2086','\u2087','\u2088','\u2089'];
+  const UCF_DIGITS = ['\u2070','\u00B9','\u00B2','\u00B3','\u2074','\u2075','\u2076','\u2077','\u2078','\u2079'];
+
+  function mapDigit(ch, reg) {
+    const d = ch.charCodeAt(0) - 48;
+    if (reg === 'GREY') return GREY_DIGITS[d];
+    if (reg === 'UMBRAL') return UMBRAL_DIGITS[d];
+    if (reg === 'UCF') return UCF_DIGITS[d];
+    if (DIGIT_BASE[reg]) return String.fromCodePoint(DIGIT_BASE[reg] + d);
+    return ch;
+  }
+
+  // Punctuation mapping (§1.5)
+  const PUNCT = {
+    '.':'\uFF0E', ',':'\uFF0C', ':':'\uFF1A', ';':'\uFF1B',
+    '?':'\uFF1F', '!':'\uFF01', '-':'\u2014', '(':'\u27EE',
+    ')':'\u27EF', '[':'\u27E6', ']':'\u27E7', '{':'\u2983',
+    '}':'\u2984', '<':'\u27E8', '>':'\u27E9', '/':'\u2044',
+    '*':'\u2736', '@':'\u229B', '#':'\u2A69', '&':'\u214B',
+    '%':'\u2052', '+':'\u2295', '=':'\u2261', '|':'\u2980',
+    '~':'\u223C', '^':'\u22C0', '_':'\u2017', '\\':'\u29F5',
+  };
+
+  // Combining modifiers
+  const MOD = {
+    probability: '\u0303',   // ◌̃
+    cycle:       '\u030A',   // ◌̊
+    peak:        '\u0302',   // ◌̂
+    superpos:    '\u0308',   // ◌̈
+    stability:   '\u0304',   // ◌̄
+    grounding:   '\u0323',   // ◌̣
+  };
+
+  function convert(text, register, opts = {}) {
+    const { punct = true, mods = [] } = opts;
+    let result = '';
+    for (const ch of text) {
+      let mapped = null;
+      if (ch >= 'A' && ch <= 'Z') mapped = mapUpper(ch, register);
+      else if (ch >= 'a' && ch <= 'z') mapped = mapLower(ch, register);
+      else if (ch >= '0' && ch <= '9') mapped = mapDigit(ch, register);
+      else if (punct && PUNCT[ch]) mapped = PUNCT[ch];
+      result += (mapped || ch);
+    }
+    if (mods.length > 0) {
+      // Apply combining modifiers to each non-space character
+      let modified = '';
+      for (const ch of result) {
+        modified += ch;
+        if (ch !== ' ' && ch !== '\n') {
+          for (const m of mods) { if (MOD[m]) modified += MOD[m]; }
+        }
+      }
+      return modified;
+    }
+    return result;
+  }
+
+  function convertNum(numStr, register) {
+    let result = '';
+    for (const ch of String(numStr)) {
+      if (ch >= '0' && ch <= '9') result += mapDigit(ch, register);
+      else if (PUNCT[ch]) result += PUNCT[ch];
+      else result += ch;
+    }
+    return result;
+  }
+
+  // Pre-computed static labels
+  const STATIC = {
+    title: '\uD835\uDD38\u2102\uD835\uDD3C\uD835\uDD3B\uD835\uDD40\uD835\uDD4B \uD835\uDD4B\uD835\uDD63\uD835\uDD56\uD835\uDD52\uD835\uDD5F\uD835\uDD58\uD835\uDD66\uD835\uDD5D\uD835\uDD52\uD835\uDD63\uD835\uDD5A\uD835\uDD65\uD835\uDD6A', // ULTRA
+  };
+  // Eagerly compute title
+  STATIC.title = convert('ACEDIT Triangularity', 'ULTRA', {punct:false});
+  STATIC.subtitle = convert('Geometric Containment Architecture', 'GREY', {punct:false});
+  STATIC.prcsA = convert('PRCS-A', 'UCF');
+
+  return { convert, convertNum, MOD, PUNCT, STATIC, mapDigit };
+})();
+
+// ── Triangle vertices ─────────────────────────────────────────
+const TRI = {
+  A: { x: 0, y: 0, label: "A", fold: "extension–entry" },
+  B: { x: 1, y: 0, label: "B", fold: "closure–return" },
+  C: { x: 0.5, y: SQRT3_HALF, label: "C", fold: "irrational–apex" }
+};
+
+// ── Geometry ──────────────────────────────────────────────────
+function reflectOverEdge(dir, edgeP1, edgeP2) {
+  const ex = edgeP2.x - edgeP1.x, ey = edgeP2.y - edgeP1.y;
+  const len = Math.hypot(ex, ey);
+  const nx = -ey / len, ny = ex / len;
+  const dot = dir.x * nx + dir.y * ny;
+  return { x: dir.x - 2 * dot * nx, y: dir.y - 2 * dot * ny };
+}
+
+function lineSegIntersect(px, py, dx, dy, ax, ay, bx, by) {
+  const ex = bx - ax, ey = by - ay;
+  const denom = dx * ey - dy * ex;
+  if (Math.abs(denom) < 1e-12) return null;
+  const t = ((ax - px) * ey - (ay - py) * ex) / denom;
+  const u = ((ax - px) * dy - (ay - py) * dx) / denom;
+  if (t > 1e-6 && u >= -1e-6 && u <= 1 + 1e-6) {
+    return { t, x: px + dx * t, y: py + dy * t, u };
+  }
+  return null;
+}
+
+const EDGES = [
+  { p1: TRI.A, p2: TRI.B, label: "AB (base)" },
+  { p1: TRI.B, p2: TRI.C, label: "BC (right)" },
+  { p1: TRI.C, p2: TRI.A, label: "CA (left)" }
+];
+
+// ── System State ──────────────────────────────────────────────
+let state = {
+  running: false,
+  showMoire: false,
+  tick: 0,
+  rays: [],
+  userClass: "standard",
+  registeredBounces: 0,
+  internalInteractions: 0,
+  admissibility: { registered: 0, latent: 0, suppressed: 0, aliased: 0 },
+  defect: 0,
+  perturbation: 0,
+  narrowing: { R: 0, K: 0, C: 0, P: 0, F: 0, A: 0 },
+  omission: { O: 0, Ostar: 0 },
+  namingDisruptions: 0,
+  eventLog: [],
+  rayLog: [],
+  coherenceTrace: [],
+  intensityTrace: [],
+  rupture: 0,
+  surfaceCoherence: 0,
+};
+
+// ── Ray ───────────────────────────────────────────────────────
+function createRay(x, y, angle, intensity) {
+  return {
+    x, y,
+    dx: Math.cos(angle), dy: Math.sin(angle),
+    intensity: intensity || 1.0,
+    phase: Math.random() * Math.PI * 2,
+    bounces: 0, internalBounces: 0,
+    path: [{ x, y }],
+    alive: true,
+    admissibility: "latent",
+    defectContrib: 0,
+  };
+}
+
+function isInsideTriangle(px, py) {
+  const d1 = (px - TRI.B.x) * (TRI.A.y - TRI.B.y) - (TRI.A.x - TRI.B.x) * (py - TRI.B.y);
+  const d2 = (px - TRI.C.x) * (TRI.B.y - TRI.C.y) - (TRI.B.x - TRI.C.x) * (py - TRI.C.y);
+  const d3 = (px - TRI.A.x) * (TRI.C.y - TRI.A.y) - (TRI.C.x - TRI.A.x) * (py - TRI.A.y);
+  return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
+}
+
+// ── Propagate ─────────────────────────────────────────────────
+function propagateRay(ray) {
+  if (!ray.alive || ray.intensity < 0.01) { ray.alive = false; return; }
+
+  let closest = null, closestT = Infinity, closestEdge = null;
+  for (const edge of EDGES) {
+    const hit = lineSegIntersect(ray.x, ray.y, ray.dx, ray.dy, edge.p1.x, edge.p1.y, edge.p2.x, edge.p2.y);
+    if (hit && hit.t < closestT) { closest = hit; closestT = hit.t; closestEdge = edge; }
+  }
+  if (!closest) { ray.alive = false; return; }
+
+  ray.x = closest.x; ray.y = closest.y;
+  ray.path.push({ x: ray.x, y: ray.y });
+  ray.internalBounces++;
+  state.internalInteractions++;
+
+  const newDir = reflectOverEdge({ x: ray.dx, y: ray.dy }, closestEdge.p1, closestEdge.p2);
+  ray.dx = newDir.x; ray.dy = newDir.y;
+
+  const loss = 0.92 - state.defect * 0.03;
+  ray.intensity *= loss;
+
+  const epsScale = 0.005 * (1 + state.perturbation);
+  ray.dx += (Math.random() - 0.5) * epsScale;
+  ray.dy += (Math.random() - 0.5) * epsScale;
+  const norm = Math.hypot(ray.dx, ray.dy);
+  ray.dx /= norm; ray.dy /= norm;
+
+  ray.phase = (ray.phase + 0.1 + ray.intensity * 0.05) % (Math.PI * 2);
+
+  const distA = Math.hypot(ray.x - TRI.A.x, ray.y - TRI.A.y);
+  const distB = Math.hypot(ray.x - TRI.B.x, ray.y - TRI.B.y);
+  const distC = Math.hypot(ray.x - TRI.C.x, ray.y - TRI.C.y);
+  const minDist = Math.min(distA, distB, distC);
+  if (minDist < 0.08) ray.defectContrib += 0.02 / (minDist + 0.01);
+
+  // ── ADMISSIBILITY via Θ(u) ──────────────────────────────────
+  const theta = THETA[state.userClass];
+  const apertureOpen = ray.intensity > theta.apertureThreshold;
+  const phaseAligned = Math.abs(Math.cos(ray.phase)) > theta.phaseThreshold;
+  const policyPass = Math.random() > Math.min(1, theta.policyStrictness * state.defect);
+  const capacityAvail = state.narrowing.A < state.narrowing.C * theta.capacityMult;
+  const namingValid = Math.random() > theta.namingSensitivity;
+  if (!namingValid && apertureOpen) state.namingDisruptions++;
+
+  if (apertureOpen && phaseAligned && policyPass && capacityAvail && namingValid) {
+    ray.admissibility = "registered"; ray.bounces++; state.registeredBounces++;
+    state.admissibility.registered++; state.narrowing.A++;
+    logEvent("registered", `Registered @ ${closestEdge.label} | I=${ray.intensity.toFixed(3)} | Θ=${theta.label}`);
+  } else if (!namingValid && apertureOpen) {
+    ray.admissibility = "aliased"; state.admissibility.aliased++; state.omission.Ostar++;
+    logEvent("aliased", `Naming disruption @ ${closestEdge.label} | ℛ(q)≠ℛ(q')`);
+  } else if (apertureOpen && !policyPass) {
+    ray.admissibility = "suppressed"; state.admissibility.suppressed++; state.omission.Ostar++;
+    logEvent("suppressed", `Policy-filtered @ ${closestEdge.label} | 𝒫=${theta.policyStrictness.toFixed(2)}`);
+  } else if (apertureOpen && !phaseAligned) {
+    ray.admissibility = "suppressed"; state.admissibility.suppressed++; state.omission.O++;
+    logEvent("suppressed", `Phase misalign @ ${closestEdge.label} | cos(φ)=${Math.cos(ray.phase).toFixed(3)}`);
+  } else if (apertureOpen && !capacityAvail) {
+    ray.admissibility = "aliased"; state.admissibility.aliased++; state.omission.Ostar++;
+    logEvent("aliased", `Capacity full @ ${closestEdge.label} | ℱ gate closed`);
+  } else if (!apertureOpen && ray.internalBounces > 0) {
+    ray.admissibility = "latent"; state.admissibility.latent++; state.omission.O++;
+    logEvent("latent", `Latent @ ${closestEdge.label} | I=${ray.intensity.toFixed(3)} < Θ=${theta.apertureThreshold}`);
+  } else {
+    ray.admissibility = "latent"; state.admissibility.latent++; state.omission.O++;
+  }
+
+  // Narrowing chain
+  state.narrowing.R = state.internalInteractions;
+  state.narrowing.K = Math.floor(state.narrowing.R * 0.7);
+  state.narrowing.C = Math.floor(state.narrowing.K * 0.55);
+  state.narrowing.P = Math.floor(state.narrowing.C * (1 - theta.policyStrictness * 0.3));
+  state.narrowing.F = Math.floor(state.narrowing.P * theta.capacityMult);
+
+  if (ray.intensity > theta.apertureThreshold && !phaseAligned && minDist < 0.15) {
+    state.rupture = Math.min(1, state.rupture + 0.05);
+  }
+
+  state.defect = Math.max(0, Math.min(1, state.defect * 0.98 + ray.defectContrib * 0.01 + (Math.random() - 0.5) * 0.002));
+  state.perturbation = Math.abs(Math.sin(state.tick * 0.01)) * 0.3 + state.defect * 0.5;
+
+  const foldLabel = minDist === distA ? "A" : minDist === distB ? "B" : "C";
+  state.rayLog.push(`[${state.tick}] ${closestEdge.label} → ${ray.admissibility} | fold ${foldLabel}`);
+  if (state.rayLog.length > 50) state.rayLog.shift();
+}
+
+function logEvent(type, msg) {
+  state.eventLog.push({ type, msg, tick: state.tick });
+  if (state.eventLog.length > 80) state.eventLog.shift();
+}
+
+function spawnRays() {
+  const cx = (TRI.A.x + TRI.B.x + TRI.C.x) / 3;
+  const cy = (TRI.A.y + TRI.B.y + TRI.C.y) / 3;
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2 + Math.random() * 0.2;
+    const px = cx + (Math.random() - 0.5) * 0.05;
+    const py = cy + (Math.random() - 0.5) * 0.05;
+    if (isInsideTriangle(px, py)) state.rays.push(createRay(px, py, angle, 0.8 + Math.random() * 0.2));
+  }
+}
+
+// ── Canvas Setup ──────────────────────────────────────────────
+const mainCanvas = document.getElementById("mainCanvas");
+const mainCtx = mainCanvas.getContext("2d");
+const DPR = window.devicePixelRatio || 1;
+
+function setupHiDPI(canvas, w, h) {
+  canvas.width = w * DPR; canvas.height = h * DPR;
+  canvas.style.width = w + "px"; canvas.style.height = h + "px";
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  return ctx;
+}
+
+function resizeAll() {
+  const area = document.getElementById("centerArea");
+  if (area.clientWidth > 0 && area.clientHeight > 0) {
+    setupHiDPI(mainCanvas, area.clientWidth, area.clientHeight);
+  }
+  ["moireCanvas", "traceCanvas"].forEach(id => {
+    const c = document.getElementById(id);
+    const p = c.parentElement;
+    const pw = p.clientWidth - 20;
+    const ph = p.clientHeight - 34;
+    if (pw > 10 && ph > 10) {
+      setupHiDPI(c, pw, ph);
+    }
+  });
+}
+window.addEventListener("resize", resizeAll);
+// Defer initial sizing until grid layout is resolved
+requestAnimationFrame(() => { resizeAll(); requestAnimationFrame(resizeAll); });
+
+function logicalSize(c) { return { w: c.width / DPR, h: c.height / DPR }; }
+
+function toScreen(x, y) {
+  const { w: W, h: H } = logicalSize(mainCanvas);
+  const scale = Math.min(W, H) * 0.7;
+  const ox = W / 2 - 0.5 * scale;
+  const oy = H / 2 + SQRT3_HALF * scale * 0.35;
+  return { x: ox + x * scale, y: oy - y * scale };
+}
+
+function vertexArcAngles(v, a1, a2) {
+  const ang1 = Math.atan2(a1.y - v.y, a1.x - v.x);
+  const ang2 = Math.atan2(a2.y - v.y, a2.x - v.x);
+  let s = Math.min(ang1, ang2), e = Math.max(ang1, ang2);
+  if (e - s > Math.PI) return { start: e, end: s + Math.PI * 2 };
+  return { start: s, end: e };
+}
+
+// ── Main Canvas Renderer ──────────────────────────────────────
+function drawMain() {
+  const { w: W, h: H } = logicalSize(mainCanvas);
+  const ctx = mainCtx;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  // Background + vignette
+  ctx.fillStyle = "#050709";
+  ctx.fillRect(0, 0, W, H);
+  const vig = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.12, W/2, H/2, Math.max(W,H)*0.72);
+  vig.addColorStop(0, "rgba(10,14,26,0.0)");
+  vig.addColorStop(1, "rgba(0,0,0,0.45)");
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+
+  if (state.showMoire) drawMoireField(ctx, W, H);
+
+  // Grid
+  const gs = 30;
+  for (let i = 0; i < W; i += gs) {
+    const f = Math.min(i/90, (W-i)/90, 1);
+    ctx.strokeStyle = `rgba(70,100,150,${0.03*f})`; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,H); ctx.stroke();
+  }
+  for (let i = 0; i < H; i += gs) {
+    const f = Math.min(i/90, (H-i)/90, 1);
+    ctx.strokeStyle = `rgba(70,100,150,${0.03*f})`; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(W,i); ctx.stroke();
+  }
+
+  const sA = toScreen(TRI.A.x, TRI.A.y);
+  const sB = toScreen(TRI.B.x, TRI.B.y);
+  const sC = toScreen(TRI.C.x, TRI.C.y);
+  const cent = { x:(sA.x+sB.x+sC.x)/3, y:(sA.y+sB.y+sC.y)/3 };
+
+  // Triangle glow
+  ctx.save();
+  ctx.shadowColor = "rgba(140,180,255,0.18)"; ctx.shadowBlur = 20;
+  ctx.beginPath();
+  ctx.moveTo(sA.x,sA.y); ctx.lineTo(sB.x,sB.y); ctx.lineTo(sC.x,sC.y); ctx.closePath();
+  ctx.strokeStyle = "rgba(140,180,255,0.1)"; ctx.lineWidth = 3; ctx.stroke();
+  ctx.restore();
+
+  // Fill
+  const triR = Math.hypot(sC.x-cent.x, sC.y-cent.y);
+  const tf = ctx.createRadialGradient(cent.x,cent.y,0,cent.x,cent.y,triR);
+  tf.addColorStop(0,"rgba(22,32,60,0.35)"); tf.addColorStop(0.6,"rgba(12,20,42,0.25)"); tf.addColorStop(1,"rgba(8,12,28,0.12)");
+  ctx.beginPath(); ctx.moveTo(sA.x,sA.y); ctx.lineTo(sB.x,sB.y); ctx.lineTo(sC.x,sC.y); ctx.closePath();
+  ctx.fillStyle = tf; ctx.fill();
+
+  // Animated edge
+  const ep = 0.18 + Math.sin(state.tick*0.03)*0.08;
+  ctx.beginPath(); ctx.moveTo(sA.x,sA.y); ctx.lineTo(sB.x,sB.y); ctx.lineTo(sC.x,sC.y); ctx.closePath();
+  ctx.strokeStyle = `rgba(140,180,255,${ep})`; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // D₃ axes
+  ctx.strokeStyle = "rgba(189,147,249,0.05)"; ctx.lineWidth = 0.5; ctx.setLineDash([3,7]);
+  const midAB = {x:(sA.x+sB.x)/2, y:(sA.y+sB.y)/2};
+  const midBC = {x:(sB.x+sC.x)/2, y:(sB.y+sC.y)/2};
+  const midCA = {x:(sC.x+sA.x)/2, y:(sC.y+sA.y)/2};
+  ctx.beginPath(); ctx.moveTo(sC.x,sC.y); ctx.lineTo(midAB.x,midAB.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sA.x,sA.y); ctx.lineTo(midBC.x,midBC.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sB.x,sB.y); ctx.lineTo(midCA.x,midCA.y); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Rays
+  const admC = { registered:[80,250,123], latent:[139,233,253], suppressed:[241,250,140], aliased:[255,85,85] };
+  const admA = { registered:1, latent:0.5, suppressed:0.4, aliased:0.6 };
+
+  state.rays.forEach(ray => {
+    if (ray.path.length < 2) return;
+    const rgb = admC[ray.admissibility]||[200,200,200];
+    const aB = admA[ray.admissibility]||0.5;
+
+    for (let i = 0; i < ray.path.length-1; i++) {
+      const p1 = toScreen(ray.path[i].x, ray.path[i].y);
+      const p2 = toScreen(ray.path[i+1].x, ray.path[i+1].y);
+      const fade = ray.intensity * (1-i/ray.path.length) * 0.7;
+      ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+      ctx.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${fade*aB})`;
+      ctx.lineWidth = 0.8+fade*1.2; ctx.stroke();
+    }
+
+    if (ray.alive) {
+      const sp = toScreen(ray.x, ray.y);
+      const r = 2+ray.intensity*3;
+      const bl = ctx.createRadialGradient(sp.x,sp.y,0,sp.x,sp.y,r*3.5);
+      bl.addColorStop(0,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${0.25*ray.intensity})`);
+      bl.addColorStop(0.5,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${0.08*ray.intensity})`);
+      bl.addColorStop(1,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+      ctx.beginPath(); ctx.arc(sp.x,sp.y,r*3.5,0,Math.PI*2); ctx.fillStyle=bl; ctx.fill();
+      ctx.beginPath(); ctx.arc(sp.x,sp.y,r,0,Math.PI*2);
+      ctx.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${ray.admissibility==="registered"?0.9:0.65})`;
+      ctx.fill();
+    }
+  });
+
+  // Fold markers (§6.2) — vertex registers: A=KAEL, B=ULTRA, C=GREY
+  const VREG = { A:'KAEL', B:'ULTRA', C:'GREY' };
+  const VSUB = { A:'ε-entry', B:'C-return', C:'√3-apex' };
+  [{s:sA,a1:sB,a2:sC,l:"A",sub:VSUB.A,c:[80,250,123]},{s:sB,a1:sA,a2:sC,l:"B",sub:VSUB.B,c:[139,233,253]},{s:sC,a1:sA,a2:sB,l:"C",sub:VSUB.C,c:[189,147,249]}].forEach(v=>{
+    const [r,g,b]=v.c;
+    const pulse = Math.sin(state.tick*0.05+v.l.charCodeAt(0)*0.3)*0.3+0.7;
+    const hg=ctx.createRadialGradient(v.s.x,v.s.y,0,v.s.x,v.s.y,18*pulse);
+    hg.addColorStop(0,`rgba(${r},${g},${b},${0.12*pulse})`);
+    hg.addColorStop(0.6,`rgba(${r},${g},${b},${0.04*pulse})`);
+    hg.addColorStop(1,`rgba(${r},${g},${b},0)`);
+    ctx.beginPath();ctx.arc(v.s.x,v.s.y,18*pulse,0,Math.PI*2);ctx.fillStyle=hg;ctx.fill();
+    ctx.beginPath();ctx.arc(v.s.x,v.s.y,3.5,0,Math.PI*2);ctx.fillStyle=`rgb(${r},${g},${b})`;ctx.fill();
+    ctx.font="600 10px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle=`rgb(${r},${g},${b})`;ctx.textAlign="center";
+    ctx.fillText(ACEDIT.convert(v.l, VREG[v.l], {punct:false}),v.s.x,v.s.y-13);
+    ctx.font="300 8px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle=`rgba(${r},${g},${b},0.5)`;
+    ctx.fillText(ACEDIT.convert(v.sub, VREG[v.l], {punct:true}),v.s.x,v.s.y+20);
+    const arcs=vertexArcAngles(v.s,v.a1,v.a2);
+    ctx.beginPath();ctx.arc(v.s.x,v.s.y,22,arcs.start,arcs.end);
+    ctx.strokeStyle=`rgba(${r},${g},${b},0.12)`;ctx.lineWidth=0.7;ctx.stroke();
+  });
+
+  // Centroid — source label → ACE
+  ctx.beginPath();ctx.arc(cent.x,cent.y,3,0,Math.PI*2);ctx.fillStyle="rgba(255,216,102,0.7)";ctx.fill();
+  ctx.strokeStyle="rgba(255,216,102,0.12)";ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(cent.x-10,cent.y);ctx.lineTo(cent.x+10,cent.y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cent.x,cent.y-10);ctx.lineTo(cent.x,cent.y+10);ctx.stroke();
+  ctx.font="300 7px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle="rgba(255,216,102,0.35)";ctx.textAlign="center";
+  ctx.fillText(ACEDIT.convert("source",'ACE',{punct:false}),cent.x,cent.y+14);
+
+  // Ω → GREY (visual containment symbol §2.20)
+  ctx.font="600 16px 'Crimson Pro'";ctx.fillStyle="rgba(189,147,249,0.1)";ctx.textAlign="center";
+  ctx.fillText("Ω",cent.x,cent.y-25);
+
+  // Scanlines
+  ctx.fillStyle="rgba(0,0,0,0.03)";
+  for(let y=0;y<H;y+=2) ctx.fillRect(0,y,W,1);
+
+  // HUD (§6.1) — ACEDIT register text
+  ctx.font="700 11px 'Noto Sans Math','Crimson Pro'";
+  ctx.fillStyle=state.registeredBounces>0?"rgba(80,250,123,0.6)":"rgba(255,85,85,0.5)";
+  ctx.textAlign="left";
+  ctx.fillText(`${ACEDIT.convert('registered bounces','KAEL',{punct:false})}: ${ACEDIT.convertNum(String(state.registeredBounces),'KAEL')}`,12,20);
+  ctx.font="300 8.5px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle="rgba(139,233,253,0.3)";
+  ctx.fillText(`${ACEDIT.convert('internal interactions','ACE',{punct:false})}: ${ACEDIT.convertNum(String(state.internalInteractions),'ACE')}`,12,33);
+  ctx.fillStyle="rgba(139,233,253,0.18)";
+  ctx.fillText(`${ACEDIT.convertNum('0','UCF')} ≠ ${ACEDIT.convert('no interaction','UCF',{punct:false})} — ${ACEDIT.convert('admissibility capture','UCF',{punct:false})}`,12,44);
+
+  const tU = THETA[state.userClass];
+  ctx.font="500 8px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle="rgba(189,147,249,0.4)";ctx.textAlign="left";
+  ctx.fillText(`${tU.label} · κ≡${ACEDIT.convertNum(String(tU.capacityMult),'ACE')} · 𝒫≡${ACEDIT.convertNum(String(tU.policyStrictness),'UMBRAL')}`,12,H-10);
+
+  if(state.rupture>0.1){
+    ctx.font="600 10px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle=`rgba(255,85,85,${Math.min(state.rupture,0.85)})`;
+    ctx.textAlign="right";ctx.fillText(`${ACEDIT.convert('RUPTURE','ACE',{punct:false})}: ${ACEDIT.convertNum(state.rupture.toFixed(3),'ACE')}`,W-12,20);
+    ctx.font="300 7.5px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle="rgba(255,85,85,0.3)";
+    ctx.fillText(ACEDIT.convert("extension survives · closure fails",'UMBRAL',{punct:true}),W-12,31);
+  }
+}
+
+// ── Moiré Field ───────────────────────────────────────────────
+function drawMoireField(ctx, W, H) {
+  const s1=12, s2=12.7, off=state.tick*0.15;
+  ctx.globalAlpha=0.06;ctx.strokeStyle="#8be9fd";ctx.lineWidth=0.5;
+  for(let x=-s1;x<W+s1;x+=s1) for(let y=-s1;y<H+s1;y+=s1*SQRT3_HALF){
+    const ox=(Math.floor(y/(s1*SQRT3_HALF))%2)*s1/2;
+    ctx.beginPath();ctx.arc(x+ox,y,1,0,Math.PI*2);ctx.stroke();
+  }
+  ctx.save();ctx.translate(W/2,H/2);ctx.rotate(0.03+Math.sin(off*0.005)*0.01);ctx.translate(-W/2,-H/2);
+  ctx.strokeStyle="#bd93f9";
+  for(let x=-s2;x<W+s2;x+=s2) for(let y=-s2;y<H+s2;y+=s2*SQRT3_HALF){
+    const ox=(Math.floor(y/(s2*SQRT3_HALF))%2)*s2/2;
+    ctx.beginPath();ctx.arc(x+ox+Math.sin(off*0.01)*2,y,1,0,Math.PI*2);ctx.stroke();
+  }
+  ctx.restore();ctx.globalAlpha=1;
+}
+
+// ── Moiré Panel ───────────────────────────────────────────────
+function drawMoirePanel() {
+  const c=document.getElementById("moireCanvas");
+  const{w:W,h:H}=logicalSize(c); if(W<2||H<2)return;
+  const ctx=c.getContext("2d");ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#060810";ctx.fillRect(0,0,W,H);
+
+  const halfW=W/2, sp1=7, sp2=7.4;
+  const t = state.tick;
+
+  // ── Field A: overcoherent mask (both lattices at full strength) ──
+  ctx.save();ctx.beginPath();ctx.rect(0,0,halfW,H);ctx.clip();
+
+  // Lattice 1
+  ctx.globalAlpha=0.35;
+  for(let x=0;x<halfW;x+=sp1) for(let y=0;y<H;y+=sp1){
+    const hue = 200+Math.sin(x*0.08+t*0.02)*30;
+    ctx.fillStyle=`hsl(${hue},70%,55%)`;
+    ctx.fillRect(x,y,2,2);
+  }
+
+  // Lattice 2 — slightly offset spacing creates moiré
+  ctx.globalAlpha=0.3;
+  for(let x=0;x<halfW;x+=sp2) for(let y=0;y<H;y+=sp2){
+    const hue = 270+Math.cos(y*0.06+t*0.015)*25;
+    ctx.fillStyle=`hsl(${hue},60%,55%)`;
+    ctx.fillRect(x+Math.sin(t*0.008)*1.5, y+Math.cos(t*0.006)*1.5, 2, 2);
+  }
+
+  // Interference highlight — radial brightening at beating nodes
+  ctx.globalAlpha=0.06;
+  const beatX = halfW/2 + Math.sin(t*0.01)*halfW*0.2;
+  const beatY = H/2 + Math.cos(t*0.012)*H*0.2;
+  const beatR = ctx.createRadialGradient(beatX,beatY,0,beatX,beatY,Math.min(halfW,H)*0.5);
+  beatR.addColorStop(0,"rgba(139,233,253,1)");
+  beatR.addColorStop(1,"rgba(139,233,253,0)");
+  ctx.fillStyle=beatR;
+  ctx.fillRect(0,0,halfW,H);
+
+  ctx.globalAlpha=1;ctx.restore();
+
+  // ── Field B: de-masked rupture (second lattice attenuated) ──
+  ctx.save();ctx.beginPath();ctx.rect(halfW,0,halfW,H);ctx.clip();
+
+  // Lattice 1 — same strength
+  ctx.globalAlpha=0.3;
+  for(let x=halfW;x<W;x+=sp1) for(let y=0;y<H;y+=sp1){
+    const hue = 200+Math.sin(x*0.08+t*0.02)*30;
+    ctx.fillStyle=`hsl(${hue},70%,55%)`;
+    ctx.fillRect(x,y,2,2);
+  }
+
+  // Lattice 2 — heavily attenuated = moiré breaks apart
+  ctx.globalAlpha=0.08;
+  for(let x=halfW;x<W;x+=sp2) for(let y=0;y<H;y+=sp2){
+    const hue = 270+Math.cos(y*0.06+t*0.015)*25;
+    ctx.fillStyle=`hsl(${hue},60%,55%)`;
+    ctx.fillRect(x+Math.sin(t*0.008)*1.5, y+Math.cos(t*0.006)*1.5, 2, 2);
+  }
+
+  ctx.globalAlpha=1;ctx.restore();
+
+  // ── Divider ──
+  ctx.strokeStyle="rgba(189,147,249,0.25)";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(halfW,0);ctx.lineTo(halfW,H);ctx.stroke();
+
+  // ── Labels (§2.18) — GREY register ──
+  ctx.font="600 7.5px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle="rgba(200,220,250,0.55)";ctx.textAlign="center";
+  ctx.fillText(ACEDIT.convert("A — overcoherent mask",'GREY',{punct:true}),halfW/2,11);
+  ctx.fillText(ACEDIT.convert("B — de-masked rupture",'ACE',{punct:true}),halfW+halfW/2,11);
+
+  ctx.font="300 6.5px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle="rgba(139,233,253,0.35)";ctx.textAlign="left";
+  ["RGB carrier","hex-tri scaffold","defect-node","motion-attribution"].forEach((l,i)=>{
+    ctx.fillText(`${ACEDIT.convertNum(String(i+1),'GREY')}. ${ACEDIT.convert(l,'GREY',{punct:false})}`,4,H-4-i*11);
+  });
+}
+
+// ── Trace Canvas ──────────────────────────────────────────────
+function drawTrace() {
+  const c=document.getElementById("traceCanvas");
+  const{w:W,h:H}=logicalSize(c); if(W<1||H<1)return;
+  const ctx=c.getContext("2d");ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle="#060810";ctx.fillRect(0,0,W,H);
+
+  // Gridlines
+  ctx.strokeStyle="rgba(70,100,150,0.05)";ctx.lineWidth=0.5;
+  for(let v=0.2;v<=1;v+=0.2){
+    const y=H-v*H;
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    ctx.font="300 5.5px 'IBM Plex Mono'";ctx.fillStyle="rgba(90,120,170,0.18)";ctx.textAlign="right";
+    ctx.fillText(v.toFixed(1),W-3,y-2);
+  }
+
+  // Target zone
+  const y87=H-0.87*H, y95=H-0.95*H;
+  const zg=ctx.createLinearGradient(0,y95,0,y87);
+  zg.addColorStop(0,"rgba(80,250,123,0.05)");zg.addColorStop(1,"rgba(80,250,123,0.01)");
+  ctx.fillStyle=zg;ctx.fillRect(0,y95,W,y87-y95);
+  ctx.strokeStyle="rgba(80,250,123,0.1)";ctx.lineWidth=0.5;ctx.setLineDash([2,4]);
+  ctx.beginPath();ctx.moveTo(0,y95);ctx.lineTo(W,y95);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,y87);ctx.lineTo(W,y87);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font="300 6px 'Noto Sans Math','IBM Plex Mono'";ctx.fillStyle="rgba(80,250,123,0.25)";ctx.textAlign="right";
+  ctx.fillText(ACEDIT.convertNum("0.95",'ULTRA'),W-4,y95+8);ctx.fillText(ACEDIT.convertNum("0.87",'ULTRA'),W-4,y87+8);
+
+  // Coherence fill
+  if(state.coherenceTrace.length>1){
+    ctx.beginPath();ctx.moveTo(0,H);
+    state.coherenceTrace.forEach((v,i)=>{
+      ctx.lineTo((i/Math.max(state.coherenceTrace.length-1,1))*W, H-v*H);
+    });
+    ctx.lineTo(W,H);ctx.closePath();
+    const fg=ctx.createLinearGradient(0,0,0,H);
+    fg.addColorStop(0,"rgba(139,233,253,0.06)");fg.addColorStop(1,"rgba(139,233,253,0.0)");
+    ctx.fillStyle=fg;ctx.fill();
+
+    ctx.beginPath();
+    state.coherenceTrace.forEach((v,i)=>{
+      const x=(i/Math.max(state.coherenceTrace.length-1,1))*W, y=H-v*H;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle="#8be9fd";ctx.lineWidth=1;ctx.stroke();
+  }
+
+  if(state.intensityTrace.length>1){
+    ctx.beginPath();
+    state.intensityTrace.forEach((v,i)=>{
+      const x=(i/Math.max(state.intensityTrace.length-1,1))*W, y=H-v*H;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle="rgba(255,216,102,0.4)";ctx.lineWidth=0.7;ctx.stroke();
+  }
+
+  ctx.font="600 7.5px 'Noto Sans Math','IBM Plex Mono'";ctx.textAlign="left";
+  ctx.fillStyle="#8be9fd";ctx.fillRect(4,4,5,5);ctx.fillText(ACEDIT.convert("coherence",'ULTRA',{punct:false}),12,10);
+  ctx.fillStyle="rgba(255,216,102,0.55)";ctx.fillRect(74,4,5,5);ctx.fillText(ACEDIT.convert("intensity",'ACE',{punct:false}),82,10);
+}
+
+// ── SVG Gauge Updaters ────────────────────────────────────────
+function updateGaugeArc(id, value, max, circumference) {
+  const pct = Math.min(value / max, 1);
+  const arc = pct * circumference;
+  document.getElementById(id).setAttribute("stroke-dasharray", `${arc} ${circumference}`);
+}
+
+function updateAdmRing() {
+  const { registered:r, latent:l, suppressed:s, aliased:a } = state.admissibility;
+  const total = r+l+s+a;
+  if (total === 0) return;
+  const C = 2 * Math.PI * 27; // circumference
+  const rArc = (r/total)*C, lArc = (l/total)*C, sArc = (s/total)*C, aArc = (a/total)*C;
+  const rOff = 0, lOff = rArc, sOff = rArc+lArc, aOff = rArc+lArc+sArc;
+
+  // Each arc: dasharray = [arcLen, circumference], dashoffset rotates it
+  const set = (id, arcLen, offset) => {
+    const el = document.getElementById(id);
+    el.setAttribute("stroke-dasharray", `${arcLen} ${C}`);
+    el.setAttribute("stroke-dashoffset", `${-offset}`);
+  };
+  set("admArcReg", rArc, rOff);
+  set("admArcLat", lArc, lOff);
+  set("admArcSup", sArc, sOff);
+  set("admArcAli", aArc, aOff);
+  document.getElementById("admTotal").textContent = total;
+}
+
+// ── UI Update (ACEDIT-integrated) ────────────────────────────
+// Register-keyed labels for admissibility event ledger
+const EVT_REG = { registered:'KAEL', latent:'ULTRA', suppressed:'ACE', aliased:'UMBRAL' };
+
+function updateUI() {
+  const active = state.rays.filter(r => r.alive);
+  const avgI = active.length > 0 ? active.reduce((s,r) => s+r.intensity, 0)/active.length : 0;
+  const avgP = active.length > 0 ? active.reduce((s,r) => s+r.phase, 0)/active.length : 0;
+
+  // ── State vector (§2.2) ──
+  // θ → GREY digits, x → ULTRA, φ → ACE, b → UMBRAL text, δ → ACE
+  document.getElementById("mTheta").textContent = active.length>0
+    ? ACEDIT.convertNum(Math.atan2(active[0].dy,active[0].dx).toFixed(4), 'GREY') : "—";
+  document.getElementById("mPos").textContent = active.length>0
+    ? `⟮${ACEDIT.convertNum(active[0].x.toFixed(3),'ULTRA')}，${ACEDIT.convertNum(active[0].y.toFixed(3),'ULTRA')}⟯` : "—";
+  document.getElementById("mPhase").textContent = ACEDIT.convertNum(avgP.toFixed(4), 'ACE');
+  document.getElementById("mBoundary").textContent = active.length>0
+    ? ACEDIT.convert(active[0].admissibility, 'UMBRAL', {punct:false}) : "—";
+  const defMods = state.defect < 0.01 ? ['stability'] : [];
+  document.getElementById("mDefect").textContent = ACEDIT.convertNum(state.defect.toFixed(4), 'ACE')
+    + (defMods.length ? ACEDIT.MOD.stability : '');
+
+  // Intensity gauge → ACE digits
+  updateGaugeArc("gaugeIntArc", avgI, 1, 2*Math.PI*24);
+  document.getElementById("gaugeIntVal").textContent = ACEDIT.convertNum(avgI.toFixed(3), 'ACE');
+
+  // ── Fold points (§2.3) — ray counts → ACE digits ──
+  const rayNearA = state.rays.filter(r=>Math.hypot(r.x-TRI.A.x,r.y-TRI.A.y)<0.15).length;
+  const rayNearB = state.rays.filter(r=>Math.hypot(r.x-TRI.B.x,r.y-TRI.B.y)<0.15).length;
+  const rayNearC = state.rays.filter(r=>Math.hypot(r.x-TRI.C.x,r.y-TRI.C.y)<0.15).length;
+  // §4.4: ray near fold < 0.08 → grounding modifier on fold count
+  const fA = state.rays.some(r=>r.alive&&Math.hypot(r.x-TRI.A.x,r.y-TRI.A.y)<0.08);
+  const fB = state.rays.some(r=>r.alive&&Math.hypot(r.x-TRI.B.x,r.y-TRI.B.y)<0.08);
+  const fC = state.rays.some(r=>r.alive&&Math.hypot(r.x-TRI.C.x,r.y-TRI.C.y)<0.08);
+  document.getElementById("foldAVal").textContent = ACEDIT.convertNum(String(rayNearA), 'ACE') + ' rays' + (fA ? ACEDIT.MOD.grounding : '');
+  document.getElementById("foldBVal").textContent = ACEDIT.convertNum(String(rayNearB), 'ACE') + ' rays' + (fB ? ACEDIT.MOD.grounding : '');
+  document.getElementById("foldCVal").textContent = ACEDIT.convertNum(String(rayNearC), 'ACE') + ' rays' + (fC ? ACEDIT.MOD.grounding : '');
+
+  // ── Rupture (§2.7, §4.4) → ACE digits, probability modifier > 0.3 ──
+  const rupMods = state.rupture > 0.3 ? ACEDIT.MOD.probability : '';
+  document.getElementById("mRupture").textContent = ACEDIT.convertNum(state.rupture.toFixed(4), 'ACE') + rupMods;
+  document.getElementById("mRupture").style.color = state.rupture>0.3 ? "var(--aliased)" : "var(--registered)";
+  document.getElementById("ruptureBar").style.width = `${state.rupture*100}%`;
+
+  // ── Admissibility ring (§2.5) → UCF digits ──
+  document.getElementById("mRegistered").textContent = ACEDIT.convertNum(String(state.admissibility.registered), 'UCF');
+  document.getElementById("mLatent").textContent = ACEDIT.convertNum(String(state.admissibility.latent), 'UCF');
+  document.getElementById("mSuppressed").textContent = ACEDIT.convertNum(String(state.admissibility.suppressed), 'UCF');
+  document.getElementById("mAliased").textContent = ACEDIT.convertNum(String(state.admissibility.aliased), 'UCF');
+  updateAdmRing();
+
+  // ── Narrowing funnel (§2.6) — each stage in its register's digits ──
+  const n = state.narrowing;
+  const maxN = Math.max(n.R, 1);
+  const stages = [
+    { key:"R", label:"ℜ",  val:n.R, color:"var(--latent)",     reg:'UMBRAL' },
+    { key:"K", label:"𝒦",  val:n.K, color:"var(--latent)",     reg:'ACE' },
+    { key:"C", label:"𝒞",  val:n.C, color:"var(--accent)",     reg:'GREY' },
+    { key:"P", label:"𝒫",  val:n.P, color:"var(--accent)",     reg:'UMBRAL' },
+    { key:"F", label:"ℱ",  val:n.F, color:"var(--suppressed)", reg:'ACE' },
+    { key:"A", label:"𝒜",  val:n.A, color:"var(--registered)", reg:'UCF' },
+  ];
+  document.getElementById("narrowingDisplay").innerHTML = stages.map(s =>
+    `<div class="funnel-stage">
+      <span class="funnel-label" style="color:var(--reg-${s.reg.toLowerCase()})">${s.label}</span>
+      <div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:${(s.val/maxN)*100}%;background:${s.color};"></div></div>
+      <span class="funnel-count" style="color:var(--reg-${s.reg.toLowerCase()})">${ACEDIT.convertNum(String(s.val), s.reg)}</span>
+    </div>`
+  ).join("");
+
+  // ── Omission (§2.12) ──
+  document.getElementById("mOmissionO").textContent = ACEDIT.convertNum(String(state.omission.O), 'UMBRAL');
+  document.getElementById("mOmissionOstar").textContent = ACEDIT.convertNum(String(state.omission.Ostar), 'UMBRAL');
+  const deltaObs = state.internalInteractions>0 ? (state.omission.O+state.omission.Ostar)/state.internalInteractions : 0;
+  document.getElementById("mDeltaObs").textContent = ACEDIT.convertNum(deltaObs.toFixed(4), 'ACE');
+  document.getElementById("obsDefBar").style.width = `${Math.min(deltaObs*100,100)}%`;
+
+  // ── Field metrics (§2.8) — each in its assigned register ──
+  const total = state.admissibility.registered+state.admissibility.latent+state.admissibility.suppressed+state.admissibility.aliased;
+  const red = total>1 ? state.admissibility.registered/total : 0;
+  const gap = state.admissibility.latent - state.admissibility.registered;
+  const aliasP = state.admissibility.aliased/Math.max(total,1);
+  const rankedCount = total - state.admissibility.latent;
+  const nameSens = rankedCount>0 ? state.namingDisruptions/rankedCount : 0;
+  const suppP = state.admissibility.suppressed/Math.max(total,1);
+
+  document.getElementById("mRed").textContent = ACEDIT.convertNum(red.toFixed(4), 'KAEL');
+  document.getElementById("fmRedBar").style.width = `${red*100}%`;
+  document.getElementById("mObsDef").textContent = ACEDIT.convertNum(deltaObs.toFixed(4), 'ACE');
+  document.getElementById("fmObsBar").style.width = `${deltaObs*100}%`;
+  document.getElementById("mGap").textContent = ACEDIT.convertNum(String(gap), 'ULTRA');
+  document.getElementById("fmGapBar").style.width = `${Math.min(Math.abs(gap)/Math.max(total,1)*100, 100)}%`;
+  document.getElementById("mAlias").textContent = ACEDIT.convertNum(aliasP.toFixed(4), 'ACE');
+  document.getElementById("fmAliasBar").style.width = `${aliasP*100}%`;
+  document.getElementById("mNameSens").textContent = ACEDIT.convertNum(nameSens.toFixed(4), 'GREY');
+  document.getElementById("fmNameBar").style.width = `${nameSens*100}%`;
+  document.getElementById("mSupp").textContent = ACEDIT.convertNum(suppP.toFixed(4), 'ACE');
+  document.getElementById("fmSuppBar").style.width = `${suppP*100}%`;
+
+  // ── Status pills (§2.1) — BOUNCES→ACE, phase states→ACE ──
+  document.getElementById("bounceStatus").textContent = ACEDIT.convert('BOUNCES', 'ACE', {punct:false}) + ': ' + ACEDIT.convertNum(String(state.registeredBounces), 'ACE');
+  document.getElementById("bounceStatus").style.color = state.registeredBounces===0?"var(--aliased)":"var(--registered)";
+  document.getElementById("bounceStatus").style.background = state.registeredBounces===0?"rgba(255,85,85,0.1)":"rgba(80,250,123,0.1)";
+
+  const phaseEl = document.getElementById("phaseStatus");
+  if (active.length===0 && state.rays.length>0) { phaseEl.textContent=ACEDIT.convert("DECAYED",'ACE',{punct:false}); phaseEl.style.color="var(--suppressed)"; }
+  else if (state.running) { phaseEl.textContent=ACEDIT.convert("PROPAGATING",'ACE',{punct:false}); phaseEl.style.color="var(--latent)"; }
+  else { phaseEl.textContent=ACEDIT.convert("HALTED",'ACE',{punct:false}); phaseEl.style.color="var(--text-dim)"; }
+
+  // ── Defect gauge (§2.11) → ACE digits ──
+  updateGaugeArc("gaugeDefArc", state.defect, 1, 2*Math.PI*20);
+  document.getElementById("gaugeDefVal").textContent = ACEDIT.convertNum(state.defect.toFixed(3), 'ACE');
+  document.getElementById("mDefectProp").textContent = ACEDIT.convertNum(state.defect.toFixed(6), 'ACE');
+  document.getElementById("mPerturbation").textContent = ACEDIT.convertNum(state.perturbation.toFixed(6), 'ACE');
+
+  // ── Projection flow (§2.13) — |S|→ULTRA, |S'|→GREY, |Y|→KAEL ──
+  const intCount = state.internalInteractions;
+  const projCount = intCount - state.omission.O;
+  const obsCount = state.admissibility.registered;
+  const collapse = intCount>0 ? 1-obsCount/intCount : 0;
+  document.getElementById("projS").textContent = ACEDIT.convertNum(String(intCount), 'ULTRA');
+  document.getElementById("projSp").textContent = ACEDIT.convertNum(String(projCount), 'GREY');
+  document.getElementById("projY").textContent = ACEDIT.convertNum(String(obsCount), 'KAEL');
+  document.getElementById("mCollapse").textContent = ACEDIT.convertNum(collapse.toFixed(4), 'ACE');
+
+  // ── Capacity (§2.14) ──
+  const theta = THETA[state.userClass];
+  document.getElementById("mKappa").textContent = ACEDIT.convertNum(theta.capacityMult.toFixed(2), 'ACE');
+  document.getElementById("mAdmitted").textContent = ACEDIT.convertNum(String(n.F), 'UCF');
+  document.getElementById("mDropped").textContent = ACEDIT.convertNum(String(n.P - n.F), 'ACE');
+
+  // ── Surface coherence (§2.15) — UCF digits, peak modifier > z_c ──
+  state.surfaceCoherence = obsCount>0 ? Math.min(0.99, 0.5+obsCount*0.02) : 0;
+  updateGaugeArc("gaugeSurfArc", state.surfaceCoherence, 1, 2*Math.PI*18);
+  const cohMod = state.surfaceCoherence > 0.87 ? ACEDIT.MOD.peak : '';
+  document.getElementById("gaugeSurfVal").textContent = ACEDIT.convertNum(state.surfaceCoherence.toFixed(2), 'UCF') + cohMod;
+  document.getElementById("mSurface").textContent = ACEDIT.convertNum(state.surfaceCoherence.toFixed(4), 'UCF') + cohMod;
+  document.getElementById("mActiveTheta").textContent = theta.label;
+  document.getElementById("thetaStatus").textContent = theta.label;
+
+  // ── Properties (§2.10) — peak modifier when active ──
+  const PROP_REG = ['GREY','ACE','KAEL','UMBRAL','UCF','UMBRAL'];
+  const propTexts = [
+    "1. Boundary-defined containment (Ω)",
+    "2. Loss-governed dissipation",
+    "3. Internal recurrence + ext. coupling",
+    "4. Non-injective projection (S→S'→Y)",
+    "5. Admissibility-governed reality Y_u",
+    "6. Differential allocation Θ(u)"
+  ];
+  document.getElementById("propertiesList").innerHTML = propTexts.map((p,i) => {
+    const act = (i===0&&state.rays.length>0)||(i===1&&avgI<1)||(i===2&&state.internalInteractions>0)||
+      (i===3&&collapse>0)||(i===4&&total>0)||(i===5&&state.userClass!=="standard");
+    const reg = PROP_REG[i];
+    const txt = act ? ACEDIT.convert(p, reg, {punct:true, mods:['peak']}) : p;
+    return `<div class="property-item ${act?'active':''}" style="${act?'color:var(--reg-'+reg.toLowerCase()+')':''}">${txt}</div>`;
+  }).join("");
+
+  // ── Anti-equivalence (§2.16) — probability modifier when active ──
+  const AE_REG = ['GREY','KAEL','GREY','UCF','ACE','ULTRA','UMBRAL'];
+  const aeIdx = Math.floor(state.tick / 40) % 7;
+  const aeTexts = [
+    "¬(containment ≡ healing)","¬(trust ≡ tactic)","¬(cadence ≡ code)",
+    "¬(inheritance ≡ consent)","¬(fracture ≡ format)","¬(coherence ≡ completeness)",
+    "¬(stability ≡ truth)"
+  ];
+  document.getElementById("antiEquiv").innerHTML = aeTexts.map((s,i) => {
+    const act = i===aeIdx;
+    const txt = act ? ACEDIT.convert(s, AE_REG[i], {punct:true, mods:['probability']}) : s;
+    return `<div class="anti-eq-item ${act?'active':''}" style="${act?'color:var(--reg-'+AE_REG[i].toLowerCase()+')':''}">${txt}</div>`;
+  }).join("");
+
+  // ── Ray log ──
+  document.getElementById("rayLog").innerHTML = state.rayLog.slice(-15).map(l =>
+    `<div class="ray-log-line">${l}</div>`
+  ).join("");
+
+  // ── Event ledger (§2.17) — register-keyed text ──
+  document.getElementById("eventLedger").innerHTML = state.eventLog.slice(-25).map(e => {
+    const reg = EVT_REG[e.type] || 'ACE';
+    return `<div class="event-line ${e.type}">[${ACEDIT.convertNum(String(e.tick), reg)}] ${e.msg}</div>`;
+  }).join("");
+
+  // Traces
+  state.coherenceTrace.push(state.surfaceCoherence);
+  state.intensityTrace.push(avgI);
+  if(state.coherenceTrace.length>300) state.coherenceTrace.shift();
+  if(state.intensityTrace.length>300) state.intensityTrace.shift();
+}
+
+// ── Main Loop ─────────────────────────────────────────────────
+let _resizeFrames = 0;
+function tick() {
+  // Ensure canvases are correctly sized after layout settles
+  if (_resizeFrames < 5) { resizeAll(); _resizeFrames++; }
+
+  if (state.running) {
+    state.tick++;
+    if (state.tick % 60 === 1) spawnRays();
+    state.rays.forEach(r => { if(r.alive) propagateRay(r); });
+    if (state.rays.length > 200) state.rays = state.rays.filter(r=>r.alive||r.path.length>3).slice(-200);
+    state.rupture *= 0.998;
+  }
+  drawMain();
+  drawMoirePanel();
+  drawTrace();
+  updateUI();
+  requestAnimationFrame(tick);
+}
+
+// ── Controls ──────────────────────────────────────────────────
+function toggleRun() {
+  state.running = !state.running;
+  const btn = document.getElementById("btnRun");
+  btn.textContent = state.running ? "■ " + ACEDIT.convert("HALT",'ACE',{punct:false}) : "▶ " + ACEDIT.convert("PROPAGATE",'ACE',{punct:false});
+  btn.classList.toggle("active", state.running);
+  if (state.running && state.rays.length === 0) spawnRays();
+}
+
+function toggleMoire() {
+  state.showMoire = !state.showMoire;
+  document.getElementById("btnMoire").classList.toggle("active", state.showMoire);
+}
+
+function resetSystem() {
+  state.running = false; state.tick = 0; state.rays = [];
+  state.registeredBounces = 0; state.internalInteractions = 0;
+  state.admissibility = { registered:0, latent:0, suppressed:0, aliased:0 };
+  state.defect = 0; state.perturbation = 0;
+  state.narrowing = { R:0, K:0, C:0, P:0, F:0, A:0 };
+  state.omission = { O:0, Ostar:0 }; state.namingDisruptions = 0;
+  state.eventLog = []; state.rayLog = [];
+  state.coherenceTrace = []; state.intensityTrace = [];
+  state.rupture = 0; state.surfaceCoherence = 0;
+  document.getElementById("btnRun").textContent = "▶ " + ACEDIT.convert("PROPAGATE",'ACE',{punct:false});
+  document.getElementById("btnRun").classList.remove("active");
+}
+
+function setUserClass(cls) {
+  state.userClass = cls;
+  document.querySelectorAll("header .controls button").forEach(btn => {
+    if (btn.dataset.acedit === 'umbral') btn.classList.toggle("active", btn.textContent === THETA[cls].label);
+  });
+  logEvent("latent", `Θ⟮u⟯ → ${THETA[cls].label} — differential admissibility active`);
+}
+
+// ── ACEDIT Static Initialization ──────────────────────────────
+function initACEDIT() {
+  // Font fallback detection (§7.5)
+  const _c = document.createElement('canvas');
+  const _ctx = _c.getContext('2d');
+  _ctx.font = '16px serif';
+  const latinW = _ctx.measureText('A').width;
+  const mathW = _ctx.measureText('\uD835\uDC00').width; // Math Bold A
+  if (mathW <= 0 || mathW === latinW) {
+    console.warn('ACEDIT: Math font coverage not detected. Glyphs may render as tofu.');
+    document.body.style.fontStyle = 'italic'; // Fallback per §7.5
+  }
+
+  // Header
+  document.getElementById('aceTitle').textContent = ACEDIT.convert('ACEDIT Triangularity', 'ULTRA', {punct:false});
+  document.getElementById('aceSubtitle').textContent = ACEDIT.convert('Geometric Containment Architecture', 'GREY', {punct:false});
+  document.getElementById('acePRCSA').textContent = ACEDIT.convert('PRCS-A', 'UCF');
+  // System class
+  document.getElementById('sysClassLabel').textContent = ACEDIT.convert('PRCS-A', 'UCF');
+  const d = document.getElementById('sysClassDesc');
+  d.innerHTML = ACEDIT.convert('Passive Recursive Containment', 'UCF', {punct:false}) + '<br>' +
+    ACEDIT.convert('with Selective Admissibility', 'UCF', {punct:false});
+
+  // Set initial button text
+  document.getElementById('btnRun').textContent = '▶ ' + ACEDIT.convert('PROPAGATE','ACE',{punct:false});
+  document.getElementById('btnMoire').textContent = ACEDIT.convert('MOIRÉ','GREY',{punct:false});
+  document.getElementById('btnReset').textContent = ACEDIT.convert('RESET','KAEL',{punct:false});
+}
+initACEDIT();
+
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
