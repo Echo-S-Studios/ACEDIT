@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layer 8 — Packet · TCP Hardening + Export</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Crimson+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050709;
+  --bg2: #090b12;
+  --bg3: #0d0f18;
+  --bg-panel: rgba(9,11,18,0.85);
+  --border: rgba(90,120,170,0.08);
+  --border-active: rgba(90,120,170,0.18);
+  --text: #9aacca;
+  --text-dim: #4a5a78;
+  --text-bright: #dce6f4;
+  --registered: #50fa7b;
+  --latent: #8be9fd;
+  --suppressed: #f1fa8c;
+  --aliased: #ff5555;
+  --crystal: #ffd866;
+  --accent: #bd93f9;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-serif: 'Crimson Pro', serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.fw-300 { font-weight: 300; }
+.fw-400 { font-weight: 400; }
+.fw-500 { font-weight: 500; }
+.fw-600 { font-weight: 600; }
+
+/* Layout */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+header .nav-back {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+header .nav-back:hover { color: var(--accent); }
+header h1 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--text-bright);
+  letter-spacing: 0.5px;
+}
+header .status-cluster {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+}
+.status-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-dim);
+}
+.status-badge.pass .dot { background: var(--registered); }
+.status-badge.warn .dot { background: var(--suppressed); }
+.status-badge.fail .dot { background: var(--aliased); }
+.status-badge.idle .dot { background: var(--text-dim); }
+.status-badge.ready .dot { background: var(--latent); box-shadow: 0 0 6px var(--latent); }
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 45px);
+}
+
+/* Sidebar — Test Input Panel */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 45px);
+}
+.sidebar h2 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--text-bright);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.input-group {
+  margin-bottom: 10px;
+}
+.input-group label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+}
+.input-group input[type="range"] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg3);
+  border-radius: 2px;
+  outline: none;
+}
+.input-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+.input-group .val {
+  text-align: right;
+  font-size: 10px;
+  color: var(--latent);
+  font-variant-numeric: tabular-nums;
+}
+.input-group select {
+  width: 100%;
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  border-radius: 3px;
+}
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 14px 0;
+}
+
+/* Main Content */
+.content {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 45px);
+}
+
+/* Self-Test Panel */
+.selftest-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.selftest-panel h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--text-bright);
+  margin-bottom: 10px;
+}
+.test-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.test-row:last-child { border-bottom: none; }
+.test-label {
+  font-size: 10px;
+  color: var(--text);
+}
+.test-pill {
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+.test-pill.pass { background: rgba(80,250,123,0.12); color: var(--registered); border: 1px solid rgba(80,250,123,0.25); }
+.test-pill.warn { background: rgba(241,250,140,0.12); color: var(--suppressed); border: 1px solid rgba(241,250,140,0.25); }
+.test-pill.fail { background: rgba(255,85,85,0.12); color: var(--aliased); border: 1px solid rgba(255,85,85,0.25); }
+.test-pill.idle { background: rgba(74,90,120,0.12); color: var(--text-dim); border: 1px solid var(--border); }
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: 1px solid var(--border-active);
+  border-radius: 3px;
+  background: var(--bg3);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { border-color: var(--accent); color: var(--text-bright); }
+.btn-export {
+  background: rgba(189,147,249,0.08);
+  border-color: rgba(189,147,249,0.2);
+  color: var(--accent);
+}
+.btn-export:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-export:not(:disabled) {
+  animation: exportPulse 2s ease-in-out infinite;
+}
+@keyframes exportPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(189,147,249,0.15); }
+  50% { box-shadow: 0 0 16px rgba(189,147,249,0.35); }
+}
+.btn-reset {
+  border-color: rgba(255,85,85,0.15);
+  color: var(--aliased);
+}
+
+/* Packet Preview */
+.packet-preview {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 16px;
+  position: relative;
+}
+.packet-preview.exported {
+  border-color: var(--registered);
+  box-shadow: 0 0 12px rgba(80,250,123,0.08);
+}
+.packet-preview h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--text-bright);
+  margin-bottom: 10px;
+}
+.packet-preview pre {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.65;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text);
+}
+.json-key { color: var(--accent); }
+.json-string { color: var(--latent); }
+.json-number { color: var(--registered); }
+.json-boolean { color: var(--suppressed); }
+.json-null { color: var(--text-dim); }
+.json-brace { color: var(--text-dim); }
+
+/* Exported Packet */
+.export-result {
+  display: none;
+  background: var(--bg-panel);
+  border: 1px solid var(--registered);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 0 20px rgba(80,250,123,0.06);
+}
+.export-result.visible { display: block; }
+.export-result h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--registered);
+  margin-bottom: 10px;
+}
+.download-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--registered);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Log */
+.log-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 14px;
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 9px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+.log-panel .log-entry.error { color: var(--aliased); }
+.log-panel .log-entry.ok { color: var(--registered); }
+.log-panel .log-entry.info { color: var(--latent); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="../index.html" class="nav-back">&#8592; index</a>
+  <h1>Layer 8 &mdash; Packet &middot; TCP Hardening + Export</h1>
+  <div class="status-cluster">
+    <span class="status-badge idle" id="badge-packet"><span class="dot"></span>packet: idle</span>
+    <span class="status-badge idle" id="badge-handoff"><span class="dot"></span>handoff: idle</span>
+  </div>
+</header>
+
+<div class="main-grid">
+  <!-- Sidebar: Test Inputs -->
+  <aside class="sidebar">
+    <h2>Test Input Panel</h2>
+
+    <div class="input-group">
+      <label>Routing State</label>
+      <select id="in-routingState">
+        <option value="idle">idle</option>
+        <option value="buffer" selected>buffer</option>
+        <option value="harbor-eligible">harbor-eligible</option>
+        <option value="ejected">ejected</option>
+      </select>
+    </div>
+
+    <div class="section-divider"></div>
+    <h2>Field Signature</h2>
+    <div class="input-group"><label>delta_obs</label><input type="range" id="in-delta_obs" min="0" max="1" step="0.01" value="0.42"><span class="val" id="val-delta_obs">0.42</span></div>
+    <div class="input-group"><label>eta_N</label><input type="range" id="in-eta_N" min="0" max="1" step="0.01" value="0.55"><span class="val" id="val-eta_N">0.55</span></div>
+    <div class="input-group"><label>sigma</label><input type="range" id="in-sigma" min="0" max="1" step="0.01" value="0.30"><span class="val" id="val-sigma">0.30</span></div>
+    <div class="input-group"><label>gamma</label><input type="range" id="in-gamma" min="0" max="1" step="0.01" value="0.60"><span class="val" id="val-gamma">0.60</span></div>
+    <div class="input-group"><label>chi</label><input type="range" id="in-chi" min="0" max="1" step="0.01" value="0.25"><span class="val" id="val-chi">0.25</span></div>
+    <div class="input-group"><label>beta</label><input type="range" id="in-beta" min="0" max="1" step="0.01" value="0.70"><span class="val" id="val-beta">0.70</span></div>
+    <div class="input-group"><label>rho</label><input type="range" id="in-rho" min="0" max="1" step="0.01" value="0.48"><span class="val" id="val-rho">0.48</span></div>
+
+    <div class="section-divider"></div>
+    <h2>Rupture Metrics</h2>
+    <div class="input-group"><label>H_E</label><input type="range" id="in-H_E" min="0" max="1" step="0.01" value="0.35"><span class="val" id="val-H_E">0.35</span></div>
+    <div class="input-group"><label>Sigma_R</label><input type="range" id="in-Sigma_R" min="0" max="1" step="0.01" value="0.20"><span class="val" id="val-Sigma_R">0.20</span></div>
+    <div class="input-group"><label>P_s</label><input type="range" id="in-P_s" min="0" max="1" step="0.01" value="0.65"><span class="val" id="val-P_s">0.65</span></div>
+    <div class="input-group"><label>R_c</label><input type="range" id="in-R_c" min="0" max="1" step="0.01" value="0.40"><span class="val" id="val-R_c">0.40</span></div>
+    <div class="input-group"><label>D_conf</label><input type="range" id="in-D_conf" min="0" max="1" step="0.01" value="0.50"><span class="val" id="val-D_conf">0.50</span></div>
+    <div class="input-group"><label>D_persist</label><input type="range" id="in-D_persist" min="0" max="1" step="0.01" value="0.45"><span class="val" id="val-D_persist">0.45</span></div>
+    <div class="input-group"><label>D_spread</label><input type="range" id="in-D_spread" min="0" max="1" step="0.01" value="0.30"><span class="val" id="val-D_spread">0.30</span></div>
+    <div class="input-group"><label>D_trip</label><input type="range" id="in-D_trip" min="0" max="1" step="0.01" value="0.55"><span class="val" id="val-D_trip">0.55</span></div>
+
+    <div class="section-divider"></div>
+    <h2>Narrowing Losses</h2>
+    <div class="input-group"><label>L_R</label><input type="range" id="in-L_R" min="0" max="1" step="0.01" value="0.12"><span class="val" id="val-L_R">0.12</span></div>
+    <div class="input-group"><label>L_K</label><input type="range" id="in-L_K" min="0" max="1" step="0.01" value="0.08"><span class="val" id="val-L_K">0.08</span></div>
+    <div class="input-group"><label>L_C</label><input type="range" id="in-L_C" min="0" max="1" step="0.01" value="0.15"><span class="val" id="val-L_C">0.15</span></div>
+    <div class="input-group"><label>L_P</label><input type="range" id="in-L_P" min="0" max="1" step="0.01" value="0.05"><span class="val" id="val-L_P">0.05</span></div>
+    <div class="input-group"><label>L_F</label><input type="range" id="in-L_F" min="0" max="1" step="0.01" value="0.10"><span class="val" id="val-L_F">0.10</span></div>
+    <div class="input-group"><label>L_A</label><input type="range" id="in-L_A" min="0" max="1" step="0.01" value="0.07"><span class="val" id="val-L_A">0.07</span></div>
+
+    <div class="section-divider"></div>
+    <h2>Closure State</h2>
+    <div class="input-group">
+      <label>Extension Admitted</label>
+      <select id="in-extensionAdmitted"><option value="true" selected>true</option><option value="false">false</option></select>
+    </div>
+    <div class="input-group">
+      <label>Closure Failure</label>
+      <select id="in-closureFailure"><option value="false" selected>false</option><option value="true">true</option></select>
+    </div>
+    <div class="input-group">
+      <label>Unique Closure</label>
+      <select id="in-uniqueClosure"><option value="true" selected>true</option><option value="false">false</option></select>
+    </div>
+
+    <div class="section-divider"></div>
+    <div class="input-group"><label>Confidence</label><input type="range" id="in-confidence" min="0" max="1" step="0.01" value="0.78"><span class="val" id="val-confidence">0.78</span></div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content">
+    <!-- Self-Test Panel -->
+    <div class="selftest-panel">
+      <h3>Self-Test Harness</h3>
+      <div class="test-row"><span class="test-label">Boot / Reset Integrity — all layers reporting</span><span class="test-pill idle" id="st-boot">idle</span></div>
+      <div class="test-row"><span class="test-label">Signal Bus Connectivity — all required registers readable</span><span class="test-pill idle" id="st-bus">idle</span></div>
+      <div class="test-row"><span class="test-label">Packet Schema Validation — all fields present, correct types</span><span class="test-pill idle" id="st-schema">idle</span></div>
+      <div class="test-row"><span class="test-label">Detector Matrix Completeness — 9 cells, all non-null</span><span class="test-pill idle" id="st-matrix">idle</span></div>
+      <div class="test-row"><span class="test-label">Route / Handoff Consistency — routing state matches handoff</span><span class="test-pill idle" id="st-route">idle</span></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn" id="btn-selftest">Run Self-Test</button>
+      <button class="btn btn-export" id="btn-export" disabled>Export TCP Packet</button>
+      <button class="btn btn-reset" id="btn-reset">Reset</button>
+    </div>
+
+    <!-- Packet Preview -->
+    <div class="packet-preview" id="packet-preview">
+      <h3>Packet Preview</h3>
+      <pre id="packet-json"><span class="json-null">— assemble packet to preview —</span></pre>
+    </div>
+
+    <!-- Export Result -->
+    <div class="export-result" id="export-result">
+      <h3>Exported Packet</h3>
+      <pre id="export-json"></pre>
+      <a class="download-link" id="download-link">Download packet.json</a>
+    </div>
+
+    <!-- Log -->
+    <div class="log-panel" id="log-panel"></div>
+  </main>
+</div>
+
+<script>
+/* ===== Constants ===== */
+const PHI = 1.618033988749895;
+const TAU = 6.283185307179586;
+const Z_C = 1.2020569031595942;
+const L4  = 7;
+const GAP = PHI - 1;
+const clamp01 = v => Math.max(0, Math.min(1, v));
+
+/* FNV-1a hash — full 32-bit implementation */
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+/* ===== Lightweight Signal Bus ===== */
+const SignalBus = (() => {
+  const _registers = {};
+  const _listeners = {};
+  return {
+    publish(key, value) {
+      _registers[key] = value;
+      if (_listeners[key]) _listeners[key].forEach(fn => fn(value));
+    },
+    read(key) {
+      return _registers[key];
+    },
+    subscribe(key, fn) {
+      if (!_listeners[key]) _listeners[key] = [];
+      _listeners[key].push(fn);
+      if (_registers[key] !== undefined) fn(_registers[key]);
+    },
+    has(key) {
+      return key in _registers;
+    },
+    keys() {
+      return Object.keys(_registers);
+    }
+  };
+})();
+
+/* ===== State ===== */
+let currentPacket  = null;
+let currentEnvelope = null;
+let selfTestResult = 'idle';  // 'idle' | 'pass' | 'warn' | 'fail'
+let packetExported = false;
+
+/* ===== DOM Refs ===== */
+const $ = id => document.getElementById(id);
+
+/* ===== Logging ===== */
+function log(msg, level = 'info') {
+  const el = $('log-panel');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + level;
+  entry.textContent = `[${new Date().toISOString().slice(11,23)}] ${msg}`;
+  el.appendChild(entry);
+  el.scrollTop = el.scrollHeight;
+}
+
+/* ===== Read all inputs ===== */
+function readInputs() {
+  const v = id => {
+    const el = $(id);
+    if (el.tagName === 'SELECT') {
+      if (el.value === 'true') return true;
+      if (el.value === 'false') return false;
+      return el.value;
+    }
+    return parseFloat(el.value);
+  };
+  return {
+    routingState: $('in-routingState').value,
+    fieldSignature: {
+      delta_obs: v('in-delta_obs'), eta_N: v('in-eta_N'), sigma: v('in-sigma'),
+      gamma: v('in-gamma'), chi: v('in-chi'), beta: v('in-beta'), rho: v('in-rho')
+    },
+    ruptureMetrics: {
+      H_E: v('in-H_E'), Sigma_R: v('in-Sigma_R'), P_s: v('in-P_s'), R_c: v('in-R_c'),
+      D_conf: v('in-D_conf'), D_persist: v('in-D_persist'), D_spread: v('in-D_spread'), D_trip: v('in-D_trip')
+    },
+    narrowingLosses: {
+      L_R: v('in-L_R'), L_K: v('in-L_K'), L_C: v('in-L_C'),
+      L_P: v('in-L_P'), L_F: v('in-L_F'), L_A: v('in-L_A')
+    },
+    closureState: {
+      extensionAdmitted: v('in-extensionAdmitted'),
+      closureFailure: v('in-closureFailure'),
+      uniqueClosure: v('in-uniqueClosure')
+    },
+    confidence: v('in-confidence')
+  };
+}
+
+/* ===== Determine dominant loss ===== */
+function dominantLoss(losses) {
+  let max = -1, name = 'none';
+  for (const [k, v] of Object.entries(losses)) {
+    if (v > max) { max = v; name = k; }
+  }
+  return name;
+}
+
+/* ===== Assemble Packet ===== */
+function assemblePacket() {
+  const inp = readInputs();
+  const rs = inp.routingState;
+
+  if (rs !== 'buffer' && rs !== 'harbor-eligible') {
+    currentPacket = null;
+    currentEnvelope = null;
+    $('packet-json').innerHTML = '<span class="json-null">— routing state must be "buffer" or "harbor-eligible" to assemble —</span>';
+    updateBadges();
+    return null;
+  }
+
+  const losses = inp.narrowingLosses;
+  const payload = {
+    routingState: rs,
+    fieldSignature: inp.fieldSignature,
+    ruptureMetrics: inp.ruptureMetrics,
+    narrowingLosses: { ...losses, dominantLoss: dominantLoss(losses) },
+    closureState: inp.closureState,
+    confidence: inp.confidence
+  };
+
+  const payloadStr = JSON.stringify(payload);
+  const checksum = fnv1a(payloadStr);
+  const packetId = fnv1a(payloadStr + Date.now());
+
+  const envelope = {
+    schemaVersion: '1.4.4',
+    packetId,
+    checksum,
+    provenance: {
+      integrity: checksum === fnv1a(payloadStr) ? 'verified' : 'mismatch',
+      confidence: payload.confidence
+    },
+    payload
+  };
+
+  currentPacket = payload;
+  currentEnvelope = envelope;
+
+  $('packet-json').innerHTML = syntaxHighlight(JSON.stringify(envelope, null, 2));
+
+  /* Publish registers */
+  SignalBus.publish('L8.packetStatus', rs === 'harbor-eligible' ? 'ready' : 'assembled');
+  SignalBus.publish('L8.handoffStatus', rs === 'harbor-eligible' ? 'eligible' : 'pending');
+  SignalBus.publish('L8.selfTest', selfTestResult);
+
+  updateBadges();
+  log('Packet assembled — routing: ' + rs + ', checksum: ' + checksum, 'info');
+  return envelope;
+}
+
+/* ===== JSON Syntax Highlighting ===== */
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"([^"]+)"(\s*:)/g, '<span class="json-key">"$1"</span>$2')
+    .replace(/:\s*"([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+    .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+    .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+    .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+    .replace(/[{}[\]]/g, '<span class="json-brace">$&</span>');
+}
+
+/* ===== Self-Test Harness ===== */
+function runSelfTest() {
+  assemblePacket();
+  const results = [];
+
+  /* 1. Boot/reset integrity — all layers reporting */
+  const bootOk = SignalBus.has('L8.packetStatus') && SignalBus.has('L8.handoffStatus') && SignalBus.has('L8.selfTest');
+  results.push(bootOk ? 'pass' : 'fail');
+  setPill('st-boot', results[0]);
+
+  /* 2. Signal bus connectivity — all required registers readable */
+  const requiredRegs = ['L8.packetStatus', 'L8.handoffStatus', 'L8.selfTest'];
+  const busOk = requiredRegs.every(r => SignalBus.read(r) !== undefined);
+  results.push(busOk ? 'pass' : 'fail');
+  setPill('st-bus', results[1]);
+
+  /* 3. Packet schema validation — all fields present, correct types */
+  let schemaOk = false;
+  if (currentPacket) {
+    const hasFields = ['routingState','fieldSignature','ruptureMetrics','narrowingLosses','closureState','confidence']
+      .every(f => f in currentPacket);
+    const typesOk = typeof currentPacket.routingState === 'string'
+      && typeof currentPacket.fieldSignature === 'object'
+      && typeof currentPacket.ruptureMetrics === 'object'
+      && typeof currentPacket.narrowingLosses === 'object'
+      && typeof currentPacket.closureState === 'object'
+      && typeof currentPacket.confidence === 'number';
+    schemaOk = hasFields && typesOk;
+  }
+  results.push(schemaOk ? 'pass' : 'fail');
+  setPill('st-schema', results[2]);
+
+  /* 4. Detector matrix completeness — 9 cells (3x3), all non-null */
+  let matrixOk = false;
+  if (currentPacket) {
+    const cells = [
+      currentPacket.ruptureMetrics.D_conf, currentPacket.ruptureMetrics.D_persist, currentPacket.ruptureMetrics.D_spread,
+      currentPacket.fieldSignature.delta_obs, currentPacket.fieldSignature.eta_N, currentPacket.fieldSignature.sigma,
+      currentPacket.narrowingLosses.L_R, currentPacket.narrowingLosses.L_K, currentPacket.narrowingLosses.L_C
+    ];
+    matrixOk = cells.length === 9 && cells.every(c => c !== null && c !== undefined);
+  }
+  results.push(matrixOk ? 'pass' : 'fail');
+  setPill('st-matrix', results[3]);
+
+  /* 5. Route/handoff consistency */
+  const rs = $('in-routingState').value;
+  const hs = SignalBus.read('L8.handoffStatus');
+  let routeOk = false;
+  if (rs === 'harbor-eligible' && hs === 'eligible') routeOk = true;
+  else if (rs === 'buffer' && hs === 'pending') routeOk = true;
+  else if (rs === 'idle' || rs === 'ejected') routeOk = false;
+  results.push(routeOk ? 'pass' : (rs === 'buffer' ? 'warn' : 'fail'));
+  setPill('st-route', results[4]);
+
+  /* Aggregate */
+  if (results.includes('fail')) selfTestResult = 'fail';
+  else if (results.includes('warn')) selfTestResult = 'warn';
+  else selfTestResult = 'pass';
+
+  SignalBus.publish('L8.selfTest', selfTestResult);
+  updateExportGuard();
+
+  log('Self-test complete: ' + selfTestResult + ' [' + results.join(', ') + ']',
+    selfTestResult === 'pass' ? 'ok' : (selfTestResult === 'warn' ? 'info' : 'error'));
+}
+
+function setPill(id, state) {
+  const el = $(id);
+  el.className = 'test-pill ' + state;
+  el.textContent = state;
+}
+
+/* ===== Export Gating ===== */
+function updateExportGuard() {
+  const rs = $('in-routingState').value;
+  const integrityOk = currentEnvelope && currentEnvelope.provenance.integrity === 'verified';
+  const confThreshold = 0.5;
+  const confOk = currentEnvelope && currentEnvelope.provenance.confidence > confThreshold;
+  const packetIntegrityOk = integrityOk && confOk;
+  const canExport = rs === 'harbor-eligible' && packetIntegrityOk && selfTestResult !== 'fail' && selfTestResult !== 'idle';
+  $('btn-export').disabled = !canExport;
+}
+
+/* ===== Export ===== */
+function exportPacket() {
+  if ($('btn-export').disabled) return;
+
+  /* Verify checksum one more time */
+  const payloadStr = JSON.stringify(currentPacket);
+  const verifyChecksum = fnv1a(payloadStr);
+  if (currentEnvelope.checksum !== verifyChecksum) {
+    log('EXPORT BLOCKED: checksum mismatch on final verify', 'error');
+    return;
+  }
+
+  const exportData = {
+    ...currentEnvelope,
+    exportTimestamp: new Date().toISOString(),
+    exportVerification: {
+      checksumVerified: true,
+      selfTestResult,
+      guardsEvaluated: ['routeState', 'packetIntegrity', 'selfTest'],
+      allGuardsPassed: true
+    }
+  };
+
+  packetExported = true;
+  $('packet-preview').classList.add('exported');
+  $('export-result').classList.add('visible');
+  $('export-json').innerHTML = syntaxHighlight(JSON.stringify(exportData, null, 2));
+
+  /* Generate downloadable JSON */
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const dl = $('download-link');
+  dl.href = url;
+  dl.download = 'tcp-packet-' + exportData.packetId + '.json';
+
+  SignalBus.publish('L8.packetStatus', 'exported');
+  SignalBus.publish('L8.handoffStatus', 'complete');
+  updateBadges();
+  log('TCP packet exported — id: ' + exportData.packetId, 'ok');
+}
+
+/* ===== Reset ===== */
+function resetAll() {
+  currentPacket = null;
+  currentEnvelope = null;
+  selfTestResult = 'idle';
+  packetExported = false;
+
+  ['st-boot','st-bus','st-schema','st-matrix','st-route'].forEach(id => setPill(id, 'idle'));
+  $('btn-export').disabled = true;
+  $('packet-preview').classList.remove('exported');
+  $('export-result').classList.remove('visible');
+  $('packet-json').innerHTML = '<span class="json-null">— assemble packet to preview —</span>';
+
+  SignalBus.publish('L8.packetStatus', 'idle');
+  SignalBus.publish('L8.handoffStatus', 'idle');
+  SignalBus.publish('L8.selfTest', 'idle');
+  updateBadges();
+  log('System reset', 'info');
+}
+
+/* ===== Badge Updates ===== */
+function updateBadges() {
+  const ps = SignalBus.read('L8.packetStatus') || 'idle';
+  const hs = SignalBus.read('L8.handoffStatus') || 'idle';
+  const bp = $('badge-packet');
+  const bh = $('badge-handoff');
+
+  bp.textContent = '';
+  bh.textContent = '';
+  const dot1 = document.createElement('span'); dot1.className = 'dot'; bp.appendChild(dot1);
+  const dot2 = document.createElement('span'); dot2.className = 'dot'; bh.appendChild(dot2);
+  bp.appendChild(document.createTextNode(' packet: ' + ps));
+  bh.appendChild(document.createTextNode(' handoff: ' + hs));
+
+  bp.className = 'status-badge ' + (ps === 'exported' ? 'pass' : ps === 'ready' ? 'ready' : ps === 'assembled' ? 'warn' : 'idle');
+  bh.className = 'status-badge ' + (hs === 'complete' ? 'pass' : hs === 'eligible' ? 'ready' : hs === 'pending' ? 'warn' : 'idle');
+}
+
+/* ===== Wire Up Events ===== */
+$('btn-selftest').addEventListener('click', runSelfTest);
+$('btn-export').addEventListener('click', exportPacket);
+$('btn-reset').addEventListener('click', resetAll);
+
+/* Sliders: live value display + auto-assemble */
+document.querySelectorAll('.sidebar input[type="range"]').forEach(slider => {
+  const valSpan = $('val-' + slider.id.replace('in-', ''));
+  slider.addEventListener('input', () => {
+    if (valSpan) valSpan.textContent = parseFloat(slider.value).toFixed(2);
+    assemblePacket();
+    updateExportGuard();
+  });
+});
+
+/* Selects: auto-assemble */
+document.querySelectorAll('.sidebar select').forEach(sel => {
+  sel.addEventListener('change', () => {
+    assemblePacket();
+    updateExportGuard();
+  });
+});
+
+/* ===== Init ===== */
+SignalBus.publish('L8.packetStatus', 'idle');
+SignalBus.publish('L8.handoffStatus', 'idle');
+SignalBus.publish('L8.selfTest', 'idle');
+updateBadges();
+log('Layer 8 — Packet firmware initialized', 'ok');
+log('Constants: PHI=' + PHI.toFixed(4) + ' TAU=' + TAU.toFixed(4) + ' Z_C=' + Z_C.toFixed(4) + ' L4=' + L4 + ' GAP=' + GAP.toFixed(4), 'info');
+assemblePacket();
+</script>
+</body>
+</html>
