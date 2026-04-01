@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EO-RFD FIRMWARE EMULATION · PHYSICAL SUBSTRATE v1.0.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=Crimson+Pro:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#050709; --bg2:#090b12; --bg3:#0d0f18;
+      --bg-panel:rgba(9,11,18,0.85);
+      --border:rgba(90,120,170,0.08); --border-active:rgba(90,120,170,0.18);
+      --text:#9aacca; --text-dim:#4a5a78; --text-bright:#dce6f4;
+      --registered:#50fa7b; --latent:#8be9fd; --suppressed:#f1fa8c;
+      --aliased:#ff5555; --crystal:#ffd866; --accent:#bd93f9;
+      --font-mono:'IBM Plex Mono',monospace; --font-serif:'Crimson Pro',serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:11px;min-height:100vh;padding:20px 24px;}
+
+    .header{text-align:center;margin-bottom:32px;}
+    .header h1{font-size:14px;letter-spacing:3px;color:var(--text-bright);text-transform:uppercase;margin-bottom:4px;}
+    .header .version{font-size:9px;color:var(--accent);letter-spacing:2px;}
+    .header .subtitle{font-size:10px;color:var(--text-dim);margin-top:8px;font-family:var(--font-serif);font-style:italic;}
+    .nav-home{display:inline-block;margin-bottom:16px;color:var(--text-dim);text-decoration:none;font-size:9px;letter-spacing:1px;}
+    .nav-home:hover{color:var(--accent);}
+
+    .signal-chain{max-width:720px;margin:0 auto 32px;}
+    .signal-chain h2{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px;text-align:center;}
+    .signal-chain h2::before{content:'';display:inline-block;width:3px;height:3px;background:var(--accent);border-radius:50%;margin-right:6px;vertical-align:middle;opacity:0.5;}
+
+    .layer-card{display:flex;align-items:center;gap:14px;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:10px 16px;margin-bottom:2px;text-decoration:none;color:inherit;transition:all 0.2s;}
+    .layer-card:hover{border-color:var(--border-active);transform:translateX(4px);}
+    .layer-card:hover .layer-name{color:var(--accent);}
+    .layer-num{font-size:16px;font-weight:600;color:var(--text-dim);min-width:24px;text-align:right;}
+    .layer-info{flex:1;}
+    .layer-name{font-size:10px;font-weight:600;color:var(--text-bright);letter-spacing:0.5px;}
+    .layer-desc{font-size:9px;color:var(--text-dim);margin-top:2px;}
+    .layer-status{font-size:8px;padding:3px 10px;border-radius:10px;font-weight:600;letter-spacing:0.8px;}
+    .status-ready{background:rgba(80,250,123,0.1);color:var(--registered);border:1px solid rgba(80,250,123,0.2);}
+
+    .connector{width:2px;height:12px;background:linear-gradient(to bottom,var(--accent),rgba(189,147,249,0.2));margin:0 auto;border-radius:1px;}
+
+    .grid-section{max-width:720px;margin:0 auto 32px;}
+    .grid-section h2{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;}
+    .grid-section h2::before{content:'';display:inline-block;width:3px;height:3px;background:var(--accent);border-radius:50%;margin-right:6px;vertical-align:middle;opacity:0.5;}
+
+    .quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:24px;}
+    .quick-btn{display:block;background:rgba(15,20,35,0.7);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:9px;padding:8px 14px;border-radius:3px;text-decoration:none;text-align:center;letter-spacing:0.5px;transition:all 0.2s;}
+    .quick-btn:hover{border-color:rgba(189,147,249,0.3);color:var(--accent);}
+    .quick-btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;}
+    .quick-btn.primary:hover{opacity:0.9;}
+
+    .constants-panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:16px;max-width:720px;margin:0 auto 24px;}
+    .constants-toggle{cursor:pointer;font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;user-select:none;}
+    .constants-toggle:hover{color:var(--accent);}
+    .constants-body{display:none;margin-top:12px;}
+    .constants-body.open{display:block;}
+    .const-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);}
+    .const-name{color:var(--accent);font-size:9px;}
+    .const-val{color:var(--text-bright);font-size:9px;font-weight:600;}
+
+    .invariants-panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:16px;max-width:720px;margin:0 auto 24px;}
+    .invariants-toggle{cursor:pointer;font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;user-select:none;}
+    .invariants-toggle:hover{color:var(--accent);}
+    .invariants-body{display:none;margin-top:12px;}
+    .invariants-body.open{display:block;}
+    .inv-item{display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);font-size:9px;}
+    .inv-check{color:var(--registered);flex-shrink:0;}
+    .inv-text{color:var(--text);}
+    .inv-text b{color:var(--text-bright);}
+
+    .footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid var(--border);font-size:8px;color:var(--text-dim);letter-spacing:1px;}
+  </style>
+</head>
+<body>
+  <a class="nav-home" href="../index.html">&larr; ACEDIT HOME</a>
+
+  <div class="header">
+    <h1>EO-RFD Firmware Emulation</h1>
+    <div class="version">PHYSICAL SUBSTRATE v1.0.0</div>
+    <div class="subtitle">Virtual bench instruments for the Eclipse&ndash;Omega Physical Substrate Architecture</div>
+  </div>
+
+  <!-- Signal Chain Diagram -->
+  <div class="signal-chain">
+    <h2>Signal Chain</h2>
+
+    <a class="layer-card" href="layer-0-substrate/substrate.html">
+      <span class="layer-num">0</span>
+      <div class="layer-info">
+        <div class="layer-name">Quasi-Crystal Substrate</div>
+        <div class="layer-desc">Al-Pd-Mn thin film &middot; 5-fold symmetry &middot; 7-zone unit cell</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-1-propagation/propagation.html">
+      <span class="layer-num">1</span>
+      <div class="layer-info">
+        <div class="layer-name">Propagation</div>
+        <div class="layer-desc">Ballistic electron transport &middot; triangular mesa &middot; QPC vertex sensors</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-2-admissibility/admissibility.html">
+      <span class="layer-num">2</span>
+      <div class="layer-info">
+        <div class="layer-name">Admissibility</div>
+        <div class="layer-desc">&Theta;-gated 5-stage comparator cascade &middot; 4-class classification</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-3-narrowing/narrowing.html">
+      <span class="layer-num">3</span>
+      <div class="layer-info">
+        <div class="layer-name">Narrowing</div>
+        <div class="layer-desc">7-stage resistive divider funnel &middot; S &rarr; &#x211B; &rarr; &#x1D4A6; &rarr; &#x1D49E; &rarr; &#x1D4AB; &rarr; &#x2131; &rarr; &#x1D49C;</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-4-field-signature/field-signature.html">
+      <span class="layer-num">4</span>
+      <div class="layer-info">
+        <div class="layer-name">Field Signature</div>
+        <div class="layer-desc">7-channel analog computer &middot; &delta;_obs, &eta;_N, &sigma;, &gamma;, &chi;, &beta;, &rho;</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-5-signal-rupture/signal-rupture.html">
+      <span class="layer-num">5</span>
+      <div class="layer-info">
+        <div class="layer-name">Signal Rupture</div>
+        <div class="layer-desc">&Sigma;_R composite &middot; 4 Schmitt-trigger tripwires &middot; state classification</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-6-detector-sweep/detector-sweep.html">
+      <span class="layer-num">6</span>
+      <div class="layer-info">
+        <div class="layer-name">Detector Sweep</div>
+        <div class="layer-desc">3&times;3 &Theta; &times; naming crossbar &middot; memristive confidence matrix</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-7-routing/routing.html">
+      <span class="layer-num">7</span>
+      <div class="layer-info">
+        <div class="layer-name">Routing</div>
+        <div class="layer-desc">TRIAD hysteresis FSM &middot; harbor eligibility &middot; &minus;0.14&rho; inversion</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-8-packet/packet.html">
+      <span class="layer-num">8</span>
+      <div class="layer-info">
+        <div class="layer-name">Packet</div>
+        <div class="layer-desc">TCP packet hardening &middot; schema validation &middot; guarded export</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+    <div class="connector"></div>
+
+    <a class="layer-card" href="layer-9-metacybernetic/metacybernetic.html">
+      <span class="layer-num">9</span>
+      <div class="layer-info">
+        <div class="layer-name">Metacybernetic</div>
+        <div class="layer-desc">CSD detection &middot; stochastic resonance &middot; negentropy envelope</div>
+      </div>
+      <span class="layer-status status-ready">READY</span>
+    </a>
+  </div>
+
+  <!-- Quick Launch -->
+  <div class="grid-section">
+    <h2>Quick Launch</h2>
+    <div class="quick-grid">
+      <a class="quick-btn primary" href="integration/full-chain.html">Full Integration Chain</a>
+      <a class="quick-btn" href="layer-0-substrate/substrate.html">L0 Substrate</a>
+      <a class="quick-btn" href="layer-1-propagation/propagation.html">L1 Propagation</a>
+      <a class="quick-btn" href="layer-2-admissibility/admissibility.html">L2 Admissibility</a>
+      <a class="quick-btn" href="layer-3-narrowing/narrowing.html">L3 Narrowing</a>
+      <a class="quick-btn" href="layer-4-field-signature/field-signature.html">L4 Field Signature</a>
+      <a class="quick-btn" href="layer-5-signal-rupture/signal-rupture.html">L5 Signal Rupture</a>
+      <a class="quick-btn" href="layer-6-detector-sweep/detector-sweep.html">L6 Detector Sweep</a>
+      <a class="quick-btn" href="layer-7-routing/routing.html">L7 Routing</a>
+      <a class="quick-btn" href="layer-8-packet/packet.html">L8 Packet</a>
+      <a class="quick-btn" href="layer-9-metacybernetic/metacybernetic.html">L9 Metacybernetic</a>
+    </div>
+  </div>
+
+  <!-- Constants Reference -->
+  <div class="constants-panel">
+    <div class="constants-toggle" onclick="this.nextElementSibling.classList.toggle('open')">&#9654; Constants Reference</div>
+    <div class="constants-body">
+      <div class="const-row"><span class="const-name">&phi; (PHI)</span><span class="const-val">1.6180339887...</span></div>
+      <div class="const-row"><span class="const-name">&tau; = &phi;&sup1;</span><span class="const-val">0.6180339887...</span></div>
+      <div class="const-row"><span class="const-name">z_c = &radic;3/2</span><span class="const-val">0.8660254037...</span></div>
+      <div class="const-row"><span class="const-name">K (Kuramoto)</span><span class="const-val">0.924</span></div>
+      <div class="const-row"><span class="const-name">L&#x2084;</span><span class="const-val">7</span></div>
+      <div class="const-row"><span class="const-name">gap = &phi;&sup4;</span><span class="const-val">0.1459...</span></div>
+      <div class="const-row"><span class="const-name">G&#x2080;</span><span class="const-val">77.5 &mu;S</span></div>
+      <div class="const-row"><span class="const-name">&sigma;_neg</span><span class="const-val">55.71...</span></div>
+      <div class="const-row"><span class="const-name">&Theta;_open aperture</span><span class="const-val">0.15</span></div>
+      <div class="const-row"><span class="const-name">&Theta;_std aperture</span><span class="const-val">0.30</span></div>
+      <div class="const-row"><span class="const-name">&Theta;_res aperture</span><span class="const-val">0.50</span></div>
+      <div class="const-row"><span class="const-name">&Sigma;_R active</span><span class="const-val">0.74</span></div>
+      <div class="const-row"><span class="const-name">H_E warning</span><span class="const-val">0.40</span></div>
+      <div class="const-row"><span class="const-name">H_E buffer</span><span class="const-val">0.62</span></div>
+      <div class="const-row"><span class="const-name">H_E harbor</span><span class="const-val">0.82</span></div>
+    </div>
+  </div>
+
+  <!-- Architecture Invariants -->
+  <div class="invariants-panel">
+    <div class="invariants-toggle" onclick="this.nextElementSibling.classList.toggle('open')">&#9654; Architecture Invariants</div>
+    <div class="invariants-body">
+      <div class="inv-item"><span class="inv-check">&#10003;</span><span class="inv-text"><b>L&#x2084; = 7</b> &mdash; Narrowing funnel has exactly 7 stages. Field signature has exactly 7 components.</span></div>
+      <div class="inv-item"><span class="inv-check">&#10003;</span><span class="inv-text"><b>z_c = &radic;3/2</b> &mdash; All coherence thresholds use SQRT3_HALF from constants, not hardcoded 0.866.</span></div>
+      <div class="inv-item"><span class="inv-check">&#10003;</span><span class="inv-text"><b>K = 0.924</b> &mdash; Kuramoto coupling threshold exact.</span></div>
+      <div class="inv-item"><span class="inv-check">&#10003;</span><span class="inv-text"><b>&tau; = &phi;&sup1;</b> &mdash; Golden inverse computed from &phi;, not hardcoded.</span></div>
+      <div class="inv-item"><span class="inv-check">&#10003;</span><span class="inv-text"><b>gap = &phi;&sup4;</b> &mdash; Truncation error computed, not hardcoded.</span></div>
+      <div class="inv-item"><span class="inv-check">&#10003;</span><span class="inv-text"><b>Provenance subtracts in H_E</b> &mdash; The &minus;0.14 &middot; &rho; term is present in harbor eligibility.</span></div>
+      <div class="inv-item"><span class="inv-check">&#10003;</span><span class="inv-text"><b>Shape of loss, not signal presence</b> &mdash; The instrument&rsquo;s value metric is loss structure, not output amplitude.</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    EO-RFD FIRMWARE EMULATION &middot; PHYSICAL SUBSTRATE v1.0.0 &middot; Pure static HTML/CSS/JS &middot; Zero infrastructure
+  </div>
+</body>
+</html>

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layer 5 — Signal Rupture · Σ_R Composite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:            #050709;
+  --bg2:           #090b12;
+  --bg3:           #0d0f18;
+  --bg-panel:      rgba(9,11,18,0.85);
+  --border:        rgba(90,120,170,0.08);
+  --border-active: rgba(90,120,170,0.18);
+  --text:          #9aacca;
+  --text-dim:      #4a5a78;
+  --text-bright:   #dce6f4;
+  --registered:    #50fa7b;
+  --latent:        #8be9fd;
+  --suppressed:    #f1fa8c;
+  --aliased:       #ff5555;
+  --crystal:       #ffd866;
+  --accent:        #bd93f9;
+  --font-mono:     'IBM Plex Mono', monospace;
+  --font-serif:    'Crimson Pro', serif;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── FIRMWARE UTILITY CLASSES ── */
+.fw-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.fw-section-label {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(154,172,202,0.1);
+  padding-bottom: 4px;
+}
+
+.fw-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 2px 0;
+}
+.fw-metric .label { color: var(--text-dim); }
+.fw-metric .value { color: var(--text-bright); font-weight: 500; }
+
+.fw-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(154,172,202,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 3px 0;
+}
+
+.fw-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.15s ease, background 0.3s ease;
+}
+
+.fw-button {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 6px 18px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.fw-button:hover { filter: brightness(1.2); }
+
+.fw-status-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(80,250,123,0.12);
+  color: var(--registered);
+  border: 1px solid rgba(80,250,123,0.25);
+}
+.fw-status-pill.watch {
+  background: rgba(241,250,140,0.12);
+  color: var(--suppressed);
+  border-color: rgba(241,250,140,0.25);
+}
+.fw-status-pill.instability {
+  background: rgba(255,216,102,0.12);
+  color: var(--crystal);
+  border-color: rgba(255,216,102,0.25);
+}
+.fw-status-pill.rupture {
+  background: rgba(255,85,85,0.12);
+  color: var(--aliased);
+  border-color: rgba(255,85,85,0.25);
+}
+
+.fw-canvas-container {
+  position: relative;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* ── LAYOUT ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.page-header h1 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 12px;
+  padding: 12px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.sidebar { display: flex; flex-direction: column; gap: 0; }
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+.slider-group input[type="range"] {
+  width: 120px;
+  accent-color: var(--accent);
+}
+.slider-group .slider-val {
+  color: var(--text-bright);
+  font-weight: 500;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* ── TRIPWIRE INDICATORS ── */
+.tw-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tw-row:last-child { border-bottom: none; }
+
+.tw-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(154,172,202,0.15);
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.3s;
+}
+.tw-led.armed {
+  background: var(--text-dim);
+  box-shadow: none;
+}
+.tw-led.latched {
+  background: var(--aliased);
+  box-shadow: 0 0 8px var(--aliased), 0 0 16px rgba(255,85,85,0.3);
+}
+
+.tw-name {
+  color: var(--text);
+  font-weight: 500;
+  min-width: 38px;
+}
+.tw-detail {
+  color: var(--text-dim);
+  font-size: 10px;
+  flex: 1;
+}
+.tw-result {
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 36px;
+  text-align: right;
+}
+.tw-result.pass { color: var(--aliased); }
+.tw-result.fail { color: var(--text-dim); }
+
+/* ── SIGMA BAR ── */
+.sigma-bar-outer {
+  width: 100%;
+  height: 16px;
+  background: rgba(154,172,202,0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 6px 0;
+  position: relative;
+}
+.sigma-bar-inner {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.2s ease, background 0.3s ease;
+  min-width: 2px;
+}
+.sigma-bar-label {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-bright);
+  text-shadow: 0 0 4px rgba(0,0,0,0.8);
+}
+
+/* ── FORMULA ── */
+.formula-block {
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  background: var(--bg3);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  margin-top: 6px;
+}
+.formula-block .f-label { color: var(--accent); font-weight: 600; }
+.formula-block .f-val { color: var(--text-bright); font-weight: 500; }
+.formula-block .f-op { color: var(--text-dim); }
+.formula-block .f-weight { color: var(--crystal); }
+
+/* ── OVERRIDE TOGGLES ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+.toggle-row label {
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-row input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div>
+    <a href="../index.html" style="font-size:11px; color:var(--text-dim);">&larr; index</a>
+    <h1>Layer 5 &mdash; Signal Rupture &middot; &Sigma;<sub>R</sub> Composite</h1>
+  </div>
+  <span class="fw-status-pill" id="statusPill">NOMINAL</span>
+</header>
+
+<div class="layout">
+  <!-- Main Column -->
+  <div>
+
+    <!-- Sigma_R Bar -->
+    <div class="fw-panel">
+      <div class="fw-section-label">&Sigma;<sub>R</sub> Composite Index</div>
+      <div class="sigma-bar-outer">
+        <div class="sigma-bar-inner" id="sigmaBar" style="width:0%; background:var(--accent);"></div>
+        <span class="sigma-bar-label" id="sigmaBarLabel">0.0000</span>
+      </div>
+      <div class="fw-metric">
+        <span class="label">&Sigma;<sub>R</sub></span>
+        <span class="value" id="regSigmaR">0.0000</span>
+      </div>
+      <div class="fw-metric">
+        <span class="label">State</span>
+        <span class="value" id="regSigmaState">nominal</span>
+      </div>
+      <div class="fw-metric">
+        <span class="label">Trigger Count</span>
+        <span class="value" id="regTriggerCount">0</span>
+      </div>
+    </div>
+
+    <!-- Tripwire Bank -->
+    <div class="fw-panel">
+      <div class="fw-section-label">Tripwire Bank</div>
+
+      <div class="tw-row">
+        <div class="tw-led armed" id="ledTW0"></div>
+        <span class="tw-name">TW0</span>
+        <span class="tw-detail">&delta;<sub>obs</sub> &ge; 0.85</span>
+        <span class="tw-detail" id="tw0Val" style="text-align:right;">0.0000</span>
+        <span class="tw-result fail" id="tw0Result">---</span>
+      </div>
+
+      <div class="tw-row">
+        <div class="tw-led armed" id="ledTW1"></div>
+        <span class="tw-name">TW1</span>
+        <span class="tw-detail">&eta;<sub>N</sub> &ge; 0.06</span>
+        <span class="tw-detail" id="tw1Val" style="text-align:right;">0.0000</span>
+        <span class="tw-result fail" id="tw1Result">---</span>
+      </div>
+
+      <div class="tw-row">
+        <div class="tw-led armed" id="ledTW2"></div>
+        <span class="tw-name">TW2</span>
+        <span class="tw-detail">red &ge; 0.02 (inv)</span>
+        <span class="tw-detail" id="tw2Val" style="text-align:right;">0.0000</span>
+        <span class="tw-result fail" id="tw2Result">---</span>
+      </div>
+
+      <div class="tw-row">
+        <div class="tw-led armed" id="ledTW3"></div>
+        <span class="tw-name">TW3</span>
+        <span class="tw-detail">&chi; &ge; 0.60</span>
+        <span class="tw-detail" id="tw3Val" style="text-align:right;">0.0000</span>
+        <span class="tw-result fail" id="tw3Result">---</span>
+      </div>
+    </div>
+
+    <!-- Weighted-Sum Formula -->
+    <div class="fw-panel">
+      <div class="fw-section-label">Weighted-Sum Equation (Live)</div>
+      <div class="formula-block" id="formulaBlock">
+        <span class="f-label">&Sigma;<sub>R</sub></span> <span class="f-op">=</span>
+        <span class="f-weight">0.34</span> <span class="f-op">&times;</span> min(<span class="f-val" id="fDobs">0.0000</span> / 0.85, 1)
+        <span class="f-op">+</span> <span class="f-weight">0.22</span> <span class="f-op">&times;</span> min(<span class="f-val" id="fEtaN">0.0000</span> / 0.06, 1)
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f-op">+</span> <span class="f-weight">0.24</span> <span class="f-op">&times;</span> (1 &minus; min(<span class="f-val" id="fRed">0.0000</span> / 0.02, 1))
+        <span class="f-op">+</span> <span class="f-weight">0.20</span> <span class="f-op">&times;</span> <span class="f-val" id="fChi">0.0000</span>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f-op">=</span>
+        <span class="f-weight" id="fTerm0">0.0000</span>
+        <span class="f-op">+</span> <span class="f-weight" id="fTerm1">0.0000</span>
+        <span class="f-op">+</span> <span class="f-weight" id="fTerm2">0.0000</span>
+        <span class="f-op">+</span> <span class="f-weight" id="fTerm3">0.0000</span>
+        <span class="f-op">=</span> <span class="f-label" id="fTotal">0.0000</span>
+      </div>
+    </div>
+
+    <!-- Self-Test -->
+    <div class="fw-panel" id="selfTestPanel" style="display:none;">
+      <div class="fw-section-label">Self-Test</div>
+      <div id="selfTestResults" style="font-size:11px;"></div>
+    </div>
+
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Test Input Sliders -->
+    <div class="fw-panel">
+      <div class="fw-section-label">Test Inputs (Standalone)</div>
+
+      <div class="slider-group">
+        <span>&delta;<sub>obs</sub></span>
+        <input type="range" id="sliderDobs" min="0" max="100" value="0" step="1">
+        <span class="slider-val" id="valDobs">0.00</span>
+      </div>
+
+      <div class="slider-group">
+        <span>&eta;<sub>N</sub></span>
+        <input type="range" id="sliderEtaN" min="0" max="100" value="0" step="1">
+        <span class="slider-val" id="valEtaN">0.000</span>
+      </div>
+
+      <div class="slider-group">
+        <span>red</span>
+        <input type="range" id="sliderRed" min="0" max="100" value="0" step="1">
+        <span class="slider-val" id="valRed">0.000</span>
+      </div>
+
+      <div class="slider-group">
+        <span>&chi;</span>
+        <input type="range" id="sliderChi" min="0" max="100" value="0" step="1">
+        <span class="slider-val" id="valChi">0.00</span>
+      </div>
+    </div>
+
+    <!-- Manual Tripwire Overrides -->
+    <div class="fw-panel">
+      <div class="fw-section-label">Tripwire Override</div>
+      <div class="toggle-row">
+        <input type="checkbox" id="ovTW0">
+        <label for="ovTW0">TW0 force-latch &delta;<sub>obs</sub></label>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="ovTW1">
+        <label for="ovTW1">TW1 force-latch &eta;<sub>N</sub></label>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="ovTW2">
+        <label for="ovTW2">TW2 force-latch red (inv)</label>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="ovTW3">
+        <label for="ovTW3">TW3 force-latch &chi;</label>
+      </div>
+    </div>
+
+    <!-- Registers -->
+    <div class="fw-panel">
+      <div class="fw-section-label">Published Registers</div>
+      <div class="fw-metric"><span class="label">L5.sigmaR</span><span class="value" id="pubSigmaR">0.0000</span></div>
+      <div class="fw-bar-track"><div class="fw-bar-fill" id="barSigmaR" style="width:0%; background:var(--accent);"></div></div>
+      <div class="fw-metric"><span class="label">L5.sigmaState</span><span class="value" id="pubSigmaState">nominal</span></div>
+      <div class="fw-metric"><span class="label">L5.triggerCount</span><span class="value" id="pubTriggerCount">0</span></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="fw-panel">
+      <div class="fw-section-label">Actions</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="fw-button" id="btnSelfTest" style="color:var(--latent); border-color:var(--latent);">Self-Test</button>
+        <button class="fw-button" id="btnReset" style="color:var(--suppressed); border-color:var(--suppressed);">Reset</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  INLINED CONSTANTS  (from shared/constants.js)
+// ════════════════════════════════════════════════════════
+const PHI        = (1 + Math.sqrt(5)) / 2;
+const TAU        = 1 / PHI;
+const SQRT3      = Math.sqrt(3);
+const SQRT3_HALF = SQRT3 / 2;
+const Z_C        = SQRT3_HALF;
+
+const SIGMA_TAU = {
+  obs:  0.85,
+  name: 0.06,
+  red:  0.02,
+  coh:  0.60
+};
+
+const ROUTING = {
+  rupture_high: 0.90,
+  rupture_low:  0.74,
+  instability:  0.55,
+  watch:        0.35
+};
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+// ════════════════════════════════════════════════════════
+//  INLINE SIGNAL BUS
+// ════════════════════════════════════════════════════════
+const SignalBus = (() => {
+  const _registers = {};
+  const _listeners = {};
+  return {
+    publish(key, value) {
+      _registers[key] = value;
+      if (_listeners[key]) _listeners[key].forEach(fn => fn(value, key));
+    },
+    read(key) { return _registers[key]; },
+    subscribe(key, fn) {
+      if (!_listeners[key]) _listeners[key] = [];
+      _listeners[key].push(fn);
+    },
+    snapshot() { return Object.assign({}, _registers); }
+  };
+})();
+
+// ════════════════════════════════════════════════════════
+//  DOM REFS
+// ════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+
+const sliders = {
+  dobs: $('sliderDobs'),
+  etaN: $('sliderEtaN'),
+  red:  $('sliderRed'),
+  chi:  $('sliderChi')
+};
+
+const overrides = {
+  tw0: $('ovTW0'),
+  tw1: $('ovTW1'),
+  tw2: $('ovTW2'),
+  tw3: $('ovTW3')
+};
+
+// ════════════════════════════════════════════════════════
+//  FIRMWARE CORE: EVALUATE TRIPWIRES + SIGMA_R
+// ════════════════════════════════════════════════════════
+function evaluate() {
+  // Read slider inputs (scaled to useful ranges)
+  const dobs = parseFloat(sliders.dobs.value) / 100;               // 0..1
+  const etaN = (parseFloat(sliders.etaN.value) / 100) * 0.12;      // 0..0.12
+  const red  = (parseFloat(sliders.red.value) / 100) * 0.06;       // 0..0.06
+  const chi  = parseFloat(sliders.chi.value) / 100;                 // 0..1
+
+  // Update slider value displays
+  $('valDobs').textContent = dobs.toFixed(2);
+  $('valEtaN').textContent = etaN.toFixed(3);
+  $('valRed').textContent  = red.toFixed(3);
+  $('valChi').textContent  = chi.toFixed(2);
+
+  // ── Tripwire evaluation ──
+  const tw0_natural = dobs >= SIGMA_TAU.obs;
+  const tw1_natural = etaN >= SIGMA_TAU.name;
+  const tw2_natural = red >= SIGMA_TAU.red;    // inverted in composite, but tripwire fires when red >= threshold
+  const tw3_natural = chi >= SIGMA_TAU.coh;
+
+  const tw0 = overrides.tw0.checked || tw0_natural;
+  const tw1 = overrides.tw1.checked || tw1_natural;
+  const tw2 = overrides.tw2.checked || tw2_natural;
+  const tw3 = overrides.tw3.checked || tw3_natural;
+
+  const triggers = [tw0, tw1, tw2, tw3];
+  const triggerCount = triggers.filter(Boolean).length;
+
+  // ── Compute Sigma_R ──
+  const term0 = 0.34 * Math.min(dobs / SIGMA_TAU.obs, 1);
+  const term1 = 0.22 * Math.min(etaN / SIGMA_TAU.name, 1);
+  const term2 = 0.24 * (1 - Math.min(red / SIGMA_TAU.red, 1));
+  const term3 = 0.20 * chi;
+
+  const sigmaR = clamp01(term0 + term1 + term2 + term3);
+
+  // ── State classification ──
+  let state;
+  if (sigmaR >= ROUTING.rupture_low) {
+    state = 'rupture';
+  } else if (triggerCount >= 4) {
+    state = 'rupture';
+  } else if (triggerCount >= 3) {
+    state = 'instability';
+  } else if (triggerCount >= 2) {
+    state = 'watch';
+  } else {
+    state = 'nominal';
+  }
+
+  // Override: sigma >= 0.74 forces rupture assay signature
+  if (sigmaR >= ROUTING.rupture_low) {
+    state = 'rupture';
+  }
+
+  // ── Update UI: Tripwire LEDs ──
+  const twData = [
+    { led: 'ledTW0', val: 'tw0Val', result: 'tw0Result', fired: tw0, value: dobs },
+    { led: 'ledTW1', val: 'tw1Val', result: 'tw1Result', fired: tw1, value: etaN },
+    { led: 'ledTW2', val: 'tw2Val', result: 'tw2Result', fired: tw2, value: red  },
+    { led: 'ledTW3', val: 'tw3Val', result: 'tw3Result', fired: tw3, value: chi  }
+  ];
+
+  for (const tw of twData) {
+    const ledEl = $(tw.led);
+    const valEl = $(tw.val);
+    const resEl = $(tw.result);
+
+    ledEl.className = 'tw-led ' + (tw.fired ? 'latched' : 'armed');
+    valEl.textContent = tw.value.toFixed(4);
+    resEl.textContent = tw.fired ? 'LATCH' : '---';
+    resEl.className = 'tw-result ' + (tw.fired ? 'pass' : 'fail');
+  }
+
+  // ── Update UI: Sigma Bar ──
+  const barEl = $('sigmaBar');
+  const barLbl = $('sigmaBarLabel');
+  barEl.style.width = (sigmaR * 100) + '%';
+  barLbl.textContent = sigmaR.toFixed(4);
+
+  // Bar color: accent -> suppressed -> aliased
+  if (sigmaR < 0.35) {
+    barEl.style.background = 'var(--accent)';
+  } else if (sigmaR < 0.55) {
+    barEl.style.background = 'var(--suppressed)';
+  } else if (sigmaR < 0.74) {
+    barEl.style.background = 'var(--crystal)';
+  } else {
+    barEl.style.background = 'var(--aliased)';
+  }
+
+  // ── Update UI: Status pill ──
+  const pill = $('statusPill');
+  pill.textContent = state.toUpperCase();
+  pill.className = 'fw-status-pill';
+  if (state === 'watch')       pill.classList.add('watch');
+  if (state === 'instability') pill.classList.add('instability');
+  if (state === 'rupture')     pill.classList.add('rupture');
+
+  // ── Update UI: Registers ──
+  $('regSigmaR').textContent      = sigmaR.toFixed(4);
+  $('regSigmaState').textContent  = state;
+  $('regTriggerCount').textContent = triggerCount;
+
+  $('pubSigmaR').textContent      = sigmaR.toFixed(4);
+  $('pubSigmaState').textContent  = state;
+  $('pubTriggerCount').textContent = triggerCount;
+
+  $('barSigmaR').style.width = (sigmaR * 100) + '%';
+  if (sigmaR < 0.35)      $('barSigmaR').style.background = 'var(--accent)';
+  else if (sigmaR < 0.55) $('barSigmaR').style.background = 'var(--suppressed)';
+  else if (sigmaR < 0.74) $('barSigmaR').style.background = 'var(--crystal)';
+  else                     $('barSigmaR').style.background = 'var(--aliased)';
+
+  // ── Update UI: Formula live values ──
+  $('fDobs').textContent = dobs.toFixed(4);
+  $('fEtaN').textContent = etaN.toFixed(4);
+  $('fRed').textContent  = red.toFixed(4);
+  $('fChi').textContent  = chi.toFixed(4);
+  $('fTerm0').textContent = term0.toFixed(4);
+  $('fTerm1').textContent = term1.toFixed(4);
+  $('fTerm2').textContent = term2.toFixed(4);
+  $('fTerm3').textContent = term3.toFixed(4);
+  $('fTotal').textContent = sigmaR.toFixed(4);
+
+  // ── Publish to Signal Bus ──
+  SignalBus.publish('L5.sigmaR',       sigmaR);
+  SignalBus.publish('L5.sigmaState',   state);
+  SignalBus.publish('L5.triggerCount', triggerCount);
+
+  return { sigmaR, state, triggerCount };
+}
+
+// ════════════════════════════════════════════════════════
+//  SELF-TEST
+// ════════════════════════════════════════════════════════
+function runSelfTest() {
+  const panel = $('selfTestPanel');
+  const results = $('selfTestResults');
+  panel.style.display = 'block';
+
+  const tests = [];
+
+  // Save current slider positions
+  const saved = {
+    dobs: sliders.dobs.value,
+    etaN: sliders.etaN.value,
+    red:  sliders.red.value,
+    chi:  sliders.chi.value
+  };
+
+  // Test 1: Sigma_R bounded [0,1]
+  const current = evaluate();
+  tests.push({
+    name: 'Sigma_R in [0,1]',
+    pass: current.sigmaR >= 0 && current.sigmaR <= 1
+  });
+
+  // Test 2: Trigger count in [0,4]
+  tests.push({
+    name: 'Trigger count in [0,4]',
+    pass: current.triggerCount >= 0 && current.triggerCount <= 4
+  });
+
+  // Test 3: All sliders at zero -> check state consistency
+  sliders.dobs.value = 0;
+  sliders.etaN.value = 0;
+  sliders.red.value  = 0;
+  sliders.chi.value  = 0;
+  overrides.tw0.checked = false;
+  overrides.tw1.checked = false;
+  overrides.tw2.checked = false;
+  overrides.tw3.checked = false;
+  const zeroResult = evaluate();
+  // With all sliders at 0, red=0 < 0.02 so TW2 won't fire, term2 = 0.24*(1-0)=0.24
+  // sigmaR = 0 + 0 + 0.24 + 0 = 0.24, triggerCount = 0, state = nominal
+  tests.push({
+    name: 'Zero inputs: Sigma_R = 0.2400 (red-inv baseline)',
+    pass: Math.abs(zeroResult.sigmaR - 0.24) < 0.001
+  });
+  tests.push({
+    name: 'Zero inputs: state = nominal',
+    pass: zeroResult.state === 'nominal'
+  });
+
+  // Test 4: All sliders maxed -> rupture
+  sliders.dobs.value = 100;
+  sliders.etaN.value = 100;
+  sliders.red.value  = 100;
+  sliders.chi.value  = 100;
+  const maxResult = evaluate();
+  // dobs=1.0, etaN=0.12, red=0.06, chi=1.0
+  // term0=0.34*1=0.34, term1=0.22*1=0.22, term2=0.24*(1-1)=0 (red inverted), term3=0.20*1=0.20
+  // sigmaR = 0.76, triggerCount = 4, state = rupture
+  tests.push({
+    name: 'Max inputs: Sigma_R = 0.7600',
+    pass: Math.abs(maxResult.sigmaR - 0.76) < 0.001
+  });
+  tests.push({
+    name: 'Max inputs: state = rupture',
+    pass: maxResult.state === 'rupture'
+  });
+
+  // Test 5: Override forces latch regardless of slider
+  sliders.dobs.value = 0;
+  sliders.etaN.value = 0;
+  sliders.red.value  = 0;
+  sliders.chi.value  = 0;
+  overrides.tw0.checked = true;
+  overrides.tw1.checked = true;
+  overrides.tw2.checked = true;
+  overrides.tw3.checked = true;
+  const overrideResult = evaluate();
+  tests.push({
+    name: 'All overrides: triggerCount = 4',
+    pass: overrideResult.triggerCount === 4
+  });
+
+  // Test 6: Signal bus registers exist
+  const busOk = SignalBus.read('L5.sigmaR') !== undefined &&
+                SignalBus.read('L5.sigmaState') !== undefined &&
+                SignalBus.read('L5.triggerCount') !== undefined;
+  tests.push({ name: 'Signal bus registers published', pass: busOk });
+
+  // Test 7: State consistency with triggers
+  // 4 triggers should be rupture (or rupture via sigma override)
+  sliders.dobs.value = 100;
+  sliders.etaN.value = 100;
+  sliders.red.value  = 100;
+  sliders.chi.value  = 100;
+  overrides.tw0.checked = false;
+  overrides.tw1.checked = false;
+  overrides.tw2.checked = false;
+  overrides.tw3.checked = false;
+  const fourTrig = evaluate();
+  tests.push({
+    name: '4 triggers -> rupture state',
+    pass: fourTrig.state === 'rupture'
+  });
+
+  // Restore
+  sliders.dobs.value = saved.dobs;
+  sliders.etaN.value = saved.etaN;
+  sliders.red.value  = saved.red;
+  sliders.chi.value  = saved.chi;
+  overrides.tw0.checked = false;
+  overrides.tw1.checked = false;
+  overrides.tw2.checked = false;
+  overrides.tw3.checked = false;
+  evaluate();
+
+  let html = '';
+  for (const t of tests) {
+    const color = t.pass ? 'var(--registered)' : 'var(--aliased)';
+    const icon  = t.pass ? 'PASS' : 'FAIL';
+    html += '<div style="color:' + color + ';">[' + icon + '] ' + t.name + '</div>';
+  }
+  results.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════
+//  EVENT BINDING
+// ════════════════════════════════════════════════════════
+for (const s of Object.values(sliders)) {
+  s.addEventListener('input', evaluate);
+}
+for (const o of Object.values(overrides)) {
+  o.addEventListener('change', evaluate);
+}
+
+$('btnSelfTest').addEventListener('click', runSelfTest);
+
+$('btnReset').addEventListener('click', () => {
+  for (const s of Object.values(sliders)) s.value = 0;
+  for (const o of Object.values(overrides)) o.checked = false;
+  $('selfTestPanel').style.display = 'none';
+  evaluate();
+});
+
+// Initial evaluation
+evaluate();
+</script>
+</body>
+</html>

@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layer 7 — Routing · TRIAD Hysteresis FSM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050709;
+  --bg2: #090b12;
+  --bg3: #0d0f18;
+  --bg-panel: rgba(9,11,18,0.85);
+  --border: rgba(90,120,170,0.08);
+  --border-active: rgba(90,120,170,0.18);
+  --text: #9aacca;
+  --text-dim: #4a5a78;
+  --text-bright: #dce6f4;
+  --registered: #50fa7b;
+  --latent: #8be9fd;
+  --suppressed: #f1fa8c;
+  --aliased: #ff5555;
+  --crystal: #ffd866;
+  --accent: #bd93f9;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-serif: 'Crimson Pro', serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.fw-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+.fw-panel:hover { border-color: var(--border-active); }
+.fw-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.fw-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+}
+.fw-serif { font-family: var(--font-serif); }
+.fw-mono { font-family: var(--font-mono); }
+.fw-dim { color: var(--text-dim); }
+.fw-bright { color: var(--text-bright); }
+.fw-accent { color: var(--accent); }
+.fw-red { color: var(--aliased); }
+.fw-green { color: var(--registered); }
+.fw-yellow { color: var(--suppressed); }
+.fw-cyan { color: var(--latent); }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+header {
+  padding: 18px 24px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+header h1 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+header .nav-back { font-size: 12px; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 18px 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.layout-full { grid-column: 1 / -1; }
+
+/* FSM Diagram */
+#fsm-canvas { width: 100%; height: 220px; display: block; }
+
+/* H_E Gauge */
+.gauge-wrap { position: relative; height: 38px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.gauge-fill { height: 100%; border-radius: 4px; transition: width 0.25s ease; }
+.gauge-marker {
+  position: absolute; top: 0; bottom: 0; width: 2px;
+  background: var(--text-dim);
+  opacity: 0.7;
+}
+.gauge-marker-label {
+  position: absolute;
+  top: -14px;
+  font-size: 9px;
+  color: var(--text-dim);
+  transform: translateX(-50%);
+}
+
+/* Persistence canvas */
+#persistence-canvas { width: 100%; height: 100px; display: block; background: var(--bg); border-radius: 4px; margin-top: 6px; }
+
+/* Recapture meter */
+.meter-bar { height: 14px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.meter-fill { height: 100%; border-radius: 3px; transition: width 0.25s ease; }
+
+/* Closure LEDs */
+.led-row { display: flex; gap: 18px; margin-top: 8px; align-items: center; }
+.led {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 1px solid var(--border-active);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.led.on-green { background: var(--registered); box-shadow: 0 0 10px var(--registered); }
+.led.on-red { background: var(--aliased); box-shadow: 0 0 10px var(--aliased); }
+.led.on-white { background: var(--text-bright); box-shadow: 0 0 10px var(--text-bright); }
+.led.off { background: var(--bg3); box-shadow: none; }
+.led-label { font-size: 10px; color: var(--text-dim); margin-left: 4px; }
+
+/* Anti-recapture indicator */
+.anti-recapture-indicator {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-top: 6px;
+}
+.anti-recapture-indicator.active { background: rgba(255,85,85,0.15); color: var(--aliased); border: 1px solid rgba(255,85,85,0.3); }
+.anti-recapture-indicator.inactive { background: var(--bg3); color: var(--text-dim); border: 1px solid var(--border); }
+
+/* Formula display */
+.formula-display {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.8;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 4px;
+  margin-top: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.formula-display .rho-term { color: var(--aliased); font-weight: 600; }
+
+/* Sliders */
+.slider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 16px;
+  margin-top: 8px;
+}
+.slider-item { display: flex; flex-direction: column; gap: 2px; }
+.slider-item label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex;
+  justify-content: space-between;
+}
+.slider-item label span { color: var(--text); font-variant-numeric: tabular-nums; }
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+/* Override button */
+.btn-override {
+  background: rgba(189,147,249,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(189,147,249,0.25);
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+.btn-override:hover { background: rgba(189,147,249,0.22); }
+.btn-override.active { background: rgba(255,85,85,0.15); color: var(--aliased); border-color: rgba(255,85,85,0.3); }
+
+/* Register list */
+.register-list { font-size: 11px; line-height: 1.7; margin-top: 6px; }
+.register-list .reg-key { color: var(--text-dim); }
+.register-list .reg-val { color: var(--latent); font-variant-numeric: tabular-nums; }
+
+/* Self-test */
+.self-test { font-size: 11px; line-height: 1.7; margin-top: 6px; }
+.self-test .pass { color: var(--registered); }
+.self-test .fail { color: var(--aliased); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="nav-back" href="../index.html">&larr; index</a>
+  <h1>Layer 7 &mdash; Routing &middot; TRIAD Hysteresis FSM</h1>
+</header>
+
+<div class="layout">
+
+  <!-- FSM State Diagram -->
+  <div class="fw-panel layout-full">
+    <div class="fw-label">FSM State Diagram</div>
+    <canvas id="fsm-canvas"></canvas>
+  </div>
+
+  <!-- H_E Gauge -->
+  <div class="fw-panel">
+    <div class="fw-label">Harbor Eligibility (H<sub>E</sub>)</div>
+    <div class="fw-value" id="he-value">0.000</div>
+    <div class="gauge-wrap">
+      <div class="gauge-fill" id="he-fill" style="width:0%; background: var(--latent);"></div>
+      <div class="gauge-marker" style="left:40%"><span class="gauge-marker-label">0.40</span></div>
+      <div class="gauge-marker" style="left:62%"><span class="gauge-marker-label">0.62</span></div>
+      <div class="gauge-marker" style="left:82%"><span class="gauge-marker-label">0.82</span></div>
+    </div>
+    <div class="fw-label" style="margin-top:12px;">H<sub>E</sub> Formula</div>
+    <div class="formula-display">
+      H<sub>E</sub> = 0.20&middot;&delta;<sub>obs</sub>
+      + 0.18&middot;min(&eta;<sub>N</sub>/0.12, 1)
+      + 0.14&middot;min(&sigma;/0.08, 1)
+      + 0.12&middot;min(&gamma;/0.35, 1)
+      + 0.12&middot;&chi;
+      + 0.24&middot;&beta;
+      <span class="rho-term">&minus; 0.14&middot;&rho;</span>
+    </div>
+  </div>
+
+  <!-- Persistence Trace -->
+  <div class="fw-panel">
+    <div class="fw-label">Persistence EMA (last 128 samples)</div>
+    <div class="fw-value" id="persistence-value">0.000</div>
+    <canvas id="persistence-canvas"></canvas>
+  </div>
+
+  <!-- Recapture Risk -->
+  <div class="fw-panel">
+    <div class="fw-label">Recapture Risk (R<sub>c</sub>)</div>
+    <div class="fw-value" id="recapture-value">0.000</div>
+    <div class="meter-bar">
+      <div class="meter-fill" id="recapture-fill" style="width:0%; background: var(--suppressed);"></div>
+    </div>
+    <div class="fw-label" style="margin-top:10px;">Anti-Recapture Mode</div>
+    <div class="anti-recapture-indicator inactive" id="anti-recapture">INACTIVE</div>
+  </div>
+
+  <!-- Closure LEDs -->
+  <div class="fw-panel">
+    <div class="fw-label">Closure State</div>
+    <div class="led-row">
+      <div class="led off" id="led-ext"></div><span class="led-label">extensionAdmitted</span>
+    </div>
+    <div class="led-row">
+      <div class="led off" id="led-fail"></div><span class="led-label">closureFailure</span>
+    </div>
+    <div class="led-row">
+      <div class="led off" id="led-unique"></div><span class="led-label">uniqueClosure</span>
+    </div>
+    <div class="fw-label" style="margin-top:14px;">Routing Confidence</div>
+    <div class="fw-value" id="confidence-value">0.000</div>
+    <div class="meter-bar">
+      <div class="meter-fill" id="confidence-fill" style="width:0%; background: var(--accent);"></div>
+    </div>
+  </div>
+
+  <!-- Published Registers -->
+  <div class="fw-panel">
+    <div class="fw-label">Published Registers</div>
+    <div class="register-list" id="registers"></div>
+  </div>
+
+  <!-- Route Override + Self-test -->
+  <div class="fw-panel">
+    <div class="fw-label">Manual Route Override</div>
+    <select id="override-select" style="background:var(--bg3);color:var(--text);border:1px solid var(--border-active);border-radius:4px;padding:4px 8px;font-family:var(--font-mono);font-size:11px;margin-top:4px;">
+      <option value="">Auto (FSM)</option>
+      <option value="play">play</option>
+      <option value="warning">warning</option>
+      <option value="buffer">buffer</option>
+      <option value="harbor-eligible">harbor-eligible</option>
+    </select>
+    <button class="btn-override" id="btn-override">Apply Override</button>
+
+    <div class="fw-label" style="margin-top:14px;">Self-Test</div>
+    <div class="self-test" id="self-test"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="fw-panel layout-full">
+    <div class="fw-label">Upstream Input Sliders</div>
+    <div class="slider-grid" id="slider-grid"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────
+const PHI   = 1.6180339887498948;
+const TAU   = 6.2831853071795865;
+const SQRT3_HALF = 0.8660254037844386;
+const Z_C   = 1.2020569031595943;
+
+const ROUTING = {
+  warningHarbor:    0.40,
+  bufferHarbor:     0.62,
+  harborHarbor:     0.82,
+  warningRecapture: 0.45,
+  antiRecapture:    0.66,
+  bufferPersistence:0.32,
+  strongPersistence:0.58,
+  sigmaActive:      0.74
+};
+
+function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+// ── Lightweight Signal Bus ─────────────────────────────────────
+const Bus = (() => {
+  const subs = {};
+  return {
+    on(ev, fn)  { (subs[ev] = subs[ev] || []).push(fn); },
+    off(ev, fn) { if (subs[ev]) subs[ev] = subs[ev].filter(f => f !== fn); },
+    emit(ev, d) { (subs[ev] || []).forEach(fn => fn(d)); }
+  };
+})();
+
+// ── Registers ──────────────────────────────────────────────────
+const REG = {
+  'L7.harborEligibility': 0,
+  'L7.persistence':       0,
+  'L7.recapture':         0,
+  'L7.routeState':        'play',
+  'L7.antiRecapture':     false,
+  'L7.routingConfidence': 0,
+  'L7.extensionAdmitted': false,
+  'L7.closureFailure':    false,
+  'L7.uniqueClosure':     true
+};
+
+// ── Inputs ─────────────────────────────────────────────────────
+const INPUTS = {
+  delta_obs:    { label: '\u03B4_obs',       min: 0, max: 1, step: 0.01, value: 0.25 },
+  eta_N:        { label: '\u03B7_N',         min: 0, max: 0.5, step: 0.005, value: 0.06 },
+  sigma:        { label: '\u03C3',           min: 0, max: 0.3, step: 0.005, value: 0.04 },
+  gamma:        { label: '\u03B3',           min: 0, max: 1, step: 0.01, value: 0.15 },
+  chi:          { label: '\u03C7',           min: 0, max: 1, step: 0.01, value: 0.20 },
+  beta:         { label: '\u03B2',           min: 0, max: 1, step: 0.01, value: 0.30 },
+  rho:          { label: '\u03C1',           min: 0, max: 1, step: 0.01, value: 0.50 },
+  sigma_R:      { label: '\u03A3_R',         min: 0, max: 1, step: 0.01, value: 0.10 },
+  rupture:      { label: 'rupture',          min: 0, max: 1, step: 0.01, value: 0.05 },
+  registered:   { label: 'registered',       min: 0, max: 10, step: 1, value: 0 },
+  A_ext:        { label: '\uD835\uDC9C (ext)',min: 0, max: 5, step: 1, value: 0 },
+  red:          { label: 'red',              min: 0, max: 0.2, step: 0.005, value: 0.00 },
+  triggerCount: { label: 'triggerCount',     min: 0, max: 20, step: 1, value: 2 },
+  interactions: { label: 'interactions',     min: 0, max: 200, step: 1, value: 24 },
+  provenance:   { label: 'provenance',       min: 0, max: 1, step: 0.01, value: 0.50 }
+};
+
+let inputValues = {};
+for (const k in INPUTS) inputValues[k] = INPUTS[k].value;
+
+// ── FSM State ──────────────────────────────────────────────────
+let fsmState = 'play';
+let overrideState = '';
+let persistenceHistory = new Array(128).fill(0);
+
+// ── Build Sliders ──────────────────────────────────────────────
+const sliderGrid = document.getElementById('slider-grid');
+for (const key in INPUTS) {
+  const cfg = INPUTS[key];
+  const item = document.createElement('div');
+  item.className = 'slider-item';
+  item.innerHTML =
+    '<label>' + cfg.label + ' <span id="sv-' + key + '">' + cfg.value.toFixed(cfg.step < 0.01 ? 3 : 2) + '</span></label>' +
+    '<input type="range" id="sl-' + key + '" min="' + cfg.min + '" max="' + cfg.max + '" step="' + cfg.step + '" value="' + cfg.value + '">';
+  sliderGrid.appendChild(item);
+  const slider = item.querySelector('input');
+  slider.addEventListener('input', function() {
+    const v = parseFloat(this.value);
+    inputValues[key] = v;
+    document.getElementById('sv-' + key).textContent = v.toFixed(cfg.step < 0.01 ? 3 : 2);
+    compute();
+  });
+}
+
+// ── Override Button ────────────────────────────────────────────
+document.getElementById('btn-override').addEventListener('click', function() {
+  overrideState = document.getElementById('override-select').value;
+  this.classList.toggle('active', overrideState !== '');
+  compute();
+});
+
+// ── Compute ────────────────────────────────────────────────────
+function compute() {
+  const I = inputValues;
+
+  // Harbor eligibility
+  let H_E = 0.20 * I.delta_obs
+           + 0.18 * Math.min(I.eta_N / 0.12, 1)
+           + 0.14 * Math.min(I.sigma / 0.08, 1)
+           + 0.12 * Math.min(I.gamma / 0.35, 1)
+           + 0.12 * I.chi
+           + 0.24 * I.beta
+           - 0.14 * I.rho;
+  H_E = clamp01(H_E);
+
+  // Persistence EMA
+  const prevP = REG['L7.persistence'];
+  const activeSigma = I.sigma_R >= ROUTING.sigmaActive ? 1 : 0;
+  let P = 0.94 * prevP + 0.12 * I.sigma_R + 0.06 * H_E + 0.03 * activeSigma;
+  P = clamp01(P);
+
+  // Recapture risk
+  let R_c = 0.48 * I.chi + 0.22 * I.delta_obs + 0.15 * H_E + 0.15 * I.beta;
+  R_c = clamp01(R_c);
+
+  // FSM transitions
+  if (overrideState) {
+    fsmState = overrideState;
+  } else {
+    switch (fsmState) {
+      case 'play':
+        if (H_E >= ROUTING.warningHarbor) fsmState = 'warning';
+        break;
+      case 'warning':
+        if (H_E >= ROUTING.bufferHarbor) fsmState = 'buffer';
+        else if (H_E < ROUTING.warningHarbor - 0.05) fsmState = 'play';
+        break;
+      case 'buffer':
+        if (H_E >= ROUTING.harborHarbor) fsmState = 'harbor-eligible';
+        else if (H_E < ROUTING.bufferHarbor - 0.05) fsmState = 'warning';
+        break;
+      case 'harbor-eligible':
+        if (H_E < ROUTING.harborHarbor - 0.05) fsmState = 'buffer';
+        break;
+    }
+  }
+
+  // Anti-recapture mode
+  const antiRecapture = R_c >= ROUTING.antiRecapture
+    || H_E >= ROUTING.harborHarbor
+    || (activeSigma && P >= ROUTING.strongPersistence);
+
+  // Closure state
+  const extensionAdmitted = I.A_ext > 0 || I.registered > 0 || I.red > 0.02;
+  const closureFailure = extensionAdmitted && (
+    I.rupture >= 0.16
+    || I.sigma_R >= 0.74
+    || (I.delta_obs >= 0.6 && I.rho <= 0.55 && I.gamma >= 0.25)
+  );
+  const uniqueClosure = !(extensionAdmitted && closureFailure);
+
+  // Routing confidence
+  const confActivity = Math.min((I.triggerCount / 4 + I.interactions / 72), 1);
+  const confidence = clamp01(0.42 * P + 0.33 * I.provenance + 0.25 * confActivity);
+
+  // Update registers
+  REG['L7.harborEligibility'] = H_E;
+  REG['L7.persistence']       = P;
+  REG['L7.recapture']         = R_c;
+  REG['L7.routeState']        = fsmState;
+  REG['L7.antiRecapture']     = antiRecapture;
+  REG['L7.routingConfidence'] = confidence;
+  REG['L7.extensionAdmitted'] = extensionAdmitted;
+  REG['L7.closureFailure']    = closureFailure;
+  REG['L7.uniqueClosure']     = uniqueClosure;
+
+  // Persistence history
+  persistenceHistory.push(P);
+  if (persistenceHistory.length > 128) persistenceHistory.shift();
+
+  // Emit
+  Bus.emit('update', REG);
+
+  // Update UI
+  updateUI(H_E, P, R_c, antiRecapture, extensionAdmitted, closureFailure, uniqueClosure, confidence);
+}
+
+// ── Update UI ──────────────────────────────────────────────────
+function updateUI(H_E, P, R_c, antiRecapture, extAdm, closFail, uniqClos, confidence) {
+  // H_E
+  document.getElementById('he-value').textContent = H_E.toFixed(3);
+  const heFill = document.getElementById('he-fill');
+  heFill.style.width = (H_E * 100) + '%';
+  if (H_E >= 0.82) heFill.style.background = 'var(--aliased)';
+  else if (H_E >= 0.62) heFill.style.background = 'var(--suppressed)';
+  else if (H_E >= 0.40) heFill.style.background = 'var(--crystal)';
+  else heFill.style.background = 'var(--latent)';
+
+  // Persistence
+  document.getElementById('persistence-value').textContent = P.toFixed(3);
+  drawPersistenceTrace();
+
+  // Recapture
+  document.getElementById('recapture-value').textContent = R_c.toFixed(3);
+  const rcFill = document.getElementById('recapture-fill');
+  rcFill.style.width = (R_c * 100) + '%';
+  rcFill.style.background = R_c >= 0.66 ? 'var(--aliased)' : 'var(--suppressed)';
+
+  // Anti-recapture
+  const arEl = document.getElementById('anti-recapture');
+  arEl.textContent = antiRecapture ? 'ACTIVE' : 'INACTIVE';
+  arEl.className = 'anti-recapture-indicator ' + (antiRecapture ? 'active' : 'inactive');
+
+  // Closure LEDs
+  const ledExt = document.getElementById('led-ext');
+  ledExt.className = 'led ' + (extAdm ? 'on-green' : 'off');
+  const ledFail = document.getElementById('led-fail');
+  ledFail.className = 'led ' + (closFail ? 'on-red' : 'off');
+  const ledUniq = document.getElementById('led-unique');
+  ledUniq.className = 'led ' + (uniqClos ? 'on-white' : 'off');
+
+  // Confidence
+  document.getElementById('confidence-value').textContent = confidence.toFixed(3);
+  document.getElementById('confidence-fill').style.width = (confidence * 100) + '%';
+
+  // Registers
+  const regEl = document.getElementById('registers');
+  let html = '';
+  for (const k in REG) {
+    const v = typeof REG[k] === 'number' ? REG[k].toFixed(4) : String(REG[k]);
+    html += '<div><span class="reg-key">' + k + '</span> <span class="reg-val">' + v + '</span></div>';
+  }
+  regEl.innerHTML = html;
+
+  // FSM canvas
+  drawFSM();
+}
+
+// ── Draw FSM ───────────────────────────────────────────────────
+function drawFSM() {
+  const canvas = document.getElementById('fsm-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+
+  const states = [
+    { id: 'play',             label: 'PLAY',    x: rect.width * 0.13, y: 110 },
+    { id: 'warning',          label: 'WARNING', x: rect.width * 0.38, y: 110 },
+    { id: 'buffer',           label: 'BUFFER',  x: rect.width * 0.63, y: 110 },
+    { id: 'harbor-eligible',  label: 'HARBOR',  x: rect.width * 0.88, y: 110 }
+  ];
+
+  const stateColors = {
+    'play': '#50fa7b',
+    'warning': '#ffd866',
+    'buffer': '#f1fa8c',
+    'harbor-eligible': '#ff5555'
+  };
+
+  // Draw arrows
+  ctx.strokeStyle = 'rgba(90,120,170,0.25)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+
+  const arrowLabels = [
+    { from: 0, to: 1, label: 'H\u2091\u22650.40', y: -28 },
+    { from: 1, to: 2, label: 'H\u2091\u22650.62', y: -28 },
+    { from: 2, to: 3, label: 'H\u2091\u22650.82', y: -28 }
+  ];
+
+  for (const a of arrowLabels) {
+    const s = states[a.from], e = states[a.to];
+    const sx = s.x + 42, ex = e.x - 42;
+    // Forward arrow (top)
+    ctx.beginPath();
+    ctx.moveTo(sx, s.y - 8);
+    ctx.lineTo(ex, e.y - 8);
+    ctx.stroke();
+    // Arrowhead
+    ctx.beginPath();
+    ctx.moveTo(ex, e.y - 8);
+    ctx.lineTo(ex - 8, e.y - 14);
+    ctx.lineTo(ex - 8, e.y - 2);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(90,120,170,0.25)';
+    ctx.fill();
+    // Label
+    ctx.fillStyle = '#4a5a78';
+    ctx.font = '10px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(a.label, (sx + ex) / 2, s.y + a.y);
+
+    // Backward arrow (bottom, dashed)
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(90,120,170,0.15)';
+    ctx.beginPath();
+    ctx.moveTo(ex, e.y + 8);
+    ctx.lineTo(sx, s.y + 8);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(sx, s.y + 8);
+    ctx.lineTo(sx + 8, s.y + 2);
+    ctx.lineTo(sx + 8, s.y + 14);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(90,120,170,0.15)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Draw state nodes
+  for (const s of states) {
+    const isCurrent = s.id === fsmState;
+    const col = stateColors[s.id];
+
+    ctx.beginPath();
+    ctx.roundRect(s.x - 40, s.y - 22, 80, 44, 8);
+    if (isCurrent) {
+      ctx.fillStyle = col + '22';
+      ctx.fill();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 16;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = 'rgba(13,15,24,0.8)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(90,120,170,0.18)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = isCurrent ? col : '#4a5a78';
+    ctx.font = (isCurrent ? '600 ' : '400 ') + '12px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.label, s.x, s.y);
+  }
+}
+
+// ── Draw Persistence Trace ─────────────────────────────────────
+function drawPersistenceTrace() {
+  const canvas = document.getElementById('persistence-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+
+  const w = rect.width, h = rect.height;
+  const data = persistenceHistory;
+  const n = data.length;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(90,120,170,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = h - (i / 4) * h;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  // Threshold lines
+  const thresholds = [
+    { v: ROUTING.bufferPersistence, col: 'rgba(241,250,140,0.25)' },
+    { v: ROUTING.strongPersistence, col: 'rgba(255,85,85,0.25)' }
+  ];
+  for (const t of thresholds) {
+    const y = h - t.v * h;
+    ctx.strokeStyle = t.col;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Trace line
+  ctx.beginPath();
+  ctx.strokeStyle = '#bd93f9';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * w;
+    const y = h - data[i] * h;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Fill under
+  ctx.lineTo(w, h);
+  ctx.lineTo(0, h);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(189,147,249,0.06)';
+  ctx.fill();
+}
+
+// ── Self-Test ──────────────────────────────────────────────────
+function runSelfTest() {
+  const results = [];
+
+  // Test 1: FSM transitions valid
+  const validStates = ['play', 'warning', 'buffer', 'harbor-eligible'];
+  const t1 = validStates.includes(fsmState);
+  results.push({ name: 'FSM state valid (' + fsmState + ')', pass: t1 });
+
+  // Test 2: H_E in [0,1]
+  const he = REG['L7.harborEligibility'];
+  results.push({ name: 'H_E in [0,1] (' + he.toFixed(4) + ')', pass: he >= 0 && he <= 1 });
+
+  // Test 3: Persistence in [0,1]
+  const p = REG['L7.persistence'];
+  results.push({ name: 'Persistence in [0,1] (' + p.toFixed(4) + ')', pass: p >= 0 && p <= 1 });
+
+  // Test 4: Closure logic consistent
+  const extAdm = REG['L7.extensionAdmitted'];
+  const closFail = REG['L7.closureFailure'];
+  const uniq = REG['L7.uniqueClosure'];
+  const closureOk = uniq === !(extAdm && closFail);
+  results.push({ name: 'Closure logic consistent', pass: closureOk });
+
+  // Test 5: Recapture in [0,1]
+  const rc = REG['L7.recapture'];
+  results.push({ name: 'Recapture in [0,1] (' + rc.toFixed(4) + ')', pass: rc >= 0 && rc <= 1 });
+
+  // Test 6: Confidence in [0,1]
+  const conf = REG['L7.routingConfidence'];
+  results.push({ name: 'Confidence in [0,1] (' + conf.toFixed(4) + ')', pass: conf >= 0 && conf <= 1 });
+
+  // Test 7: FSM transition thresholds ordered
+  const ordered = ROUTING.warningHarbor < ROUTING.bufferHarbor && ROUTING.bufferHarbor < ROUTING.harborHarbor;
+  results.push({ name: 'Thresholds ordered (0.40 < 0.62 < 0.82)', pass: ordered });
+
+  const el = document.getElementById('self-test');
+  el.innerHTML = results.map(r =>
+    '<div class="' + (r.pass ? 'pass' : 'fail') + '">' +
+    (r.pass ? '\u2713' : '\u2717') + ' ' + r.name + '</div>'
+  ).join('');
+}
+
+// ── Init ───────────────────────────────────────────────────────
+compute();
+runSelfTest();
+
+// Re-run self-test on each update
+Bus.on('update', function() { runSelfTest(); });
+
+// Recompute periodically to animate persistence EMA decay
+setInterval(function() { compute(); }, 500);
+
+// Handle resize
+window.addEventListener('resize', function() { drawFSM(); drawPersistenceTrace(); });
+</script>
+</body>
+</html>

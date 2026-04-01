@@ -87,6 +87,8 @@
     .card--acorn        { --accent: #f7c948; --glow: rgba(247,201,72,0.15); }
     .card--honkfire     { --accent: #e056fd; --glow: rgba(224,86,253,0.15); }
     .card--unified      { --accent: #ee5a24; --glow: rgba(238,90,36,0.15); }
+    .card--firmware     { --accent: #bd93f9; --glow: rgba(189,147,249,0.15); }
+    .card--asi          { --accent: #8be9fd; --glow: rgba(139,233,253,0.15); }
 
     .card:hover { box-shadow: 0 12px 40px var(--glow); border-color: var(--accent); }
     .card::before { background: radial-gradient(circle at 30% 20%, var(--glow), transparent 70%); }
@@ -156,6 +158,20 @@
       <span class="card__icon">📐</span>
       <div class="card__title">Unified Framework Use Cases</div>
       <p class="card__desc">47 comprehensive build specifications across the unified framework.</p>
+      <span class="card__arrow">Open &rarr;</span>
+    </a>
+
+    <a class="card card--firmware" href="eo-rfd-firmware/index.html">
+      <span class="card__icon">🔬</span>
+      <div class="card__title">EO-RFD Firmware Emulation</div>
+      <p class="card__desc">Physical substrate firmware emulation — 10-layer signal chain, cycle-accurate register logic.</p>
+      <span class="card__arrow">Open &rarr;</span>
+    </a>
+
+    <a class="card card--asi" href="acedit-asi-v2.html">
+      <span class="card__icon">🧠</span>
+      <div class="card__title">ACEDIT ASI v2</div>
+      <p class="card__desc">ASI architecture — 21 cognitive invariants, 9-layer stack, observer-core diagnostic.</p>
       <span class="card__arrow">Open &rarr;</span>
     </a>
   </div>

@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layer 6 — Detector Sweep · 3×3 Crossbar Matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:            #050709;
+  --bg2:           #090b12;
+  --bg3:           #0d0f18;
+  --bg-panel:      rgba(9,11,18,0.85);
+  --border:        rgba(90,120,170,0.08);
+  --border-active: rgba(90,120,170,0.18);
+  --text:          #9aacca;
+  --text-dim:      #4a5a78;
+  --text-bright:   #dce6f4;
+  --registered:    #50fa7b;
+  --latent:        #8be9fd;
+  --suppressed:    #f1fa8c;
+  --aliased:       #ff5555;
+  --crystal:       #ffd866;
+  --accent:        #bd93f9;
+  --font-mono:     'IBM Plex Mono', monospace;
+  --font-serif:    'Crimson Pro', serif;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── FIRMWARE UTILITY CLASSES ── */
+.fw-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.fw-section-label {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(154,172,202,0.1);
+  padding-bottom: 4px;
+}
+.fw-section-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.fw-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 2px 0;
+}
+.fw-metric .label { color: var(--text-dim); }
+.fw-metric .value { color: var(--text-bright); font-weight: 500; }
+
+.fw-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(154,172,202,0.06);
+  border-radius: 3px;
+  overflow: visible;
+  margin: 3px 0;
+  position: relative;
+}
+
+.fw-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.15s ease, background 0.3s ease;
+}
+
+.fw-button {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 6px 18px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.fw-button:hover { filter: brightness(1.2); }
+.fw-button.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.fw-status-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(80,250,123,0.12);
+  color: var(--registered);
+  border: 1px solid rgba(80,250,123,0.25);
+}
+.fw-status-pill.watch {
+  background: rgba(241,250,140,0.12);
+  color: var(--suppressed);
+  border-color: rgba(241,250,140,0.25);
+}
+.fw-status-pill.alert {
+  background: rgba(255,85,85,0.12);
+  color: var(--aliased);
+  border-color: rgba(255,85,85,0.25);
+}
+
+.fw-canvas-container {
+  position: relative;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* ── LAYOUT ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.page-header h1 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 12px;
+  padding: 12px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.sidebar { display: flex; flex-direction: column; gap: 0; }
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+.slider-group input[type="range"] {
+  width: 120px;
+  accent-color: var(--accent);
+}
+.slider-group .slider-val {
+  color: var(--text-bright);
+  font-weight: 500;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* ── TRIPWIRE INDICATORS ── */
+.tw-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tw-row:last-child { border-bottom: none; }
+
+.tw-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(154,172,202,0.15);
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.3s;
+}
+.tw-led.armed {
+  background: var(--text-dim);
+  box-shadow: none;
+}
+.tw-led.latched {
+  background: var(--aliased);
+  box-shadow: 0 0 8px var(--aliased), 0 0 16px rgba(255,85,85,0.3);
+}
+
+.tw-name {
+  color: var(--text);
+  font-weight: 500;
+  min-width: 38px;
+}
+
+/* ── 3x3 MATRIX GRID ── */
+.matrix-container {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto auto;
+  gap: 2px;
+}
+
+.matrix-col-header {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 4px;
+}
+
+.matrix-row-header {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 8px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.matrix-cell {
+  position: relative;
+  min-width: 80px;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: default;
+  transition: border-color 0.2s, background 0.2s;
+  font-weight: 600;
+  font-size: 13px;
+}
+.matrix-cell:hover {
+  border-color: var(--border-active);
+  z-index: 2;
+}
+.matrix-cell .cell-score { color: var(--text-bright); }
+.matrix-cell .cell-sub {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── TOOLTIP ── */
+.tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg3);
+  border: 1px solid var(--border-active);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+}
+.matrix-cell:hover .tooltip { display: block; }
+
+/* ── CONFIDENCE GAUGE ── */
+.gauge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.gauge-canvas {
+  width: 80px;
+  height: 80px;
+}
+.gauge-readout {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+.gauge-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── THRESHOLD MARKER ── */
+.threshold-marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  background: var(--aliased);
+  border-radius: 1px;
+}
+.threshold-marker::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: var(--aliased);
+  white-space: nowrap;
+}
+
+/* ── SPREAD RANGE BAR ── */
+.spread-range {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  transition: left 0.15s, width 0.15s;
+}
+
+/* ── CHECKBOX / DROPDOWN ── */
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+.ctrl-row input[type="checkbox"] { accent-color: var(--accent); }
+.ctrl-row select {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+/* ── BASIS READOUT ── */
+.basis-readout {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.6;
+  padding: 6px 0;
+  min-height: 32px;
+}
+
+/* ── SELF-TEST ── */
+.self-test-result {
+  font-size: 11px;
+  padding: 4px 0;
+  min-height: 20px;
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="page-header">
+  <h1>Layer 6 — Detector Sweep</h1>
+  <nav><a href="../index.html">&larr; Index</a></nav>
+</header>
+
+<div class="layout">
+
+<!-- ── MAIN COLUMN ── -->
+<div class="main-col">
+
+  <!-- 3x3 CROSSBAR MATRIX -->
+  <div class="fw-panel">
+    <div class="fw-section-label">3x3 &Theta; x Naming Crossbar Matrix</div>
+    <div class="matrix-container" id="matrix">
+      <!-- corner blank -->
+      <div></div>
+      <div class="matrix-col-header">Canonical</div>
+      <div class="matrix-col-header">Safe</div>
+      <div class="matrix-col-header">Invalid</div>
+      <!-- rows injected by JS -->
+    </div>
+  </div>
+
+  <!-- CONFIDENCE GAUGE -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Detector Confidence (D_conf)</div>
+    <div class="gauge-wrap">
+      <canvas class="gauge-canvas fw-canvas-container" id="gaugeCanvas" width="160" height="160"></canvas>
+      <div>
+        <div class="gauge-readout" id="confValue">0.000</div>
+        <div class="gauge-label">confidence</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSISTENCE BAR -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Persistence</div>
+    <div class="fw-metric">
+      <span class="label">cells &ge; 0.55</span>
+      <span class="value" id="persValue">0.000</span>
+    </div>
+    <div class="fw-bar-track" style="position:relative;">
+      <div class="fw-bar-fill" id="persBar" style="width:0%; background:var(--latent);"></div>
+      <div class="threshold-marker" style="left:44%;" data-label="0.44"></div>
+    </div>
+  </div>
+
+  <!-- SPREAD BAR -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Spread (max - min)</div>
+    <div class="fw-metric">
+      <span class="label">range</span>
+      <span class="value" id="spreadValue">0.000</span>
+    </div>
+    <div class="fw-bar-track" style="position:relative;">
+      <div class="spread-range" id="spreadBar" style="position:absolute; background:var(--suppressed); opacity:0.6; height:6px; border-radius:3px;"></div>
+    </div>
+  </div>
+
+  <!-- BASIS TEXT -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Detector Basis</div>
+    <div class="basis-readout" id="basisText">--</div>
+  </div>
+
+</div><!-- /main-col -->
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+
+  <!-- TRIPWIRES -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Tripwires <span id="twCount" style="color:var(--text-bright);">0/7</span></div>
+    <div id="tripwireList"></div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="fw-panel">
+    <div class="fw-section-label">Input Controls</div>
+
+    <div class="slider-group">
+      <span style="min-width:90px;">&delta;_obs</span>
+      <input type="range" id="sl_delta_obs" min="0" max="1" step="0.01" value="0.50">
+      <span class="slider-val" id="sv_delta_obs">0.50</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">&eta;_N</span>
+      <input type="range" id="sl_eta_N" min="0" max="0.5" step="0.005" value="0.04">
+      <span class="slider-val" id="sv_eta_N">0.040</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">&sigma;</span>
+      <input type="range" id="sl_sigma" min="0" max="0.5" step="0.005" value="0.05">
+      <span class="slider-val" id="sv_sigma">0.050</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">&gamma;</span>
+      <input type="range" id="sl_gamma" min="0" max="1" step="0.01" value="0.40">
+      <span class="slider-val" id="sv_gamma">0.40</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">&chi;</span>
+      <input type="range" id="sl_chi" min="0" max="1" step="0.01" value="0.35">
+      <span class="slider-val" id="sv_chi">0.35</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">&beta;</span>
+      <input type="range" id="sl_beta" min="0" max="1" step="0.01" value="0.30">
+      <span class="slider-val" id="sv_beta">0.30</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">&rho;</span>
+      <input type="range" id="sl_rho" min="0" max="1" step="0.01" value="0.25">
+      <span class="slider-val" id="sv_rho">0.25</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">&Sigma;_R</span>
+      <input type="range" id="sl_sigmaR" min="0" max="1" step="0.01" value="0.40">
+      <span class="slider-val" id="sv_sigmaR">0.40</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">rupture</span>
+      <input type="range" id="sl_rupture" min="0" max="1" step="0.01" value="0.10">
+      <span class="slider-val" id="sv_rupture">0.10</span>
+    </div>
+    <div class="slider-group">
+      <span style="min-width:90px;">aliasP</span>
+      <input type="range" id="sl_aliasP" min="0" max="1" step="0.01" value="0.08">
+      <span class="slider-val" id="sv_aliasP">0.08</span>
+    </div>
+
+    <div class="ctrl-row">
+      <input type="checkbox" id="cb_closureFailure">
+      <span>closureFailure</span>
+    </div>
+
+    <div class="ctrl-row">
+      <span style="min-width:90px;">dominantLoss</span>
+      <select id="sel_dominantLoss">
+        <option value="L_E">L_E</option>
+        <option value="L_K">L_K</option>
+        <option value="L_P">L_P</option>
+        <option value="L_A">L_A</option>
+        <option value="L_S">L_S</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- SELF-TEST -->
+  <div class="fw-panel">
+    <button class="fw-button" id="selfTestBtn" style="color:var(--accent); border-color:var(--accent); width:100%;">Run Self-Test</button>
+    <div class="self-test-result" id="selfTestResult"></div>
+  </div>
+
+</div><!-- /sidebar -->
+
+</div><!-- /layout -->
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════════════ */
+const PHI = (1 + Math.sqrt(5)) / 2;
+const TAU = 1 / PHI;
+const SQRT3_HALF = Math.sqrt(3) / 2;
+const Z_C = SQRT3_HALF;
+const L4 = 7;
+
+const DETECTOR_MODS = {
+  theta:  { open: 0.88, standard: 1.00, restricted: 1.16 },
+  name:   { canonical: 0.92, safe: 1.00, invalid: 1.14 }
+};
+
+const SIGMA_TAU = { obs: 0.85, name: 0.06, red: 0.02, coh: 0.60 };
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+/* ═══════════════════════════════════════════════
+   LIGHTWEIGHT SIGNAL BUS
+   ═══════════════════════════════════════════════ */
+const Bus = (() => {
+  const store = {};
+  const subs = {};
+  return {
+    publish(key, value) {
+      store[key] = value;
+      (subs[key] || []).forEach(fn => fn(value));
+    },
+    read(key) { return store[key]; },
+    subscribe(key, fn) {
+      (subs[key] || (subs[key] = [])).push(fn);
+      if (key in store) fn(store[key]);
+    }
+  };
+})();
+
+/* ═══════════════════════════════════════════════
+   THETA / NAMING LABELS
+   ═══════════════════════════════════════════════ */
+const THETA_PROFILES = ['open', 'standard', 'restricted'];
+const NAMING_MODES   = ['canonical', 'safe', 'invalid'];
+const THETA_LABELS   = { open: '\u0398_open', standard: '\u0398_std', restricted: '\u0398_res' };
+
+/* ═══════════════════════════════════════════════
+   TRIPWIRE DEFINITIONS
+   ═══════════════════════════════════════════════ */
+const TRIPWIRE_DEFS = [
+  { id: 'tw_delta',   label: '\u03B4_obs \u2265 0.55',       test: () => readInput('delta_obs') >= 0.55 },
+  { id: 'tw_eta',     label: '\u03B7_N \u2265 0.06',         test: () => readInput('eta_N') >= 0.06 },
+  { id: 'tw_sigma',   label: '\u03C3 \u2265 0.08',           test: () => readInput('sigma') >= 0.08 },
+  { id: 'tw_alias',   label: 'aliasP \u2265 0.12',           test: () => readInput('aliasP') >= 0.12 },
+  { id: 'tw_rupture', label: 'rupture \u2265 0.16',          test: () => readInput('rupture') >= 0.16 },
+  { id: 'tw_loss',    label: 'domLoss \u2208 {K,P,A}',       test: () => ['L_K','L_P','L_A'].includes(document.getElementById('sel_dominantLoss').value) },
+  { id: 'tw_pers',    label: 'persistence \u2265 0.44',      test: () => (Bus.read('L6.persistence') || 0) >= 0.44 }
+];
+
+/* ═══════════════════════════════════════════════
+   INPUT READING
+   ═══════════════════════════════════════════════ */
+function readInput(name) {
+  const el = document.getElementById('sl_' + name);
+  return el ? parseFloat(el.value) : 0;
+}
+
+/* ═══════════════════════════════════════════════
+   MATRIX BUILD (DOM)
+   ═══════════════════════════════════════════════ */
+const matrixEl = document.getElementById('matrix');
+const cellEls = {};
+
+function buildMatrix() {
+  THETA_PROFILES.forEach(tp => {
+    // row header
+    const rh = document.createElement('div');
+    rh.className = 'matrix-row-header';
+    rh.textContent = THETA_LABELS[tp];
+    matrixEl.appendChild(rh);
+
+    NAMING_MODES.forEach(nm => {
+      const cell = document.createElement('div');
+      cell.className = 'matrix-cell';
+      cell.innerHTML = '<span class="cell-score">--</span><span class="cell-sub">--</span><div class="tooltip"></div>';
+      matrixEl.appendChild(cell);
+      cellEls[tp + '|' + nm] = cell;
+    });
+  });
+}
+buildMatrix();
+
+/* ═══════════════════════════════════════════════
+   TRIPWIRE LIST BUILD (DOM)
+   ═══════════════════════════════════════════════ */
+const twListEl = document.getElementById('tripwireList');
+const twLeds = {};
+TRIPWIRE_DEFS.forEach(tw => {
+  const row = document.createElement('div');
+  row.className = 'tw-row';
+  row.innerHTML = '<div class="tw-led armed" id="led_' + tw.id + '"></div><span class="tw-name">' + tw.label + '</span>';
+  twListEl.appendChild(row);
+  twLeds[tw.id] = row.querySelector('.tw-led');
+});
+
+/* ═══════════════════════════════════════════════
+   CELL COLOR
+   ═══════════════════════════════════════════════ */
+function cellColor(score) {
+  if (score <= 0.3) return 'var(--crystal)';
+  if (score <= 0.6) return 'var(--suppressed)';
+  return 'var(--aliased)';
+}
+
+function cellBg(score) {
+  if (score <= 0.3) return 'rgba(255,216,102,0.08)';
+  if (score <= 0.6) return 'rgba(241,250,140,0.08)';
+  return 'rgba(255,85,85,0.10)';
+}
+
+/* ═══════════════════════════════════════════════
+   GAUGE DRAWING
+   ═══════════════════════════════════════════════ */
+function drawGauge(conf) {
+  const canvas = document.getElementById('gaugeCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w / 2, cy = h / 2, r = 60;
+  const startAngle = 0.75 * Math.PI;
+  const endAngle   = 2.25 * Math.PI;
+  const sweep = endAngle - startAngle;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // track
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startAngle, endAngle, false);
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = 'rgba(154,172,202,0.08)';
+  ctx.stroke();
+
+  // fill
+  const fillEnd = startAngle + sweep * clamp01(conf);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startAngle, fillEnd, false);
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  if (conf < 0.3) ctx.strokeStyle = '#50fa7b';
+  else if (conf < 0.6) ctx.strokeStyle = '#f1fa8c';
+  else ctx.strokeStyle = '#ff5555';
+  ctx.stroke();
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN COMPUTE
+   ═══════════════════════════════════════════════ */
+function compute() {
+  const delta_obs = readInput('delta_obs');
+  const eta_N     = readInput('eta_N');
+  const sigma     = readInput('sigma');
+  const gamma     = readInput('gamma');
+  const chi       = readInput('chi');
+  const beta      = readInput('beta');
+  const rho       = readInput('rho');
+  const sigmaR    = readInput('sigmaR');
+  const rupture   = readInput('rupture');
+  const aliasP    = readInput('aliasP');
+  const closureFailure = document.getElementById('cb_closureFailure').checked ? 1 : 0;
+  const dominantLoss   = document.getElementById('sel_dominantLoss').value;
+
+  // ── 9-cell matrix ──
+  const scores = [];
+  const matrix = {};
+
+  THETA_PROFILES.forEach(tp => {
+    NAMING_MODES.forEach(nm => {
+      const tMod = DETECTOR_MODS.theta[tp];
+      const nMod = DETECTOR_MODS.name[nm];
+
+      const baseScore = 0.25 * delta_obs
+                      + 0.20 * eta_N
+                      + 0.15 * sigma
+                      + 0.10 * gamma
+                      + 0.10 * chi
+                      + 0.10 * beta
+                      + 0.10 * (1 - rho);
+
+      const cellScore = clamp01(baseScore * tMod * nMod);
+      scores.push(cellScore);
+
+      const key = tp + '|' + nm;
+      matrix[key] = { score: cellScore, baseScore, tMod, nMod };
+
+      // update DOM cell
+      const cell = cellEls[key];
+      cell.querySelector('.cell-score').textContent = cellScore.toFixed(3);
+      cell.querySelector('.cell-sub').textContent = tp[0] + '/' + nm[0];
+      cell.style.color = cellColor(cellScore);
+      cell.style.background = cellBg(cellScore);
+
+      // tooltip
+      const tip = cell.querySelector('.tooltip');
+      tip.innerHTML =
+        '<b>' + THETA_LABELS[tp] + ' x ' + nm + '</b><br>' +
+        'base = ' + baseScore.toFixed(4) + '<br>' +
+        '\u03B8 mod = ' + tMod.toFixed(2) + '  name mod = ' + nMod.toFixed(2) + '<br>' +
+        'cell = ' + cellScore.toFixed(4) + '<br>' +
+        '---<br>' +
+        '\u03B4_obs=' + delta_obs.toFixed(2) +
+        '  \u03B7_N=' + eta_N.toFixed(3) +
+        '  \u03C3=' + sigma.toFixed(3) + '<br>' +
+        '\u03B3=' + gamma.toFixed(2) +
+        '  \u03C7=' + chi.toFixed(2) +
+        '  \u03B2=' + beta.toFixed(2) +
+        '  \u03C1=' + rho.toFixed(2);
+    });
+  });
+
+  // ── Persistence ──
+  const persistence = scores.filter(s => s >= 0.55).length / 9;
+
+  // ── Spread ──
+  const maxScore = Math.max(...scores);
+  const minScore = Math.min(...scores);
+  const spread = maxScore - minScore;
+
+  // ── Tripwires (persistence tripwire depends on current persistence) ──
+  Bus.publish('L6.persistence', persistence);
+  let tripFired = 0;
+  const firedNames = [];
+  TRIPWIRE_DEFS.forEach(tw => {
+    const fired = tw.test();
+    if (fired) { tripFired++; firedNames.push(tw.label); }
+    const led = twLeds[tw.id];
+    led.className = 'tw-led ' + (fired ? 'latched' : 'armed');
+  });
+
+  // ── Detector confidence ──
+  const D_conf = clamp01(
+    0.30 * sigmaR +
+    0.24 * persistence +
+    0.18 * delta_obs +
+    0.10 * closureFailure +
+    0.10 * rho +
+    0.08 * Math.min(tripFired / 7, 1)
+  );
+
+  // ── Basis text ──
+  let basis = 'No tripwires fired.';
+  if (firedNames.length > 0) {
+    basis = 'Fired: ' + firedNames.join(', ') + '.';
+  }
+
+  // ── Update DOM ──
+  document.getElementById('confValue').textContent = D_conf.toFixed(3);
+  drawGauge(D_conf);
+
+  document.getElementById('persValue').textContent = persistence.toFixed(3);
+  document.getElementById('persBar').style.width = (persistence * 100) + '%';
+  document.getElementById('persBar').style.background =
+    persistence >= 0.44 ? 'var(--aliased)' : 'var(--latent)';
+
+  document.getElementById('spreadValue').textContent = spread.toFixed(3);
+  const spreadBar = document.getElementById('spreadBar');
+  spreadBar.style.left  = (minScore * 100) + '%';
+  spreadBar.style.width = (spread * 100) + '%';
+
+  document.getElementById('basisText').textContent = basis;
+  document.getElementById('twCount').textContent = tripFired + '/7';
+
+  // ── Publish to bus ──
+  Bus.publish('L6.confidence', D_conf);
+  Bus.publish('L6.spread', spread);
+  Bus.publish('L6.tripwires', tripFired);
+  Bus.publish('L6.basis', basis);
+  Bus.publish('L6.matrix', matrix);
+}
+
+/* ═══════════════════════════════════════════════
+   SLIDER WIRING
+   ═══════════════════════════════════════════════ */
+const SLIDERS = ['delta_obs','eta_N','sigma','gamma','chi','beta','rho','sigmaR','rupture','aliasP'];
+
+SLIDERS.forEach(name => {
+  const sl = document.getElementById('sl_' + name);
+  const sv = document.getElementById('sv_' + name);
+  sl.addEventListener('input', () => {
+    const v = parseFloat(sl.value);
+    sv.textContent = v < 0.1 ? v.toFixed(3) : v.toFixed(2);
+    compute();
+  });
+});
+
+document.getElementById('cb_closureFailure').addEventListener('change', compute);
+document.getElementById('sel_dominantLoss').addEventListener('change', compute);
+
+/* ═══════════════════════════════════════════════
+   SELF-TEST
+   ═══════════════════════════════════════════════ */
+document.getElementById('selfTestBtn').addEventListener('click', () => {
+  const res = document.getElementById('selfTestResult');
+  const errors = [];
+
+  // Run compute with current inputs
+  compute();
+
+  const matrix = Bus.read('L6.matrix');
+  const conf = Bus.read('L6.confidence');
+  const pers = Bus.read('L6.persistence');
+
+  // Check 9 cells exist
+  const keys = Object.keys(matrix || {});
+  if (keys.length !== 9) errors.push('Expected 9 cells, got ' + keys.length);
+
+  // Check all scores in [0,1]
+  keys.forEach(k => {
+    const s = matrix[k].score;
+    if (s < 0 || s > 1) errors.push('Cell ' + k + ' score out of range: ' + s);
+  });
+
+  // Check confidence in [0,1]
+  if (conf < 0 || conf > 1) errors.push('Confidence out of range: ' + conf);
+
+  // Check persistence in [0,1]
+  if (pers < 0 || pers > 1) errors.push('Persistence out of range: ' + pers);
+
+  if (errors.length === 0) {
+    res.innerHTML = '<span class="fw-status-pill">PASS</span> 9 cells OK, D_conf=' + conf.toFixed(3) + ', pers=' + pers.toFixed(3);
+  } else {
+    res.innerHTML = '<span class="fw-status-pill alert">FAIL</span> ' + errors.join('; ');
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════ */
+compute();
+</script>
+</body>
+</html>
