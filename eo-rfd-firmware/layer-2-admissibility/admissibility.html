@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layer 2 — Admissibility · Θ-Gated Comparator Cascade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050709;
+  --bg2: #090b12;
+  --bg3: #0d0f18;
+  --bg-panel: rgba(9,11,18,0.85);
+  --border: rgba(90,120,170,0.08);
+  --border-active: rgba(90,120,170,0.18);
+  --text: #9aacca;
+  --text-dim: #4a5a78;
+  --text-bright: #dce6f4;
+  --registered: #50fa7b;
+  --latent: #8be9fd;
+  --suppressed: #f1fa8c;
+  --aliased: #ff5555;
+  --crystal: #ffd866;
+  --accent: #bd93f9;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-serif: 'Crimson Pro', serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Utility classes */
+.fw-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.fw-panel:hover { border-color: var(--border-active); }
+.fw-section-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fw-section-label::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.fw-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+.fw-metric .label {
+  color: var(--text-dim);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.fw-metric .value {
+  color: var(--text-bright);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.fw-bar-track {
+  width: 100%;
+  height: 3px;
+  background: var(--bg);
+  border-radius: 2px;
+  margin: 4px 0 8px;
+  overflow: hidden;
+}
+.fw-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.fw-button {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fw-button:hover {
+  border-color: var(--border-active);
+  color: var(--text-bright);
+}
+.fw-button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(189,147,249,0.06);
+}
+.fw-status-pill {
+  display: inline-block;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.fw-canvas-container {
+  position: relative;
+  width: 100%;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* Layout */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.top-bar .nav-link { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
+.top-bar .title {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: var(--text-bright);
+  font-weight: 400;
+}
+.main-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr 260px;
+  gap: 12px;
+  padding: 14px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Cascade column */
+.cascade-col { display: flex; flex-direction: column; gap: 0; }
+.gate-node {
+  position: relative;
+  padding: 10px 12px;
+  border-left: 2px solid var(--border);
+  margin-left: 8px;
+}
+.gate-node::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 2px solid var(--text-dim);
+  transition: all 0.2s;
+}
+.gate-node.pass::before { background: var(--registered); border-color: var(--registered); box-shadow: 0 0 6px var(--registered); }
+.gate-node.fail::before { background: var(--aliased); border-color: var(--aliased); box-shadow: 0 0 6px var(--aliased); }
+.gate-node .gate-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+.gate-node .gate-desc {
+  font-size: 10px;
+  color: var(--text);
+}
+.gate-node .gate-val {
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.gate-result {
+  text-align: center;
+  padding: 10px;
+  margin-left: 8px;
+  border-left: 2px solid var(--border);
+}
+.gate-result .result-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Ring chart */
+.ring-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+}
+.ring-container canvas { display: block; }
+
+/* Controls */
+.controls-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+.slider-group label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.slider-group input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--bg);
+  border-radius: 2px;
+  outline: none;
+}
+.slider-group input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+/* Self-test */
+.self-test-ok { color: var(--registered); }
+.self-test-fail { color: var(--aliased); }
+
+/* Noise label */
+.noise-label {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--crystal);
+  text-align: center;
+  margin: 4px 0;
+}
+
+/* Omission panel */
+.omission-row {
+  display: flex;
+  gap: 12px;
+}
+.omission-block {
+  flex: 1;
+  text-align: center;
+}
+.omission-block .o-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.omission-block .o-value {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+}
+.omission-block .o-desc {
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="../index.html" class="nav-link">&larr; Index</a>
+  <span class="title">Layer 2 &mdash; Admissibility &middot; &Theta;-Gated Comparator Cascade</span>
+  <span class="fw-status-pill" id="statusPill" style="background:rgba(80,250,123,0.12);color:var(--registered);">NOMINAL</span>
+</div>
+
+<div class="main-grid">
+  <!-- LEFT: Cascade diagram -->
+  <div>
+    <div class="fw-panel">
+      <div class="fw-section-label">5-Stage Cascade</div>
+      <div class="cascade-col" id="cascadeCol">
+        <div class="gate-node" id="gate1">
+          <div class="gate-label">Gate 1 &mdash; Aperture</div>
+          <div class="gate-desc">intensity &gt; &Theta;.apt</div>
+          <div class="gate-val" id="gate1val">--</div>
+        </div>
+        <div class="gate-node" id="gate2">
+          <div class="gate-label">Gate 2 &mdash; Phase</div>
+          <div class="gate-desc">|cos(&phi;)| &gt; &Theta;.phase</div>
+          <div class="gate-val" id="gate2val">--</div>
+        </div>
+        <div class="gate-node" id="gate3">
+          <div class="gate-label">Gate 3 &mdash; Policy</div>
+          <div class="gate-desc">rand &gt; &Theta;.policy&times;defect</div>
+          <div class="gate-val" id="gate3val">--</div>
+        </div>
+        <div class="gate-node" id="gate4">
+          <div class="gate-label">Gate 4 &mdash; Capacity</div>
+          <div class="gate-desc">&Ascr; &lt; &Cscr;&times;&Theta;.cap</div>
+          <div class="gate-val" id="gate4val">--</div>
+        </div>
+        <div class="gate-node" id="gate5">
+          <div class="gate-label">Gate 5 &mdash; Naming</div>
+          <div class="gate-desc">rand &gt; &Theta;.naming</div>
+          <div class="gate-val" id="gate5val">--</div>
+        </div>
+        <div class="gate-result">
+          <div class="result-label" id="cascadeResult" style="color:var(--text-dim);">AWAITING</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="fw-panel">
+      <div class="fw-section-label">&Theta; Profile</div>
+      <div class="controls-row">
+        <button class="fw-button active" id="btnOpen" onclick="setProfile('open')">Open</button>
+        <button class="fw-button" id="btnStandard" onclick="setProfile('standard')">Standard</button>
+        <button class="fw-button" id="btnRestricted" onclick="setProfile('restricted')">Restricted</button>
+      </div>
+      <div class="slider-group">
+        <label>Noise floor</label>
+        <input type="range" id="noiseSlider" min="0" max="100" value="30">
+        <span id="noiseVal" style="font-size:9px;color:var(--text-dim);width:30px;text-align:right;">0.30</span>
+      </div>
+      <div class="noise-label">V<sub>noise</sub>(T=300K)</div>
+      <button class="fw-button" style="width:100%;margin-top:8px;" onclick="injectTestEvent()">Inject Test Event</button>
+    </div>
+  </div>
+
+  <!-- CENTER: Ring + Counters -->
+  <div>
+    <div class="fw-panel">
+      <div class="fw-section-label">Admissibility Ring</div>
+      <div class="ring-container">
+        <canvas id="ringCanvas" width="220" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Classification Counters</div>
+      <div class="fw-metric">
+        <span class="label">Registered</span>
+        <span class="value" id="cntRegistered" style="color:var(--registered);">0</span>
+      </div>
+      <div class="fw-bar-track"><div class="fw-bar-fill" id="barRegistered" style="background:var(--registered);width:0%;"></div></div>
+
+      <div class="fw-metric">
+        <span class="label">Latent</span>
+        <span class="value" id="cntLatent" style="color:var(--latent);">0</span>
+      </div>
+      <div class="fw-bar-track"><div class="fw-bar-fill" id="barLatent" style="background:var(--latent);width:0%;"></div></div>
+
+      <div class="fw-metric">
+        <span class="label">Suppressed</span>
+        <span class="value" id="cntSuppressed" style="color:var(--suppressed);">0</span>
+      </div>
+      <div class="fw-bar-track"><div class="fw-bar-fill" id="barSuppressed" style="background:var(--suppressed);width:0%;"></div></div>
+
+      <div class="fw-metric">
+        <span class="label">Aliased</span>
+        <span class="value" id="cntAliased" style="color:var(--aliased);">0</span>
+      </div>
+      <div class="fw-bar-track"><div class="fw-bar-fill" id="barAliased" style="background:var(--aliased);width:0%;"></div></div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Omission Tracking</div>
+      <div class="omission-row">
+        <div class="omission-block">
+          <div class="o-label">O</div>
+          <div class="o-value" id="omO">0</div>
+          <div class="o-desc">latent + phase-suppressed</div>
+        </div>
+        <div class="omission-block">
+          <div class="o-label">O*</div>
+          <div class="o-value" id="omOstar">0</div>
+          <div class="o-desc">policy + capacity + naming</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Registers + Self-test -->
+  <div>
+    <div class="fw-panel">
+      <div class="fw-section-label">Published Registers</div>
+      <div id="registersList"></div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Rupture Counter</div>
+      <div class="fw-metric">
+        <span class="label">Rupture</span>
+        <span class="value" id="ruptureVal" style="color:var(--crystal);">0.000</span>
+      </div>
+      <div class="fw-bar-track"><div class="fw-bar-fill" id="barRupture" style="background:var(--crystal);width:0%;"></div></div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Self-Test</div>
+      <div id="selfTestResult" style="font-size:10px;">Awaiting data...</div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Auto-generate Rate</div>
+      <div class="slider-group">
+        <label>Events/s</label>
+        <input type="range" id="rateSlider" min="0" max="60" value="10">
+        <span id="rateVal" style="font-size:9px;color:var(--text-dim);width:30px;text-align:right;">10</span>
+      </div>
+    </div>
+
+    <div class="fw-panel">
+      <div class="fw-section-label">Constants</div>
+      <div style="font-size:9px;color:var(--text-dim);line-height:1.8;" id="constDisplay"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Constants ──
+const PHI = (1 + Math.sqrt(5)) / 2;
+const TAU = 1 / PHI;
+const SQRT3 = Math.sqrt(3);
+const SQRT3_HALF = SQRT3 / 2;
+const Z_C = SQRT3_HALF;
+const K_FORM = 0.924;
+const L4 = 7;
+const GAP = Math.pow(PHI, -4);
+
+const THETA_PROFILES = {
+  open:       { apertureThreshold: 0.15, phaseThreshold: 0.4, capacityMult: 0.95, namingSensitivity: 0.02, policyStrictness: 0.1 },
+  standard:   { apertureThreshold: 0.30, phaseThreshold: 0.6, capacityMult: 0.80, namingSensitivity: 0.08, policyStrictness: 0.3 },
+  restricted: { apertureThreshold: 0.50, phaseThreshold: 0.8, capacityMult: 0.50, namingSensitivity: 0.25, policyStrictness: 0.6 }
+};
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+// Display constants
+document.getElementById('constDisplay').innerHTML =
+  'PHI = ' + PHI.toFixed(6) + '<br>' +
+  'TAU = ' + TAU.toFixed(6) + '<br>' +
+  'SQRT3 = ' + SQRT3.toFixed(6) + '<br>' +
+  'Z_C = ' + Z_C.toFixed(6) + '<br>' +
+  'K_FORM = ' + K_FORM + '<br>' +
+  'L4 = ' + L4 + '<br>' +
+  'GAP = ' + GAP.toFixed(6);
+
+// ── Signal Bus ──
+const SignalBus = (() => {
+  const channels = {};
+  const subs = {};
+  return {
+    publish(ch, val) {
+      channels[ch] = val;
+      if (subs[ch]) subs[ch].forEach(cb => cb(val));
+    },
+    read(ch) { return channels[ch]; },
+    subscribe(ch, cb) {
+      if (!subs[ch]) subs[ch] = [];
+      subs[ch].push(cb);
+    }
+  };
+})();
+
+// ── State ──
+let currentProfile = 'open';
+let theta = { ...THETA_PROFILES.open };
+let noiseFloor = 0.30;
+let autoRate = 10;
+let rupture = 0;
+let totalInteractions = 0;
+
+const counts = { registered: 0, latent: 0, suppressed: 0, aliased: 0 };
+const omission = { O: 0, Ostar: 0 };
+let namingDisruptions = 0;
+let lastGateStates = [null, null, null, null, null];
+let lastResult = null;
+
+// ── Profile selector ──
+function setProfile(name) {
+  currentProfile = name;
+  theta = { ...THETA_PROFILES[name] };
+  document.getElementById('btnOpen').classList.toggle('active', name === 'open');
+  document.getElementById('btnStandard').classList.toggle('active', name === 'standard');
+  document.getElementById('btnRestricted').classList.toggle('active', name === 'restricted');
+}
+
+// Sliders
+document.getElementById('noiseSlider').addEventListener('input', e => {
+  noiseFloor = e.target.value / 100;
+  document.getElementById('noiseVal').textContent = noiseFloor.toFixed(2);
+});
+document.getElementById('rateSlider').addEventListener('input', e => {
+  autoRate = parseInt(e.target.value);
+  document.getElementById('rateVal').textContent = autoRate;
+});
+
+// ── Cascade evaluation ──
+function evaluateBounce(bounce) {
+  const { intensity, phase, defect, capacity, activity, nearVertex } = bounce;
+  totalInteractions++;
+
+  const gateResults = [];
+  let classification = 'registered';
+  let failGate = -1;
+
+  // Gate 1: Aperture
+  const g1pass = intensity <= theta.apertureThreshold;
+  gateResults.push({ pass: g1pass, val: 'I=' + intensity.toFixed(3) + ' apt=' + theta.apertureThreshold });
+  if (!g1pass && failGate < 0) { failGate = 0; classification = 'latent'; }
+
+  // Gate 2: Phase
+  const cosPhase = Math.abs(Math.cos(phase));
+  const g2pass = cosPhase <= theta.phaseThreshold;
+  gateResults.push({ pass: g2pass, val: '|cos|=' + cosPhase.toFixed(3) + ' th=' + theta.phaseThreshold });
+  if (!g2pass && failGate < 0) { failGate = 1; classification = 'suppressed'; }
+
+  // Gate 3: Policy
+  const policyRand = Math.random();
+  const policyThresh = theta.policyStrictness * defect;
+  const g3pass = policyRand <= policyThresh || policyThresh <= 0;
+  const g3actual = policyRand > policyThresh;
+  gateResults.push({ pass: !g3actual, val: 'r=' + policyRand.toFixed(3) + ' th=' + policyThresh.toFixed(3) });
+  if (g3actual && failGate < 0) { failGate = 2; classification = 'suppressed'; }
+
+  // Gate 4: Capacity
+  const capThresh = capacity * theta.capacityMult;
+  const g4pass = activity >= capThresh;
+  gateResults.push({ pass: g4pass, val: 'A=' + activity.toFixed(3) + ' C*m=' + capThresh.toFixed(3) });
+  if (!g4pass && failGate < 0) { failGate = 3; classification = 'aliased'; }
+
+  // Gate 5: Naming
+  const namingRand = Math.random();
+  const g5pass = namingRand <= theta.namingSensitivity;
+  const g5actual = namingRand > theta.namingSensitivity;
+  gateResults.push({ pass: !g5actual, val: 'r=' + namingRand.toFixed(3) + ' th=' + theta.namingSensitivity });
+  if (g5actual && failGate < 0) { failGate = 4; classification = 'aliased'; }
+
+  // If all gates passed, classification stays 'registered'
+  // Re-determine: only the first failing gate matters
+  if (failGate < 0) classification = 'registered';
+
+  counts[classification]++;
+
+  // Omission tracking
+  if (classification === 'latent' || (classification === 'suppressed' && failGate === 1)) {
+    omission.O++;
+  }
+  if ((classification === 'suppressed' && failGate === 2) || classification === 'aliased') {
+    omission.Ostar++;
+  }
+
+  // Naming disruptions
+  if (failGate === 4) namingDisruptions++;
+
+  // Rupture: intensity > apt AND phase misaligned AND nearVertex
+  if (intensity > theta.apertureThreshold && cosPhase > theta.phaseThreshold && nearVertex) {
+    rupture += 1;
+  }
+
+  // Update gate display
+  lastGateStates = gateResults;
+  lastResult = classification;
+
+  // Publish registers
+  SignalBus.publish('L2.registered', counts.registered);
+  SignalBus.publish('L2.latent', counts.latent);
+  SignalBus.publish('L2.suppressed', counts.suppressed);
+  SignalBus.publish('L2.aliased', counts.aliased);
+  SignalBus.publish('L2.omissionO', omission.O);
+  SignalBus.publish('L2.omissionOstar', omission.Ostar);
+  SignalBus.publish('L2.namingDisruptions', namingDisruptions);
+  SignalBus.publish('L2.rupture', rupture);
+
+  return classification;
+}
+
+// ── Synthetic bounce generator ──
+function generateSyntheticBounce() {
+  const noise = noiseFloor * (Math.random() - 0.5) * 2;
+  return {
+    intensity: clamp01(Math.random() * 0.6 + noise * 0.2),
+    phase: Math.random() * Math.PI * 2,
+    defect: clamp01(Math.random() * 0.5 + noise * 0.1),
+    capacity: clamp01(0.3 + Math.random() * 0.7),
+    activity: clamp01(Math.random()),
+    nearVertex: Math.random() < 0.15
+  };
+}
+
+function injectTestEvent() {
+  const bounce = generateSyntheticBounce();
+  evaluateBounce(bounce);
+}
+
+// Subscribe to Layer 1 bounce events (for integration)
+SignalBus.subscribe('L1.bounce', bounce => {
+  evaluateBounce(bounce);
+});
+
+// ── Ring chart ──
+function drawRing(ctx, w, h) {
+  const cx = w / 2, cy = h / 2;
+  const outerR = Math.min(w, h) / 2 - 10;
+  const innerR = outerR * 0.6;
+  const total = totalInteractions || 1;
+
+  const segments = [
+    { count: counts.registered, color: '#50fa7b' },
+    { count: counts.latent, color: '#8be9fd' },
+    { count: counts.suppressed, color: '#f1fa8c' },
+    { count: counts.aliased, color: '#ff5555' }
+  ];
+
+  ctx.clearRect(0, 0, w, h);
+
+  let startAngle = -Math.PI / 2;
+  for (const seg of segments) {
+    const sweep = (seg.count / total) * Math.PI * 2;
+    if (sweep < 0.001) continue;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, startAngle, startAngle + sweep);
+    ctx.arc(cx, cy, innerR, startAngle + sweep, startAngle, true);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.globalAlpha = 0.8;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    startAngle += sweep;
+  }
+
+  // Center text
+  ctx.fillStyle = '#dce6f4';
+  ctx.font = '600 16px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(totalInteractions, cx, cy - 6);
+  ctx.fillStyle = '#4a5a78';
+  ctx.font = '400 8px "IBM Plex Mono", monospace';
+  ctx.fillText('TOTAL', cx, cy + 10);
+}
+
+// ── Registers display ──
+const registerKeys = [
+  'L2.registered', 'L2.latent', 'L2.suppressed', 'L2.aliased',
+  'L2.omissionO', 'L2.omissionOstar', 'L2.namingDisruptions', 'L2.rupture'
+];
+
+function updateRegisters() {
+  const el = document.getElementById('registersList');
+  el.innerHTML = registerKeys.map(k => {
+    const v = SignalBus.read(k);
+    const display = (k === 'L2.rupture' && typeof v === 'number') ? v.toFixed(3) : (v || 0);
+    return '<div class="fw-metric"><span class="label">' + k + '</span><span class="value">' + display + '</span></div>';
+  }).join('');
+}
+
+// ── Self-test ──
+function runSelfTest() {
+  const el = document.getElementById('selfTestResult');
+  const sumClass = counts.registered + counts.latent + counts.suppressed + counts.aliased;
+  const test1 = sumClass === totalInteractions;
+  const sumOmission = omission.O + omission.Ostar;
+  const expectedOmission = totalInteractions - counts.registered;
+  const test2 = sumOmission === expectedOmission;
+
+  let html = '';
+  html += '<div class="' + (test1 ? 'self-test-ok' : 'self-test-fail') + '">';
+  html += (test1 ? 'PASS' : 'FAIL') + ' R+L+S+A=' + sumClass + ' total=' + totalInteractions;
+  html += '</div>';
+  html += '<div class="' + (test2 ? 'self-test-ok' : 'self-test-fail') + '">';
+  html += (test2 ? 'PASS' : 'FAIL') + ' O+O*=' + sumOmission + ' expected=' + expectedOmission;
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ── Gate display update ──
+function updateGateDisplay() {
+  for (let i = 0; i < 5; i++) {
+    const node = document.getElementById('gate' + (i + 1));
+    const valEl = document.getElementById('gate' + (i + 1) + 'val');
+    if (lastGateStates[i] !== null) {
+      node.classList.toggle('pass', lastGateStates[i].pass);
+      node.classList.toggle('fail', !lastGateStates[i].pass);
+      valEl.textContent = lastGateStates[i].val;
+    } else {
+      node.classList.remove('pass', 'fail');
+      valEl.textContent = '--';
+    }
+  }
+
+  const resultEl = document.getElementById('cascadeResult');
+  if (lastResult) {
+    const colorMap = { registered: '--registered', latent: '--latent', suppressed: '--suppressed', aliased: '--aliased' };
+    resultEl.textContent = lastResult.toUpperCase();
+    resultEl.style.color = 'var(' + colorMap[lastResult] + ')';
+  }
+}
+
+// ── Counter display update ──
+function updateCounters() {
+  const total = totalInteractions || 1;
+  document.getElementById('cntRegistered').textContent = counts.registered;
+  document.getElementById('cntLatent').textContent = counts.latent;
+  document.getElementById('cntSuppressed').textContent = counts.suppressed;
+  document.getElementById('cntAliased').textContent = counts.aliased;
+
+  document.getElementById('barRegistered').style.width = (counts.registered / total * 100) + '%';
+  document.getElementById('barLatent').style.width = (counts.latent / total * 100) + '%';
+  document.getElementById('barSuppressed').style.width = (counts.suppressed / total * 100) + '%';
+  document.getElementById('barAliased').style.width = (counts.aliased / total * 100) + '%';
+
+  document.getElementById('omO').textContent = omission.O;
+  document.getElementById('omOstar').textContent = omission.Ostar;
+
+  document.getElementById('ruptureVal').textContent = rupture.toFixed(3);
+  document.getElementById('barRupture').style.width = Math.min(rupture / 20 * 100, 100) + '%';
+}
+
+// ── Animation loop ──
+let lastAutoTime = 0;
+const ringCanvas = document.getElementById('ringCanvas');
+const ringCtx = ringCanvas.getContext('2d');
+
+function frame(ts) {
+  // Auto-generate events
+  if (autoRate > 0) {
+    const interval = 1000 / autoRate;
+    if (ts - lastAutoTime >= interval) {
+      lastAutoTime = ts;
+      const bounce = generateSyntheticBounce();
+      evaluateBounce(bounce);
+    }
+  }
+
+  // Rupture decay
+  rupture *= 0.998;
+  SignalBus.publish('L2.rupture', rupture);
+
+  // Update visuals
+  updateGateDisplay();
+  updateCounters();
+  updateRegisters();
+  drawRing(ringCtx, ringCanvas.width, ringCanvas.height);
+  runSelfTest();
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
