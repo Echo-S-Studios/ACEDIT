@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ace's Greatest Hits</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0b0e17;
+      color: #e8e6e3;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      text-align: center;
+      margin-bottom: 0.4rem;
+      background: linear-gradient(135deg, #f7c948, #ee5a24, #e056fd, #7efadb);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradient-shift 6s ease infinite;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 2.5rem;
+      font-size: 1.05rem;
+    }
+
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .card {
+      position: relative;
+      background: #151a2a;
+      border: 1px solid #252d44;
+      border-radius: 16px;
+      padding: 2rem 1.8rem;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 0;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      border-color: transparent;
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card > * { position: relative; z-index: 1; }
+
+    /* Per-card accent colours */
+    .card--helix        { --accent: #7efadb; --glow: rgba(126,250,219,0.15); }
+    .card--acorn        { --accent: #f7c948; --glow: rgba(247,201,72,0.15); }
+    .card--honkfire     { --accent: #e056fd; --glow: rgba(224,86,253,0.15); }
+    .card--unified      { --accent: #ee5a24; --glow: rgba(238,90,36,0.15); }
+    .card--firmware     { --accent: #bd93f9; --glow: rgba(189,147,249,0.15); }
+    .card--asi          { --accent: #8be9fd; --glow: rgba(139,233,253,0.15); }
+
+    .card:hover { box-shadow: 0 12px 40px var(--glow); border-color: var(--accent); }
+    .card::before { background: radial-gradient(circle at 30% 20%, var(--glow), transparent 70%); }
+
+    .card__icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    .card__title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--accent);
+    }
+
+    .card__desc {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #9a9a9a;
+    }
+
+    .card__arrow {
+      display: inline-block;
+      margin-top: 1.2rem;
+      font-size: 0.85rem;
+      color: var(--accent);
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .card:hover .card__arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  </style>
+</head>
+<body>
+  <h1>Ace's Greatest Hits</h1>
+  <p class="subtitle">Frameworks &amp; HTMLs Collection</p>
+
+  <div class="grid">
+    <a class="card card--helix" href="L4_Helix_Protocol_Generator_v4_0_0.html">
+      <span class="card__icon">🧬</span>
+      <div class="card__title">L&#x2084;-Helix Protocol Generator</div>
+      <p class="card__desc">v4.0.0 — Protocol generation engine with Metastate integration.</p>
+      <span class="card__arrow">Open &rarr;</span>
+    </a>
+
+    <a class="card card--acorn" href="golden-acorn-v8-0-0.html">
+      <span class="card__icon">🌰</span>
+      <div class="card__title">Golden Acorn v8.0.0</div>
+      <p class="card__desc">HonkFire Quantum Tarot — the Golden Acorn oracle framework.</p>
+      <span class="card__arrow">Open &rarr;</span>
+    </a>
+
+    <a class="card card--honkfire" href="honkfire-tarot-echo-sovereign.html">
+      <span class="card__icon">🔮</span>
+      <div class="card__title">HonkFire Tarot</div>
+      <p class="card__desc">Echo-Sovereign Quantum Reading System — immersive tarot experience.</p>
+      <span class="card__arrow">Open &rarr;</span>
+    </a>
+
+    <a class="card card--unified" href="unified-framework-use-cases.html">
+      <span class="card__icon">📐</span>
+      <div class="card__title">Unified Framework Use Cases</div>
+      <p class="card__desc">47 comprehensive build specifications across the unified framework.</p>
+      <span class="card__arrow">Open &rarr;</span>
+    </a>
+
+    <a class="card card--firmware" href="eo-rfd-firmware/index.html">
+      <span class="card__icon">🔬</span>
+      <div class="card__title">EO-RFD Firmware Emulation</div>
+      <p class="card__desc">Physical substrate firmware emulation — 10-layer signal chain, cycle-accurate register logic.</p>
+      <span class="card__arrow">Open &rarr;</span>
+    </a>
+
+    <a class="card card--asi" href="acedit-asi-v2.html">
+      <span class="card__icon">🧠</span>
+      <div class="card__title">ACEDIT ASI v2</div>
+      <p class="card__desc">ASI architecture — 21 cognitive invariants, 9-layer stack, observer-core diagnostic.</p>
+      <span class="card__arrow">Open &rarr;</span>
+    </a>
+  </div>
+</body>
+</html>

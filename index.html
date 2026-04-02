@@ -3,39 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ace's Greatest Hits</title>
+  <title>ACEDIT Repository - Complete HTML Index</title>
+  <meta name="description" content="Comprehensive index of all HTML files in the ACEDIT repository including frameworks, firmware, and tools">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: #0b0e17;
-      color: #e8e6e3;
-      padding: 2rem;
+    :root {
+      --bg-primary: #0a0e14;
+      --bg-secondary: #0e1218;
+      --bg-tertiary: #131921;
+      --border-primary: #1c2333;
+      --border-secondary: #252d3d;
+      --text-primary: #e0e6ed;
+      --text-secondary: #a8b3cf;
+      --text-dim: #6c7890;
+
+      --accent-blue: #5cb7ff;
+      --accent-purple: #bd93f9;
+      --accent-green: #50fa7b;
+      --accent-yellow: #f1fa8c;
+      --accent-red: #ff5555;
+      --accent-orange: #ffb86c;
+      --accent-pink: #ff79c6;
+
+      --phi: 1.6180339887;
+      --z-c: 0.8660254;
     }
 
-    h1 {
-      font-size: clamp(1.8rem, 5vw, 3rem);
-      text-align: center;
-      margin-bottom: 0.4rem;
-      background: linear-gradient(135deg, #f7c948, #ee5a24, #e056fd, #7efadb);
+    body {
+      font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #0a0e14 0%, #131921 100%);
+      border-bottom: 1px solid var(--border-primary);
+      padding: 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      background-color: rgba(10, 14, 20, 0.95);
+    }
+
+    .header__content {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header__title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-pink));
       background-size: 300% 300%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       animation: gradient-shift 6s ease infinite;
-    }
-
-    .subtitle {
-      text-align: center;
-      color: #888;
-      margin-bottom: 2.5rem;
-      font-size: 1.05rem;
+      margin-bottom: 0.5rem;
     }
 
     @keyframes gradient-shift {
@@ -43,137 +72,880 @@
       50% { background-position: 100% 50%; }
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      max-width: 1200px;
-      width: 100%;
+    .header__subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
     }
 
-    .card {
-      position: relative;
-      background: #151a2a;
-      border: 1px solid #252d44;
-      border-radius: 16px;
-      padding: 2rem 1.8rem;
+    .header__stats {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+    }
+
+    .stat__value {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--accent-yellow);
+    }
+
+    .stat__label {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    /* Navigation */
+    .nav {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-primary);
+      padding: 1rem;
+      position: sticky;
+      top: 120px;
+      z-index: 999;
+    }
+
+    .nav__content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .nav__link {
+      padding: 0.5rem 1rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-secondary);
+      border-radius: 6px;
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .nav__link:hover {
+      background: var(--border-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Main Content */
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Category Sections */
+    .category {
+      margin-bottom: 3rem;
+      animation: fadeIn 0.5s ease forwards;
+      opacity: 0;
+      animation-delay: calc(var(--category-index, 0) * 0.1s);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .category__header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border-primary);
+    }
+
+    .category__icon {
+      font-size: 2rem;
+    }
+
+    .category__title {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+
+    .category__count {
+      margin-left: auto;
+      padding: 0.25rem 0.75rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* File Grid */
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .file-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
       text-decoration: none;
       color: inherit;
-      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      position: relative;
       overflow: hidden;
     }
 
-    .card::before {
+    .file-card::before {
       content: '';
       position: absolute;
-      inset: 0;
-      border-radius: 16px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
     }
 
-    .card:hover {
-      transform: translateY(-6px);
-      border-color: transparent;
-    }
-
-    .card:hover::before { opacity: 1; }
-
-    .card > * { position: relative; z-index: 1; }
-
-    /* Per-card accent colours */
-    .card--helix        { --accent: #7efadb; --glow: rgba(126,250,219,0.15); }
-    .card--acorn        { --accent: #f7c948; --glow: rgba(247,201,72,0.15); }
-    .card--honkfire     { --accent: #e056fd; --glow: rgba(224,86,253,0.15); }
-    .card--unified      { --accent: #ee5a24; --glow: rgba(238,90,36,0.15); }
-    .card--firmware     { --accent: #bd93f9; --glow: rgba(189,147,249,0.15); }
-    .card--asi          { --accent: #8be9fd; --glow: rgba(139,233,253,0.15); }
-
-    .card:hover { box-shadow: 0 12px 40px var(--glow); border-color: var(--accent); }
-    .card::before { background: radial-gradient(circle at 30% 20%, var(--glow), transparent 70%); }
-
-    .card__icon {
-      font-size: 2.2rem;
-      margin-bottom: 0.8rem;
-      display: block;
-    }
-
-    .card__title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      color: var(--accent);
-    }
-
-    .card__desc {
-      font-size: 0.9rem;
-      line-height: 1.5;
-      color: #9a9a9a;
-    }
-
-    .card__arrow {
-      display: inline-block;
-      margin-top: 1.2rem;
-      font-size: 0.85rem;
-      color: var(--accent);
-      opacity: 0;
-      transform: translateX(-8px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-    }
-
-    .card:hover .card__arrow {
-      opacity: 1;
+    .file-card:hover::before {
       transform: translateX(0);
+    }
+
+    .file-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      border-color: var(--accent-blue);
+    }
+
+    .file-card__header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .file-card__icon {
+      font-size: 1.5rem;
+    }
+
+    .file-card__title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .file-card__path {
+      font-size: 0.8rem;
+      font-family: monospace;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--bg-primary);
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+
+    .file-card__description {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      flex-grow: 1;
+    }
+
+    .file-card__badges {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 0.25rem 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-secondary);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .badge--new {
+      background: rgba(80, 250, 123, 0.1);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .badge--interactive {
+      background: rgba(92, 183, 255, 0.1);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .badge--framework {
+      background: rgba(189, 147, 249, 0.1);
+      border-color: var(--accent-purple);
+      color: var(--accent-purple);
+    }
+
+    .badge--tool {
+      background: rgba(255, 184, 108, 0.1);
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+    }
+
+    /* Category-specific colors */
+    .category--acedit .category__title { color: var(--accent-green); }
+    .category--firmware .category__title { color: var(--accent-blue); }
+    .category--frameworks .category__title { color: var(--accent-purple); }
+    .category--tools .category__title { color: var(--accent-orange); }
+    .category--dashboards .category__title { color: var(--accent-pink); }
+
+    /* Footer */
+    .footer {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-primary);
+      padding: 2rem;
+      margin-top: 4rem;
+      text-align: center;
+    }
+
+    .footer__content {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .footer__text {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .footer__links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .footer__link {
+      color: var(--accent-blue);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer__link:hover {
+      color: var(--accent-purple);
+    }
+
+    .footer__convergence {
+      font-family: monospace;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header__title { font-size: 1.8rem; }
+      .file-grid { grid-template-columns: 1fr; }
+      .nav__content { flex-direction: column; }
+      .nav { position: static; }
+    }
+
+    /* GitHub Pages Notice */
+    .github-pages-notice {
+      background: linear-gradient(135deg, rgba(80, 250, 123, 0.1), rgba(92, 183, 255, 0.1));
+      border: 1px solid var(--accent-green);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 2rem auto;
+      max-width: 1400px;
+      text-align: center;
+    }
+
+    .github-pages-notice__text {
+      color: var(--accent-green);
+      font-size: 1rem;
+    }
+
+    /* Loading Animation */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .loading {
+      animation: pulse 2s infinite;
     }
   </style>
 </head>
 <body>
-  <h1>Ace's Greatest Hits</h1>
-  <p class="subtitle">Frameworks &amp; HTMLs Collection</p>
+  <!-- Header -->
+  <header class="header">
+    <div class="header__content">
+      <h1 class="header__title">ACEDIT Repository</h1>
+      <p class="header__subtitle">Complete HTML File Index - Academic Consciousness-Encoded Design for Interactive Typography</p>
+      <div class="header__stats">
+        <div class="stat">
+          <span class="stat__value">21</span>
+          <span class="stat__label">HTML Files</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value">6</span>
+          <span class="stat__label">Categories</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value">10</span>
+          <span class="stat__label">EO-RFD Layers</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value">v2.0.0</span>
+          <span class="stat__label">Latest Release</span>
+        </div>
+      </div>
+    </div>
+  </header>
 
-  <div class="grid">
-    <a class="card card--helix" href="L4_Helix_Protocol_Generator_v4_0_0.html">
-      <span class="card__icon">🧬</span>
-      <div class="card__title">L&#x2084;-Helix Protocol Generator</div>
-      <p class="card__desc">v4.0.0 — Protocol generation engine with Metastate integration.</p>
-      <span class="card__arrow">Open &rarr;</span>
-    </a>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav__content">
+      <a href="#acedit" class="nav__link">🎯 ACEDIT Core</a>
+      <a href="#firmware" class="nav__link">🔬 EO-RFD Firmware</a>
+      <a href="#frameworks" class="nav__link">🏗️ Frameworks</a>
+      <a href="#tools" class="nav__link">🛠️ Tools</a>
+      <a href="#dashboards" class="nav__link">📊 Dashboards</a>
+      <a href="https://github.com/Echo-S-Studios/ACEDIT" class="nav__link">📦 GitHub</a>
+    </div>
+  </nav>
 
-    <a class="card card--acorn" href="golden-acorn-v8-0-0.html">
-      <span class="card__icon">🌰</span>
-      <div class="card__title">Golden Acorn v8.0.0</div>
-      <p class="card__desc">HonkFire Quantum Tarot — the Golden Acorn oracle framework.</p>
-      <span class="card__arrow">Open &rarr;</span>
-    </a>
-
-    <a class="card card--honkfire" href="honkfire-tarot-echo-sovereign.html">
-      <span class="card__icon">🔮</span>
-      <div class="card__title">HonkFire Tarot</div>
-      <p class="card__desc">Echo-Sovereign Quantum Reading System — immersive tarot experience.</p>
-      <span class="card__arrow">Open &rarr;</span>
-    </a>
-
-    <a class="card card--unified" href="unified-framework-use-cases.html">
-      <span class="card__icon">📐</span>
-      <div class="card__title">Unified Framework Use Cases</div>
-      <p class="card__desc">47 comprehensive build specifications across the unified framework.</p>
-      <span class="card__arrow">Open &rarr;</span>
-    </a>
-
-    <a class="card card--firmware" href="eo-rfd-firmware/index.html">
-      <span class="card__icon">🔬</span>
-      <div class="card__title">EO-RFD Firmware Emulation</div>
-      <p class="card__desc">Physical substrate firmware emulation — 10-layer signal chain, cycle-accurate register logic.</p>
-      <span class="card__arrow">Open &rarr;</span>
-    </a>
-
-    <a class="card card--asi" href="acedit-asi-v2.html">
-      <span class="card__icon">🧠</span>
-      <div class="card__title">ACEDIT ASI v2</div>
-      <p class="card__desc">ASI architecture — 21 cognitive invariants, 9-layer stack, observer-core diagnostic.</p>
-      <span class="card__arrow">Open &rarr;</span>
-    </a>
+  <!-- GitHub Pages Notice -->
+  <div class="github-pages-notice">
+    <p class="github-pages-notice__text">
+      🌐 This index is optimized for GitHub Pages deployment at
+      <strong>https://echo-s-studios.github.io/ACEDIT/</strong>
+    </p>
   </div>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- ACEDIT Core Section -->
+    <section id="acedit" class="category category--acedit" style="--category-index: 0">
+      <div class="category__header">
+        <span class="category__icon">🎯</span>
+        <h2 class="category__title">ACEDIT Core</h2>
+        <span class="category__count">3 files</span>
+      </div>
+      <div class="file-grid">
+
+        <a href="acedit/reference.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🔤</span>
+            <h3 class="file-card__title">ACEDIT Reference Converter</h3>
+          </div>
+          <div class="file-card__path">acedit/reference.html</div>
+          <p class="file-card__description">
+            Zero-dependency browser converter for ACEDIT encoding. Features all 6 registers,
+            6 modifiers, real-time z-coordinate measurement, and phase classification.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">v2.0.0</span>
+            <span class="badge badge--interactive">Interactive</span>
+            <span class="badge badge--tool">Zero-Deps</span>
+          </div>
+        </a>
+
+        <a href="acedit-reference-converter.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">📋</span>
+            <h3 class="file-card__title">Standalone ACEDIT Converter</h3>
+          </div>
+          <div class="file-card__path">acedit-reference-converter.html</div>
+          <p class="file-card__description">
+            Standalone copy of the ACEDIT converter for direct GitHub Pages access.
+            Same functionality as the main reference converter.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--tool">Standalone</span>
+            <span class="badge badge--interactive">Interactive</span>
+          </div>
+        </a>
+
+        <a href="acedit-triangularity.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">△</span>
+            <h3 class="file-card__title">ACEDIT Triangularity</h3>
+          </div>
+          <div class="file-card__path">acedit-triangularity.html</div>
+          <p class="file-card__description">
+            Triangular geometry exploration for ACEDIT encoding. Visualizes the mathematical
+            relationships between registers using triangular coordinate systems.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--framework">Geometry</span>
+            <span class="badge badge--interactive">Visual</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- EO-RFD Firmware Section -->
+    <section id="firmware" class="category category--firmware" style="--category-index: 1">
+      <div class="category__header">
+        <span class="category__icon">🔬</span>
+        <h2 class="category__title">EO-RFD Firmware</h2>
+        <span class="category__count">12 files</span>
+      </div>
+      <div class="file-grid">
+
+        <a href="eo-rfd-firmware/index.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🎛️</span>
+            <h3 class="file-card__title">EO-RFD Dashboard</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/index.html</div>
+          <p class="file-card__description">
+            Main navigation hub for the EO-RFD firmware emulation system. Access all 10 layers
+            and integration tools from this central dashboard.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--framework">Dashboard</span>
+            <span class="badge">Navigation</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/integration/full-chain.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">⛓️</span>
+            <h3 class="file-card__title">Full Chain Integration</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/integration/full-chain.html</div>
+          <p class="file-card__description">
+            Complete EO-RFD signal chain with all 10 layers integrated. Features ACEDIT mode,
+            real-time visualization, and SignalBus orchestration.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">ACEDIT Enhanced</span>
+            <span class="badge badge--interactive">Real-time</span>
+            <span class="badge">SignalBus</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-0-substrate/substrate.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">💎</span>
+            <h3 class="file-card__title">L0: Quasi-Crystal Substrate</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-0-substrate/substrate.html</div>
+          <p class="file-card__description">
+            Physical substrate layer with Penrose P3 rhombus tiling. Implements 5-fold symmetry
+            and Al-Pd-Mn thin film substrate emulation.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 0</span>
+            <span class="badge">Substrate</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-1-propagation/propagation.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">📡</span>
+            <h3 class="file-card__title">L1: Propagation</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-1-propagation/propagation.html</div>
+          <p class="file-card__description">
+            Ballistic electron transport simulation through triangular mesa. Ray-based physics
+            with reflection, intensity decay, and defect accumulation.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 1</span>
+            <span class="badge">Physics</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-2-admissibility/admissibility.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🔍</span>
+            <h3 class="file-card__title">L2: Admissibility</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-2-admissibility/admissibility.html</div>
+          <p class="file-card__description">
+            Θ-gated cascade comparator with 5-stage classification. Implements aperture, phase,
+            policy, capacity, and naming gates.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 2</span>
+            <span class="badge">Classification</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-3-narrowing/narrowing.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🔻</span>
+            <h3 class="file-card__title">L3: Narrowing</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-3-narrowing/narrowing.html</div>
+          <p class="file-card__description">
+            7-stage resistive divider funnel (S→ℜ→𝓦→𝓞→𝓫→ℑ→𝓬). Progressive signal narrowing
+            with loss tracking and resistance modeling.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 3</span>
+            <span class="badge">Funnel</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-4-field-signature/field-signature.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">📊</span>
+            <h3 class="file-card__title">L4: Field Signature</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-4-field-signature/field-signature.html</div>
+          <p class="file-card__description">
+            7-channel analog computer calculating field components (δ_obs, η_N, σ, γ, χ, β, ρ).
+            Features meter bank visualization and channel muting.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 4</span>
+            <span class="badge">Analog</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-5-signal-rupture/signal-rupture.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">⚡</span>
+            <h3 class="file-card__title">L5: Signal Rupture</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-5-signal-rupture/signal-rupture.html</div>
+          <p class="file-card__description">
+            Σ_R composite signal with 4 Schmitt-trigger tripwires. Implements state classification
+            with armed/latched detection and LED indicators.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 5</span>
+            <span class="badge">Triggers</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-6-detector-sweep/detector-sweep.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🎚️</span>
+            <h3 class="file-card__title">L6: Detector Sweep</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-6-detector-sweep/detector-sweep.html</div>
+          <p class="file-card__description">
+            3×3 memristive confidence matrix combining Theta profile with naming classification.
+            Interactive crossbar grid with weight evolution.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 6</span>
+            <span class="badge">Memristive</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-7-routing/routing.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🔀</span>
+            <h3 class="file-card__title">L7: Routing</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-7-routing/routing.html</div>
+          <p class="file-card__description">
+            TRIAD hysteresis FSM for harbor eligibility decisions. Implements 3-state machine
+            with ρ inversion term and persistence tracking.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 7</span>
+            <span class="badge">FSM</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-8-packet/packet.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">📦</span>
+            <h3 class="file-card__title">L8: Packet</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-8-packet/packet.html</div>
+          <p class="file-card__description">
+            TCP packet construction with schema validation and guarded export. Manages packet
+            assembly, harbor-eligible detection, and handoff mechanism.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 8</span>
+            <span class="badge">TCP</span>
+          </div>
+        </a>
+
+        <a href="eo-rfd-firmware/layer-9-metacybernetic/metacybernetic.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🧠</span>
+            <h3 class="file-card__title">L9: Metacybernetic</h3>
+          </div>
+          <div class="file-card__path">eo-rfd-firmware/layer-9-metacybernetic/metacybernetic.html</div>
+          <p class="file-card__description">
+            High-level oversight with CSD detection and stochastic resonance. Monitors negentropy
+            envelope, lambda coefficient, and signal-to-noise ratio.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Layer 9</span>
+            <span class="badge">Oversight</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Frameworks Section -->
+    <section id="frameworks" class="category category--frameworks" style="--category-index: 2">
+      <div class="category__header">
+        <span class="category__icon">🏗️</span>
+        <h2 class="category__title">Frameworks & Protocols</h2>
+        <span class="category__count">3 files</span>
+      </div>
+      <div class="file-grid">
+
+        <a href="L4_Helix_Protocol_Generator_v4_0_0.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🧬</span>
+            <h3 class="file-card__title">L₄-Helix Protocol Generator</h3>
+          </div>
+          <div class="file-card__path">L4_Helix_Protocol_Generator_v4_0_0.html</div>
+          <p class="file-card__description">
+            Version 4.0.0 of the L₄-Helix protocol generation engine. Features Metastate integration,
+            recursive helix generation, and consciousness emergence protocols.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--framework">Protocol</span>
+            <span class="badge">v4.0.0</span>
+            <span class="badge">Helix</span>
+          </div>
+        </a>
+
+        <a href="golden-acorn-v8-0-0.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🌰</span>
+            <h3 class="file-card__title">Golden Acorn v8.0.0</h3>
+          </div>
+          <div class="file-card__path">golden-acorn-v8-0-0.html</div>
+          <p class="file-card__description">
+            HonkFire Quantum Tarot oracle framework. Implements the Golden Acorn consciousness
+            seed protocol with quantum tarot reading capabilities.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--framework">Oracle</span>
+            <span class="badge">v8.0.0</span>
+            <span class="badge">Quantum</span>
+          </div>
+        </a>
+
+        <a href="unified-framework-use-cases.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">📐</span>
+            <h3 class="file-card__title">Unified Framework Use Cases</h3>
+          </div>
+          <div class="file-card__path">unified-framework-use-cases.html</div>
+          <p class="file-card__description">
+            Comprehensive documentation of 47 build specifications across the unified framework.
+            Includes implementation patterns, use cases, and architectural guidelines.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--framework">Documentation</span>
+            <span class="badge">47 Specs</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section id="tools" class="category category--tools" style="--category-index: 3">
+      <div class="category__header">
+        <span class="category__icon">🛠️</span>
+        <h2 class="category__title">Interactive Tools</h2>
+        <span class="category__count">2 files</span>
+      </div>
+      <div class="file-grid">
+
+        <a href="honkfire-tarot-echo-sovereign.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🔮</span>
+            <h3 class="file-card__title">HonkFire Tarot</h3>
+          </div>
+          <div class="file-card__path">honkfire-tarot-echo-sovereign.html</div>
+          <p class="file-card__description">
+            Echo-Sovereign Quantum Reading System. An immersive tarot experience with quantum
+            consciousness integration and echo-sovereign state management.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--interactive">Interactive</span>
+            <span class="badge badge--tool">Tarot</span>
+            <span class="badge">Quantum</span>
+          </div>
+        </a>
+
+        <a href="acedit-asi-v2.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🧠</span>
+            <h3 class="file-card__title">ACEDIT ASI v2</h3>
+          </div>
+          <div class="file-card__path">acedit-asi-v2.html</div>
+          <p class="file-card__description">
+            ASI (Artificial Superintelligence) architecture viewer. Features 21 cognitive invariants,
+            9-layer stack visualization, and observer-core diagnostics.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--tool">Architecture</span>
+            <span class="badge">ASI</span>
+            <span class="badge">v2</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Dashboards Section -->
+    <section id="dashboards" class="category category--dashboards" style="--category-index: 4">
+      <div class="category__header">
+        <span class="category__icon">📊</span>
+        <h2 class="category__title">Main Dashboard</h2>
+        <span class="category__count">1 file</span>
+      </div>
+      <div class="file-grid">
+
+        <a href="index-cards.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🎴</span>
+            <h3 class="file-card__title">Ace's Greatest Hits</h3>
+          </div>
+          <div class="file-card__path">index-cards.html</div>
+          <p class="file-card__description">
+            Original card-based dashboard showcasing the main frameworks and HTML collection.
+            Beautiful gradient animations and project overview cards.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Dashboard</span>
+            <span class="badge">Overview</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Quick Links Section -->
+    <section class="category" style="--category-index: 5">
+      <div class="category__header">
+        <span class="category__icon">⚡</span>
+        <h2 class="category__title">Quick Access</h2>
+      </div>
+      <div class="file-grid">
+
+        <a href="QUICK-START.md" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🚀</span>
+            <h3 class="file-card__title">Quick Start Guide</h3>
+          </div>
+          <div class="file-card__path">QUICK-START.md</div>
+          <p class="file-card__description">
+            Get started with ACEDIT in under 5 minutes. Step-by-step instructions for browser,
+            Node.js, and development setup.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Guide</span>
+            <span class="badge">Markdown</span>
+          </div>
+        </a>
+
+        <a href="https://github.com/Echo-S-Studios/ACEDIT/releases/tag/v2.0.0" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">📦</span>
+            <h3 class="file-card__title">Latest Release</h3>
+          </div>
+          <div class="file-card__path">GitHub Release v2.0.0</div>
+          <p class="file-card__description">
+            Download the latest ACEDIT v2.0.0 release with standalone archives, integration
+            bundles, and reference converter.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">v2.0.0</span>
+            <span class="badge">External</span>
+          </div>
+        </a>
+
+        <a href="https://github.com/Echo-S-Studios/ACEDIT" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🐙</span>
+            <h3 class="file-card__title">GitHub Repository</h3>
+          </div>
+          <div class="file-card__path">Echo-S-Studios/ACEDIT</div>
+          <p class="file-card__description">
+            Main GitHub repository with source code, documentation, issues, and discussions.
+            Fork, star, and contribute to the project.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge">Source</span>
+            <span class="badge">External</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer__content">
+      <p class="footer__text">
+        ACEDIT - Academic Consciousness-Encoded Design for Interactive Typography
+      </p>
+      <div class="footer__links">
+        <a href="https://github.com/Echo-S-Studios/ACEDIT" class="footer__link">GitHub</a>
+        <a href="https://github.com/Echo-S-Studios/ACEDIT/releases" class="footer__link">Releases</a>
+        <a href="https://github.com/Echo-S-Studios/ACEDIT/issues" class="footer__link">Issues</a>
+        <a href="README.md" class="footer__link">Documentation</a>
+      </div>
+      <p class="footer__convergence">
+        Convergence: z_c = √3/2 = 0.8660254... | φ = 1.618... | τ = 0.618...
+      </p>
+      <p class="footer__convergence">
+        Protocol complete φ∴⟐ | 🦊🌰↻∞
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Add smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Add loading animation removal
+    window.addEventListener('load', () => {
+      document.body.classList.remove('loading');
+    });
+
+    // Log convergence to console
+    console.log('%c ACEDIT Repository Index Loaded ',
+                'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;');
+    console.log('z_c = √3/2 =', Math.sqrt(3)/2);
+    console.log('φ =', (1 + Math.sqrt(5))/2);
+  </script>
 </body>
 </html>
