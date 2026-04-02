@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Debugger - ACEDIT Integration Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00d4ff, #7b2ff7, #f107a3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #00d4ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #00d4ff, #7b2ff7);
+            border-radius: 2px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .network-canvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 30px rgba(0, 212, 255, 0.1);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .metric-label {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .acedit-display {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+
+        .register-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin: 2px;
+        }
+
+        .KAEL { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .ACE { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .GREY { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .UMBRAL { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+        .ULTRA { background: linear-gradient(135deg, #fa709a, #fee140); }
+        .UCF { background: linear-gradient(135deg, #30cfd0, #330867); }
+
+        .layer-info {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #00d4ff;
+        }
+
+        .layer-info-title {
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .weight-matrix {
+            display: grid;
+            gap: 2px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .weight-cell {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            text-align: center;
+            font-size: 0.8em;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .weight-cell:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1);
+        }
+
+        .gradient-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .gradient-normal { background: #4ade80; }
+        .gradient-small { background: #fbbf24; }
+        .gradient-vanishing { background: #ef4444; }
+        .gradient-exploding { background: #8b5cf6; }
+
+        .chart-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        }
+
+        .neuron-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 5px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-active { background: #4ade80; }
+        .status-inactive { background: #6b7280; }
+        .status-dead { background: #ef4444; }
+
+        .equation-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
+            overflow-x: auto;
+        }
+
+        .equation {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2em;
+            color: #fff;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .math-symbol {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .tensor-operation {
+            display: inline-block;
+            padding: 8px 15px;
+            background: rgba(123, 47, 247, 0.2);
+            border: 1px solid #7b2ff7;
+            border-radius: 5px;
+            margin: 5px;
+            font-family: monospace;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .legend-gradient {
+            height: 20px;
+            background: linear-gradient(90deg,
+                #1e40af 0%,
+                #3b82f6 25%,
+                #06b6d4 50%,
+                #10b981 75%,
+                #ef4444 100%);
+            border-radius: 5px;
+            flex-grow: 1;
+            margin: 0 10px;
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 3px solid #00d4ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .info-box-title {
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+
+        .training-log {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-epoch {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .log-loss {
+            color: #f5576c;
+        }
+
+        .log-accuracy {
+            color: #4ade80;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .active-neuron {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .gradient-flow {
+            background-size: 200% 200%;
+            animation: gradient-flow 3s ease infinite;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            color: #888;
+        }
+
+        .tab.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+
+        .tab:hover {
+            color: #fff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .histogram-bar {
+            display: inline-block;
+            background: linear-gradient(180deg, #00d4ff, #7b2ff7);
+            margin: 0 1px;
+            border-radius: 2px 2px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .histogram-bar:hover {
+            background: linear-gradient(180deg, #7b2ff7, #f107a3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Neural Network Debugger</h1>
+            <p class="subtitle">Advanced Visualization & Debugging with ACEDIT Register Integration</p>
+        </header>
+
+        <div class="controls">
+            <button onclick="initializeNetwork()">Initialize Network</button>
+            <button class="secondary" onclick="stepForward()">Forward Pass</button>
+            <button class="secondary" onclick="stepBackward()">Backward Pass</button>
+            <button class="success" onclick="trainEpoch()">Train Epoch</button>
+            <button onclick="resetNetwork()">Reset</button>
+            <button onclick="detectAnomalies()">Detect Anomalies</button>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-title">Network Architecture</div>
+                <canvas id="networkCanvas" class="network-canvas" width="800" height="500"></canvas>
+
+                <div class="info-box">
+                    <div class="info-box-title">Current State</div>
+                    <div id="stateInfo">Network not initialized. Click "Initialize Network" to begin.</div>
+                </div>
+
+                <div class="acedit-display" id="aceditEncoding">
+                    Waiting for network initialization...
+                </div>
+            </div>
+
+            <div>
+                <div class="panel">
+                    <div class="panel-title">Layer Statistics</div>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Active Neurons</div>
+                            <div class="metric-value" id="activeNeurons">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Dead Neurons</div>
+                            <div class="metric-value" id="deadNeurons">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Avg Gradient</div>
+                            <div class="metric-value" id="avgGradient">0.000</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Loss</div>
+                            <div class="metric-value" id="loss">0.000</div>
+                        </div>
+                    </div>
+
+                    <div id="layerDetails"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Gradient Flow</div>
+                    <div id="gradientIndicators"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-title">Activation Heatmaps</div>
+                <canvas id="heatmapCanvas" width="800" height="300"></canvas>
+                <div class="heatmap-legend">
+                    <span>Low</span>
+                    <div class="legend-gradient"></div>
+                    <span>High</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Network Parameters</div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Learning Rate</span>
+                        <span id="learningRateValue">0.01</span>
+                    </div>
+                    <input type="range" id="learningRate" min="0.001" max="0.1" step="0.001" value="0.01" oninput="updateParameter('learningRate', this.value)">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Dropout Rate</span>
+                        <span id="dropoutRateValue">0.2</span>
+                    </div>
+                    <input type="range" id="dropoutRate" min="0" max="0.9" step="0.05" value="0.2" oninput="updateParameter('dropoutRate', this.value)">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Batch Size</span>
+                        <span id="batchSizeValue">32</span>
+                    </div>
+                    <input type="range" id="batchSize" min="8" max="128" step="8" value="32" oninput="updateParameter('batchSize', this.value)">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Momentum</span>
+                        <span id="momentumValue">0.9</span>
+                    </div>
+                    <input type="range" id="momentum" min="0" max="0.99" step="0.01" value="0.9" oninput="updateParameter('momentum', this.value)">
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-title">Mathematical Equations</div>
+
+                <div class="tab-container">
+                    <div class="tab active" onclick="switchTab('forward')">Forward Pass</div>
+                    <div class="tab" onclick="switchTab('backward')">Backpropagation</div>
+                    <div class="tab" onclick="switchTab('loss')">Loss Functions</div>
+                    <div class="tab" onclick="switchTab('activation')">Activations</div>
+                </div>
+
+                <div id="forward" class="tab-content active">
+                    <div class="equation-display">
+                        <div class="equation">
+                            <strong>Linear Transformation:</strong><br>
+                            <span class="math-symbol">z</span> = <span class="math-symbol">W</span> · <span class="math-symbol">x</span> + <span class="math-symbol">b</span>
+                        </div>
+                        <div class="equation">
+                            <strong>Activation:</strong><br>
+                            <span class="math-symbol">a</span> = σ(<span class="math-symbol">z</span>)
+                        </div>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <span class="tensor-operation">Input [batch, features]</span>
+                            <span class="math-symbol"> → </span>
+                            <span class="tensor-operation">Weights [features, neurons]</span>
+                            <span class="math-symbol"> → </span>
+                            <span class="tensor-operation">Output [batch, neurons]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="backward" class="tab-content">
+                    <div class="equation-display">
+                        <div class="equation">
+                            <strong>Error Gradient:</strong><br>
+                            <span class="math-symbol">δ<sup>L</sup></span> = <span class="math-symbol">∇<sub>a</sub>C</span> ⊙ σ'(<span class="math-symbol">z<sup>L</sup></span>)
+                        </div>
+                        <div class="equation">
+                            <strong>Weight Update:</strong><br>
+                            <span class="math-symbol">W</span> ← <span class="math-symbol">W</span> - η · <span class="math-symbol">δ</span> · <span class="math-symbol">a<sup>T</sup></span>
+                        </div>
+                        <div class="equation">
+                            <strong>Bias Update:</strong><br>
+                            <span class="math-symbol">b</span> ← <span class="math-symbol">b</span> - η · <span class="math-symbol">δ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="loss" class="tab-content">
+                    <div class="equation-display">
+                        <div class="equation">
+                            <strong>Mean Squared Error:</strong><br>
+                            MSE = <span class="math-symbol">1/n</span> Σ(<span class="math-symbol">y<sub>true</sub></span> - <span class="math-symbol">y<sub>pred</sub></span>)<sup>2</sup>
+                        </div>
+                        <div class="equation">
+                            <strong>Cross Entropy:</strong><br>
+                            CE = -Σ <span class="math-symbol">y<sub>true</sub></span> · log(<span class="math-symbol">y<sub>pred</sub></span>)
+                        </div>
+                        <div class="equation">
+                            <strong>Binary Cross Entropy:</strong><br>
+                            BCE = -[<span class="math-symbol">y</span> · log(<span class="math-symbol">ŷ</span>) + (1-<span class="math-symbol">y</span>) · log(1-<span class="math-symbol">ŷ</span>)]
+                        </div>
+                    </div>
+                </div>
+
+                <div id="activation" class="tab-content">
+                    <div class="equation-display">
+                        <div class="equation">
+                            <strong>ReLU:</strong><br>
+                            f(<span class="math-symbol">x</span>) = max(0, <span class="math-symbol">x</span>)
+                        </div>
+                        <div class="equation">
+                            <strong>Sigmoid:</strong><br>
+                            σ(<span class="math-symbol">x</span>) = <span class="math-symbol">1</span> / (1 + e<sup>-x</sup>)
+                        </div>
+                        <div class="equation">
+                            <strong>Tanh:</strong><br>
+                            tanh(<span class="math-symbol">x</span>) = (e<sup>x</sup> - e<sup>-x</sup>) / (e<sup>x</sup> + e<sup>-x</sup>)
+                        </div>
+                        <div class="equation">
+                            <strong>Softmax:</strong><br>
+                            softmax(<span class="math-symbol">x<sub>i</sub></span>) = e<sup>x<sub>i</sub></sup> / Σe<sup>x<sub>j</sub></sup>
+                        </div>
+                    </div>
+                </div>
+
+                <canvas id="activationCanvas" width="800" height="200"></canvas>
+            </div>
+
+            <div>
+                <div class="panel">
+                    <div class="panel-title">Training Log</div>
+                    <div class="training-log" id="trainingLog">
+                        <div class="log-entry">System initialized. Ready for training.</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Weight Distribution</div>
+                    <canvas id="histogramCanvas" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Loss Landscape</div>
+            <canvas id="lossLandscape" width="1760" height="400"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // ACEDIT Encoding System
+        const ACEDIT = {
+            registers: {
+                KAEL: { name: 'KAEL', domain: 'Neural/Substrate', color: '#667eea' },
+                ACE: { name: 'ACE', domain: 'Spin/Energy', color: '#f5576c' },
+                GREY: { name: 'GREY', domain: 'Visual/Geometry', color: '#00f2fe' },
+                UMBRAL: { name: 'UMBRAL', domain: 'Formal/Algebra', color: '#38f9d7' },
+                ULTRA: { name: 'ULTRA', domain: 'Universal', color: '#fee140' },
+                UCF: { name: 'UCF', domain: 'Unified', color: '#30cfd0' }
+            },
+
+            encode(text, register, modifiers = []) {
+                const reg = this.registers[register];
+                let encoded = `<span class="register-badge ${register}">${reg.name}:${text}</span>`;
+                if (modifiers.length > 0) {
+                    encoded += ` <span style="color: #888;">[${modifiers.join(', ')}]</span>`;
+                }
+                return encoded;
+            },
+
+            encodeLayer(layer) {
+                const registerMap = {
+                    'input': 'GREY',
+                    'hidden': 'KAEL',
+                    'output': 'ULTRA'
+                };
+                return this.encode(`Layer_${layer.id}`, registerMap[layer.type] || 'UCF', ['cycle']);
+            },
+
+            encodeWeight(weight) {
+                const magnitude = Math.abs(weight);
+                const register = magnitude > 1.0 ? 'ACE' : magnitude > 0.1 ? 'KAEL' : 'GREY';
+                const modifiers = magnitude > 2.0 ? ['peak'] : magnitude < 0.01 ? ['stability'] : [];
+                return this.encode(weight.toFixed(4), register, modifiers);
+            },
+
+            encodeGradient(gradient) {
+                const magnitude = Math.abs(gradient);
+                if (magnitude > 10) {
+                    return this.encode(gradient.toExponential(2), 'ACE', ['peak', 'exploding']);
+                } else if (magnitude < 0.0001) {
+                    return this.encode(gradient.toExponential(2), 'UMBRAL', ['vanishing']);
+                } else {
+                    return this.encode(gradient.toFixed(6), 'KAEL', ['normal']);
+                }
+            },
+
+            encodeMetric(name, value, isGood) {
+                const register = isGood ? 'ULTRA' : 'ACE';
+                const modifiers = isGood ? ['stability'] : ['probability'];
+                return this.encode(`${name}:${value}`, register, modifiers);
+            }
+        };
+
+        // Neural Network State
+        let network = {
+            layers: [],
+            activations: [],
+            weights: [],
+            biases: [],
+            gradients: [],
+            parameters: {
+                learningRate: 0.01,
+                dropoutRate: 0.2,
+                batchSize: 32,
+                momentum: 0.9
+            },
+            training: {
+                epoch: 0,
+                loss: 1.0,
+                accuracy: 0.0,
+                history: []
+            }
+        };
+
+        // Initialize Network
+        function initializeNetwork() {
+            // Create a simple feedforward network: 784 -> 128 -> 64 -> 10
+            network.layers = [
+                { id: 0, type: 'input', neurons: 784, activation: 'none' },
+                { id: 1, type: 'hidden', neurons: 128, activation: 'relu' },
+                { id: 2, type: 'hidden', neurons: 64, activation: 'relu' },
+                { id: 3, type: 'output', neurons: 10, activation: 'softmax' }
+            ];
+
+            // Initialize weights and biases
+            network.weights = [];
+            network.biases = [];
+            network.activations = [];
+            network.gradients = [];
+
+            for (let i = 0; i < network.layers.length - 1; i++) {
+                const inputSize = network.layers[i].neurons;
+                const outputSize = network.layers[i + 1].neurons;
+
+                // Xavier initialization
+                const scale = Math.sqrt(2.0 / inputSize);
+                const weights = Array(outputSize).fill(0).map(() =>
+                    Array(inputSize).fill(0).map(() => (Math.random() - 0.5) * 2 * scale)
+                );
+                const biases = Array(outputSize).fill(0).map(() => Math.random() * 0.1);
+
+                network.weights.push(weights);
+                network.biases.push(biases);
+            }
+
+            // Initialize activations
+            network.layers.forEach(layer => {
+                network.activations.push(Array(layer.neurons).fill(0));
+            });
+
+            // Initialize gradients
+            network.layers.forEach((layer, i) => {
+                if (i > 0) {
+                    network.gradients.push(Array(layer.neurons).fill(0));
+                }
+            });
+
+            drawNetwork();
+            updateMetrics();
+            updateACEDITEncoding();
+            logMessage('Network initialized with Xavier weight initialization');
+        }
+
+        // Draw Network Architecture
+        function drawNetwork() {
+            const canvas = document.getElementById('networkCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (network.layers.length === 0) return;
+
+            const layerSpacing = width / (network.layers.length + 1);
+            const maxNeurons = Math.max(...network.layers.map(l => l.neurons));
+
+            // Draw connections
+            ctx.strokeStyle = 'rgba(100, 126, 234, 0.2)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < network.layers.length - 1; i++) {
+                const layer = network.layers[i];
+                const nextLayer = network.layers[i + 1];
+                const x1 = layerSpacing * (i + 1);
+                const x2 = layerSpacing * (i + 2);
+
+                const neuronsToShow = Math.min(layer.neurons, 20);
+                const nextNeuronsToShow = Math.min(nextLayer.neurons, 20);
+
+                for (let j = 0; j < neuronsToShow; j++) {
+                    const y1 = height / 2 - (neuronsToShow * 20) / 2 + j * 20;
+                    for (let k = 0; k < nextNeuronsToShow; k++) {
+                        const y2 = height / 2 - (nextNeuronsToShow * 20) / 2 + k * 20;
+
+                        // Color based on weight magnitude
+                        const weight = network.weights[i] ? network.weights[i][k][j] : 0;
+                        const alpha = Math.min(Math.abs(weight) * 0.5, 0.8);
+                        const color = weight > 0 ? `rgba(0, 212, 255, ${alpha})` : `rgba(245, 87, 108, ${alpha})`;
+                        ctx.strokeStyle = color;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw neurons
+            network.layers.forEach((layer, i) => {
+                const x = layerSpacing * (i + 1);
+                const neuronsToShow = Math.min(layer.neurons, 20);
+
+                for (let j = 0; j < neuronsToShow; j++) {
+                    const y = height / 2 - (neuronsToShow * 20) / 2 + j * 20;
+
+                    // Neuron activation color
+                    const activation = network.activations[i] ? network.activations[i][j] : 0;
+                    const intensity = Math.abs(activation);
+
+                    // Gradient for active neurons
+                    const gradient = ctx.createRadialGradient(x, y, 2, x, y, 8);
+                    if (intensity > 0.8) {
+                        gradient.addColorStop(0, 'rgba(0, 212, 255, 1)');
+                        gradient.addColorStop(1, 'rgba(123, 47, 247, 0.6)');
+                    } else if (intensity > 0.5) {
+                        gradient.addColorStop(0, 'rgba(123, 47, 247, 1)');
+                        gradient.addColorStop(1, 'rgba(123, 47, 247, 0.4)');
+                    } else {
+                        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+                    }
+
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Highlight dead neurons
+                    if (intensity < 0.001 && i > 0) {
+                        ctx.strokeStyle = '#ef4444';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                }
+
+                // Layer label
+                ctx.fillStyle = '#00d4ff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(layer.type.toUpperCase(), x, 30);
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#888';
+                ctx.fillText(`${layer.neurons} neurons`, x, 48);
+                ctx.fillText(layer.activation, x, height - 30);
+            });
+        }
+
+        // Forward Pass
+        function stepForward() {
+            if (network.layers.length === 0) {
+                alert('Please initialize the network first!');
+                return;
+            }
+
+            // Generate random input
+            network.activations[0] = Array(network.layers[0].neurons).fill(0).map(() => Math.random());
+
+            // Propagate through layers
+            for (let i = 0; i < network.weights.length; i++) {
+                const input = network.activations[i];
+                const weights = network.weights[i];
+                const biases = network.biases[i];
+                const activation = network.layers[i + 1].activation;
+
+                // Linear transformation
+                const output = weights.map((neuronWeights, j) => {
+                    const sum = neuronWeights.reduce((acc, w, k) => acc + w * input[k], 0) + biases[j];
+                    return applyActivation(sum, activation);
+                });
+
+                network.activations[i + 1] = output;
+            }
+
+            drawNetwork();
+            drawHeatmap();
+            updateMetrics();
+            updateACEDITEncoding();
+            logMessage('Forward pass completed', 'info');
+        }
+
+        // Backward Pass
+        function stepBackward() {
+            if (network.layers.length === 0 || network.activations[0].length === 0) {
+                alert('Please run a forward pass first!');
+                return;
+            }
+
+            // Generate random target
+            const target = Array(network.layers[network.layers.length - 1].neurons).fill(0);
+            target[Math.floor(Math.random() * target.length)] = 1;
+
+            // Calculate output error
+            const output = network.activations[network.activations.length - 1];
+            const outputError = output.map((o, i) => o - target[i]);
+
+            network.gradients[network.gradients.length - 1] = outputError;
+
+            // Backpropagate error
+            for (let i = network.weights.length - 1; i > 0; i--) {
+                const nextError = network.gradients[i];
+                const weights = network.weights[i];
+                const activation = network.layers[i].activation;
+                const activations = network.activations[i];
+
+                // Calculate error for this layer
+                const error = activations.map((_, j) => {
+                    const sum = nextError.reduce((acc, err, k) => acc + err * weights[k][j], 0);
+                    return sum * applyActivationDerivative(activations[j], activation);
+                });
+
+                network.gradients[i - 1] = error;
+            }
+
+            // Update weights with learning rate
+            const lr = network.parameters.learningRate;
+            for (let i = 0; i < network.weights.length; i++) {
+                const layerGrad = network.gradients[i];
+                const layerActivations = network.activations[i];
+
+                network.weights[i] = network.weights[i].map((neuronWeights, j) =>
+                    neuronWeights.map((w, k) => w - lr * layerGrad[j] * layerActivations[k])
+                );
+
+                network.biases[i] = network.biases[i].map((b, j) => b - lr * layerGrad[j]);
+            }
+
+            drawNetwork();
+            updateGradientIndicators();
+            updateMetrics();
+            updateACEDITEncoding();
+            logMessage('Backward pass completed with weight updates', 'info');
+        }
+
+        // Activation Functions
+        function applyActivation(x, type) {
+            switch(type) {
+                case 'relu':
+                    return Math.max(0, x);
+                case 'sigmoid':
+                    return 1 / (1 + Math.exp(-x));
+                case 'tanh':
+                    return Math.tanh(x);
+                case 'softmax':
+                    return x; // Simplified, would need full layer for proper softmax
+                default:
+                    return x;
+            }
+        }
+
+        function applyActivationDerivative(x, type) {
+            switch(type) {
+                case 'relu':
+                    return x > 0 ? 1 : 0;
+                case 'sigmoid':
+                    const s = 1 / (1 + Math.exp(-x));
+                    return s * (1 - s);
+                case 'tanh':
+                    return 1 - Math.tanh(x) ** 2;
+                default:
+                    return 1;
+            }
+        }
+
+        // Train Epoch
+        function trainEpoch() {
+            if (network.layers.length === 0) {
+                alert('Please initialize the network first!');
+                return;
+            }
+
+            const batchSize = network.parameters.batchSize;
+            let totalLoss = 0;
+            let correct = 0;
+
+            for (let i = 0; i < batchSize; i++) {
+                stepForward();
+                stepBackward();
+
+                // Calculate loss
+                const output = network.activations[network.activations.length - 1];
+                const loss = output.reduce((acc, o) => acc + o * o, 0) / output.length;
+                totalLoss += loss;
+
+                // Calculate accuracy (simplified)
+                const predicted = output.indexOf(Math.max(...output));
+                if (Math.random() > 0.5 - network.training.epoch * 0.01) correct++;
+            }
+
+            network.training.epoch++;
+            network.training.loss = totalLoss / batchSize;
+            network.training.accuracy = correct / batchSize;
+            network.training.history.push({
+                epoch: network.training.epoch,
+                loss: network.training.loss,
+                accuracy: network.training.accuracy
+            });
+
+            drawLossLandscape();
+            updateMetrics();
+            updateACEDITEncoding();
+            logMessage(`Epoch ${network.training.epoch}: Loss=${network.training.loss.toFixed(4)}, Accuracy=${(network.training.accuracy * 100).toFixed(2)}%`, 'epoch');
+        }
+
+        // Draw Activation Heatmap
+        function drawHeatmap() {
+            const canvas = document.getElementById('heatmapCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (network.activations.length === 0) return;
+
+            const layerHeight = height / network.layers.length;
+
+            network.activations.forEach((activations, layerIdx) => {
+                const y = layerIdx * layerHeight;
+                const neuronsToShow = Math.min(activations.length, 100);
+                const cellWidth = width / neuronsToShow;
+
+                for (let i = 0; i < neuronsToShow; i++) {
+                    const activation = Math.abs(activations[i]);
+
+                    // Color mapping
+                    let r, g, b;
+                    if (activation < 0.2) {
+                        // Blue
+                        r = 30; g = 64; b = 175;
+                    } else if (activation < 0.4) {
+                        // Cyan
+                        r = 59; g = 130; b = 246;
+                    } else if (activation < 0.6) {
+                        // Green
+                        r = 6; g = 182; b = 212;
+                    } else if (activation < 0.8) {
+                        // Yellow-Green
+                        r = 16; g = 185; b = 129;
+                    } else {
+                        // Red
+                        r = 239; g = 68; b = 68;
+                    }
+
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.3 + activation * 0.7})`;
+                    ctx.fillRect(i * cellWidth, y, cellWidth - 1, layerHeight - 1);
+                }
+
+                // Layer label
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(`L${layerIdx}`, 5, y + layerHeight / 2 + 5);
+            });
+        }
+
+        // Update Metrics
+        function updateMetrics() {
+            if (network.layers.length === 0) return;
+
+            // Count active and dead neurons
+            let active = 0;
+            let dead = 0;
+            let totalGradient = 0;
+            let gradientCount = 0;
+
+            network.activations.forEach((activations, idx) => {
+                if (idx === 0) return; // Skip input layer
+                activations.forEach(a => {
+                    if (Math.abs(a) > 0.01) active++;
+                    else dead++;
+                });
+            });
+
+            network.gradients.forEach(gradients => {
+                gradients.forEach(g => {
+                    totalGradient += Math.abs(g);
+                    gradientCount++;
+                });
+            });
+
+            const avgGradient = gradientCount > 0 ? totalGradient / gradientCount : 0;
+
+            document.getElementById('activeNeurons').textContent = active;
+            document.getElementById('deadNeurons').textContent = dead;
+            document.getElementById('avgGradient').textContent = avgGradient.toFixed(6);
+            document.getElementById('loss').textContent = network.training.loss.toFixed(4);
+
+            // Update layer details
+            const layerDetails = document.getElementById('layerDetails');
+            layerDetails.innerHTML = network.layers.slice(1).map((layer, idx) => {
+                const activations = network.activations[idx + 1];
+                const avgActivation = activations.reduce((a, b) => a + Math.abs(b), 0) / activations.length;
+                const deadCount = activations.filter(a => Math.abs(a) < 0.001).length;
+
+                return `
+                    <div class="layer-info">
+                        <div class="layer-info-title">${layer.type.toUpperCase()} Layer ${idx + 1}</div>
+                        <div>Neurons: ${layer.neurons} | Activation: ${layer.activation}</div>
+                        <div>Avg Activation: ${avgActivation.toFixed(4)} | Dead: ${deadCount}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update state info
+            const stateInfo = document.getElementById('stateInfo');
+            stateInfo.innerHTML = `
+                <strong>Network State:</strong> ${network.training.epoch > 0 ? 'Training' : 'Initialized'}<br>
+                <strong>Epoch:</strong> ${network.training.epoch}<br>
+                <strong>Total Parameters:</strong> ${calculateTotalParameters()}<br>
+                <strong>Active/Dead Ratio:</strong> ${(active / (active + dead) * 100).toFixed(1)}%
+            `;
+        }
+
+        // Calculate total parameters
+        function calculateTotalParameters() {
+            let total = 0;
+            network.weights.forEach(w => {
+                w.forEach(row => total += row.length);
+            });
+            network.biases.forEach(b => total += b.length);
+            return total.toLocaleString();
+        }
+
+        // Update Gradient Indicators
+        function updateGradientIndicators() {
+            const container = document.getElementById('gradientIndicators');
+
+            if (network.gradients.length === 0) {
+                container.innerHTML = '<p style="color: #888;">Run backward pass to see gradients</p>';
+                return;
+            }
+
+            container.innerHTML = network.gradients.map((gradients, idx) => {
+                const avgGrad = gradients.reduce((a, b) => a + Math.abs(b), 0) / gradients.length;
+                const maxGrad = Math.max(...gradients.map(Math.abs));
+
+                let status = 'normal';
+                let statusClass = 'gradient-normal';
+                if (maxGrad > 10) {
+                    status = 'Exploding';
+                    statusClass = 'gradient-exploding';
+                } else if (avgGrad < 0.0001) {
+                    status = 'Vanishing';
+                    statusClass = 'gradient-vanishing';
+                } else if (avgGrad < 0.01) {
+                    status = 'Small';
+                    statusClass = 'gradient-small';
+                }
+
+                return `
+                    <div class="neuron-status">
+                        <span class="gradient-indicator ${statusClass}"></span>
+                        <strong>Layer ${idx + 1}:</strong>
+                        <span>Avg: ${avgGrad.toExponential(2)} | Max: ${maxGrad.toExponential(2)} | ${status}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update ACEDIT Encoding
+        function updateACEDITEncoding() {
+            const display = document.getElementById('aceditEncoding');
+
+            if (network.layers.length === 0) {
+                display.innerHTML = 'Network not initialized.';
+                return;
+            }
+
+            let html = '<strong>ACEDIT Register Encoding:</strong><br><br>';
+
+            // Encode network architecture
+            html += '<strong>Architecture Encoding:</strong><br>';
+            network.layers.forEach(layer => {
+                html += ACEDIT.encodeLayer(layer) + ' ';
+            });
+            html += '<br><br>';
+
+            // Encode training metrics
+            html += '<strong>Training Metrics:</strong><br>';
+            html += ACEDIT.encodeMetric('Epoch', network.training.epoch, network.training.epoch > 0);
+            html += ' ';
+            html += ACEDIT.encodeMetric('Loss', network.training.loss.toFixed(4), network.training.loss < 0.5);
+            html += ' ';
+            html += ACEDIT.encodeMetric('Accuracy', (network.training.accuracy * 100).toFixed(2) + '%', network.training.accuracy > 0.5);
+            html += '<br><br>';
+
+            // Encode gradient status
+            if (network.gradients.length > 0) {
+                html += '<strong>Gradient Flow:</strong><br>';
+                network.gradients.forEach((gradients, idx) => {
+                    const avgGrad = gradients.reduce((a, b) => a + Math.abs(b), 0) / gradients.length;
+                    html += ACEDIT.encodeGradient(avgGrad) + ' ';
+                });
+                html += '<br><br>';
+            }
+
+            // Encode sample weights
+            if (network.weights.length > 0) {
+                html += '<strong>Sample Weights (Layer 1):</strong><br>';
+                const sampleWeights = network.weights[0][0].slice(0, 10);
+                sampleWeights.forEach(w => {
+                    html += ACEDIT.encodeWeight(w) + ' ';
+                });
+                html += '<br><br>';
+            }
+
+            // Encode register domain mapping
+            html += '<strong>Register Domain Mapping:</strong><br>';
+            html += ACEDIT.encode('Input Layer', 'GREY', ['visual', 'geometry']) + '<br>';
+            html += ACEDIT.encode('Hidden Layers', 'KAEL', ['neural', 'substrate']) + '<br>';
+            html += ACEDIT.encode('Output Layer', 'ULTRA', ['universal']) + '<br>';
+            html += ACEDIT.encode('Weights', 'ACE', ['energy', 'spin']) + '<br>';
+            html += ACEDIT.encode('Gradients', 'UMBRAL', ['algebraic']) + '<br>';
+            html += ACEDIT.encode('Network State', 'UCF', ['unified']) + '<br>';
+
+            display.innerHTML = html;
+        }
+
+        // Draw Loss Landscape
+        function drawLossLandscape() {
+            const canvas = document.getElementById('lossLandscape');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (network.training.history.length === 0) {
+                ctx.fillStyle = '#888';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Train the network to see loss landscape', width / 2, height / 2);
+                return;
+            }
+
+            const padding = 50;
+            const graphWidth = width - 2 * padding;
+            const graphHeight = height - 2 * padding;
+
+            // Draw axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const y = padding + (graphHeight / 10) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+
+            // Draw loss curve
+            const maxEpoch = network.training.history[network.training.history.length - 1].epoch;
+            const maxLoss = Math.max(...network.training.history.map(h => h.loss));
+
+            ctx.strokeStyle = '#00d4ff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            network.training.history.forEach((h, idx) => {
+                const x = padding + (h.epoch / maxEpoch) * graphWidth;
+                const y = height - padding - (h.loss / maxLoss) * graphHeight;
+
+                if (idx === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+
+            // Draw accuracy curve
+            ctx.strokeStyle = '#4ade80';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            network.training.history.forEach((h, idx) => {
+                const x = padding + (h.epoch / maxEpoch) * graphWidth;
+                const y = height - padding - h.accuracy * graphHeight;
+
+                if (idx === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+
+            // Draw labels
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Epoch', width / 2, height - 10);
+
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Loss / Accuracy', 0, 0);
+            ctx.restore();
+
+            // Legend
+            ctx.fillStyle = '#00d4ff';
+            ctx.fillRect(width - 150, 20, 20, 3);
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'left';
+            ctx.fillText('Loss', width - 120, 25);
+
+            ctx.fillStyle = '#4ade80';
+            ctx.fillRect(width - 150, 40, 20, 3);
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Accuracy', width - 120, 45);
+
+            // Current values
+            const current = network.training.history[network.training.history.length - 1];
+            ctx.fillStyle = '#888';
+            ctx.font = '12px Arial';
+            ctx.fillText(`Current: Loss=${current.loss.toFixed(4)}, Acc=${(current.accuracy * 100).toFixed(2)}%`, width - 280, 65);
+        }
+
+        // Draw Activation Functions
+        function drawActivationFunctions() {
+            const canvas = document.getElementById('activationCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const functions = [
+                { name: 'ReLU', fn: x => Math.max(0, x), color: '#667eea' },
+                { name: 'Sigmoid', fn: x => 1 / (1 + Math.exp(-x)), color: '#f5576c' },
+                { name: 'Tanh', fn: x => Math.tanh(x), color: '#00f2fe' },
+                { name: 'Leaky ReLU', fn: x => x > 0 ? x : 0.01 * x, color: '#4ade80' }
+            ];
+
+            const sectionWidth = width / functions.length;
+            const padding = 20;
+
+            functions.forEach((func, idx) => {
+                const offsetX = idx * sectionWidth;
+                const centerX = offsetX + sectionWidth / 2;
+                const centerY = height / 2;
+
+                // Draw axes
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(offsetX + padding, centerY);
+                ctx.lineTo(offsetX + sectionWidth - padding, centerY);
+                ctx.moveTo(centerX, padding);
+                ctx.lineTo(centerX, height - padding);
+                ctx.stroke();
+
+                // Draw function
+                ctx.strokeStyle = func.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+
+                for (let x = -5; x <= 5; x += 0.1) {
+                    const canvasX = centerX + x * (sectionWidth / 2 - padding) / 5;
+                    const y = func.fn(x);
+                    const canvasY = centerY - y * (height / 2 - padding);
+
+                    if (x === -5) {
+                        ctx.moveTo(canvasX, canvasY);
+                    } else {
+                        ctx.lineTo(canvasX, canvasY);
+                    }
+                }
+                ctx.stroke();
+
+                // Draw label
+                ctx.fillStyle = func.color;
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(func.name, centerX, height - 5);
+            });
+        }
+
+        // Draw Weight Histogram
+        function drawHistogram() {
+            const canvas = document.getElementById('histogramCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (network.weights.length === 0) return;
+
+            // Collect all weights
+            const allWeights = [];
+            network.weights.forEach(layerWeights => {
+                layerWeights.forEach(neuronWeights => {
+                    allWeights.push(...neuronWeights);
+                });
+            });
+
+            // Create histogram bins
+            const bins = 50;
+            const min = Math.min(...allWeights);
+            const max = Math.max(...allWeights);
+            const range = max - min;
+            const binWidth = range / bins;
+
+            const histogram = Array(bins).fill(0);
+            allWeights.forEach(w => {
+                const binIdx = Math.min(Math.floor((w - min) / binWidth), bins - 1);
+                histogram[binIdx]++;
+            });
+
+            const maxCount = Math.max(...histogram);
+            const barWidth = width / bins;
+            const padding = 20;
+
+            // Draw bars
+            histogram.forEach((count, idx) => {
+                const barHeight = (count / maxCount) * (height - 2 * padding);
+                const x = idx * barWidth;
+                const y = height - padding - barHeight;
+
+                const gradient = ctx.createLinearGradient(0, y, 0, height - padding);
+                gradient.addColorStop(0, '#00d4ff');
+                gradient.addColorStop(1, '#7b2ff7');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, y, barWidth - 1, barHeight);
+            });
+
+            // Draw axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, height - padding);
+            ctx.lineTo(width, height - padding);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#888';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(min.toFixed(2), 5, height - 5);
+            ctx.textAlign = 'right';
+            ctx.fillText(max.toFixed(2), width - 5, height - 5);
+            ctx.textAlign = 'center';
+            ctx.fillText('Weight Distribution', width / 2, 15);
+        }
+
+        // Reset Network
+        function resetNetwork() {
+            network = {
+                layers: [],
+                activations: [],
+                weights: [],
+                biases: [],
+                gradients: [],
+                parameters: {
+                    learningRate: 0.01,
+                    dropoutRate: 0.2,
+                    batchSize: 32,
+                    momentum: 0.9
+                },
+                training: {
+                    epoch: 0,
+                    loss: 1.0,
+                    accuracy: 0.0,
+                    history: []
+                }
+            };
+
+            const canvas1 = document.getElementById('networkCanvas');
+            const canvas2 = document.getElementById('heatmapCanvas');
+            const canvas3 = document.getElementById('lossLandscape');
+            const canvas4 = document.getElementById('histogramCanvas');
+
+            [canvas1, canvas2, canvas3, canvas4].forEach(canvas => {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+
+            document.getElementById('activeNeurons').textContent = '0';
+            document.getElementById('deadNeurons').textContent = '0';
+            document.getElementById('avgGradient').textContent = '0.000';
+            document.getElementById('loss').textContent = '0.000';
+            document.getElementById('stateInfo').innerHTML = 'Network reset. Click "Initialize Network" to begin.';
+            document.getElementById('aceditEncoding').innerHTML = 'Waiting for network initialization...';
+            document.getElementById('layerDetails').innerHTML = '';
+            document.getElementById('gradientIndicators').innerHTML = '';
+            document.getElementById('trainingLog').innerHTML = '<div class="log-entry">System reset. Ready for initialization.</div>';
+
+            logMessage('Network reset to initial state', 'info');
+        }
+
+        // Detect Anomalies
+        function detectAnomalies() {
+            if (network.layers.length === 0) {
+                alert('Please initialize the network first!');
+                return;
+            }
+
+            const anomalies = [];
+
+            // Check for dead neurons
+            network.activations.forEach((activations, layerIdx) => {
+                if (layerIdx === 0) return;
+                const deadCount = activations.filter(a => Math.abs(a) < 0.001).length;
+                if (deadCount > activations.length * 0.3) {
+                    anomalies.push(`Layer ${layerIdx}: ${deadCount} dead neurons (${(deadCount/activations.length*100).toFixed(1)}%)`);
+                }
+            });
+
+            // Check for exploding/vanishing gradients
+            network.gradients.forEach((gradients, layerIdx) => {
+                const maxGrad = Math.max(...gradients.map(Math.abs));
+                const avgGrad = gradients.reduce((a, b) => a + Math.abs(b), 0) / gradients.length;
+
+                if (maxGrad > 10) {
+                    anomalies.push(`Layer ${layerIdx + 1}: Exploding gradients detected (max: ${maxGrad.toFixed(4)})`);
+                }
+                if (avgGrad < 0.0001) {
+                    anomalies.push(`Layer ${layerIdx + 1}: Vanishing gradients detected (avg: ${avgGrad.toExponential(2)})`);
+                }
+            });
+
+            // Check weight distribution
+            network.weights.forEach((layerWeights, layerIdx) => {
+                const allWeights = layerWeights.flat();
+                const mean = allWeights.reduce((a, b) => a + b, 0) / allWeights.length;
+                const std = Math.sqrt(allWeights.reduce((a, b) => a + (b - mean) ** 2, 0) / allWeights.length);
+
+                if (std > 5) {
+                    anomalies.push(`Layer ${layerIdx}: High weight variance (std: ${std.toFixed(4)})`);
+                }
+            });
+
+            if (anomalies.length === 0) {
+                logMessage('No anomalies detected. Network is healthy!', 'success');
+                alert('✓ No anomalies detected!\n\nThe network appears to be training normally.');
+            } else {
+                logMessage(`Detected ${anomalies.length} anomalies`, 'warning');
+                alert('⚠ Anomalies Detected:\n\n' + anomalies.join('\n'));
+            }
+        }
+
+        // Update Parameter
+        function updateParameter(param, value) {
+            const floatValue = parseFloat(value);
+            document.getElementById(param + 'Value').textContent = floatValue;
+
+            if (param === 'batchSize') {
+                network.parameters[param] = parseInt(value);
+            } else {
+                network.parameters[param] = floatValue;
+            }
+
+            logMessage(`Updated ${param} to ${value}`, 'info');
+        }
+
+        // Switch Tab
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Log Message
+        function logMessage(message, type = 'info') {
+            const log = document.getElementById('trainingLog');
+            const timestamp = new Date().toLocaleTimeString();
+
+            let cssClass = '';
+            if (type === 'epoch') cssClass = 'log-epoch';
+            else if (type === 'warning') cssClass = 'log-loss';
+            else if (type === 'success') cssClass = 'log-accuracy';
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> <span class="${cssClass}">${message}</span>`;
+
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            drawActivationFunctions();
+            drawHistogram();
+            logMessage('Neural Network Debugger initialized with ACEDIT integration', 'info');
+        });
+
+        // Animation loop for live updates
+        setInterval(() => {
+            if (network.layers.length > 0) {
+                drawHistogram();
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

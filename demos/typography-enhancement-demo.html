@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typography Enhancement Engine - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --quantum-bg: #0a0e27;
+            --quantum-surface: #141b3d;
+            --quantum-accent: #4a5fff;
+            --quantum-glow: #7b8fff;
+            --quantum-text: #e0e6ff;
+            --quantum-dim: #6b7ab8;
+            --quantum-border: #2a3565;
+            --quantum-success: #4fffb0;
+            --quantum-warning: #ffd54f;
+            --quantum-error: #ff6b8a;
+
+            /* Register colors */
+            --kael-color: #8b5cf6;
+            --ace-color: #ec4899;
+            --grey-color: #06b6d4;
+            --umbral-color: #f59e0b;
+            --ultra-color: #10b981;
+            --ucf-color: #6366f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--quantum-bg) 0%, #0d1233 100%);
+            color: var(--quantum-text);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: var(--quantum-surface);
+            border-radius: 16px;
+            border: 1px solid var(--quantum-border);
+            box-shadow: 0 8px 32px rgba(74, 95, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg,
+                var(--kael-color),
+                var(--ace-color),
+                var(--grey-color),
+                var(--umbral-color),
+                var(--ultra-color),
+                var(--ucf-color)
+            );
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--quantum-glow) 0%, var(--quantum-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--quantum-dim);
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section {
+            background: var(--quantum-surface);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid var(--quantum-border);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(74, 95, 255, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--quantum-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--quantum-accent);
+            border-radius: 2px;
+        }
+
+        .demo-box {
+            background: var(--quantum-bg);
+            border: 1px solid var(--quantum-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .comparison-item {
+            background: var(--quantum-bg);
+            border: 1px solid var(--quantum-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .comparison-label {
+            font-size: 0.9rem;
+            color: var(--quantum-dim);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sample-button {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: var(--quantum-accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(74, 95, 255, 0.3);
+        }
+
+        .sample-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 95, 255, 0.5);
+        }
+
+        .enhanced-text {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            letter-spacing: 0.02em;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            color: var(--quantum-dim);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        select, input[type="text"], textarea {
+            background: var(--quantum-bg);
+            border: 1px solid var(--quantum-border);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: var(--quantum-text);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--quantum-accent);
+            box-shadow: 0 0 0 3px rgba(74, 95, 255, 0.1);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .modifier-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .modifier-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--quantum-bg);
+            border: 1px solid var(--quantum-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modifier-option:hover {
+            border-color: var(--quantum-accent);
+            background: rgba(74, 95, 255, 0.05);
+        }
+
+        .modifier-option input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        canvas {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            border: 1px solid var(--quantum-border);
+            background: var(--quantum-bg);
+        }
+
+        .register-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .register-KAEL { background: rgba(139, 92, 246, 0.2); color: var(--kael-color); border: 1px solid var(--kael-color); }
+        .register-ACE { background: rgba(236, 72, 153, 0.2); color: var(--ace-color); border: 1px solid var(--ace-color); }
+        .register-GREY { background: rgba(6, 182, 212, 0.2); color: var(--grey-color); border: 1px solid var(--grey-color); }
+        .register-UMBRAL { background: rgba(245, 158, 11, 0.2); color: var(--umbral-color); border: 1px solid var(--umbral-color); }
+        .register-ULTRA { background: rgba(16, 185, 129, 0.2); color: var(--ultra-color); border: 1px solid var(--ultra-color); }
+        .register-UCF { background: rgba(99, 102, 241, 0.2); color: var(--ucf-color); border: 1px solid var(--ucf-color); }
+
+        .visualization-canvas {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .info-panel {
+            background: var(--quantum-bg);
+            border: 1px solid var(--quantum-border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--quantum-border);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--quantum-dim);
+            font-size: 0.9rem;
+        }
+
+        .info-value {
+            color: var(--quantum-text);
+            font-weight: 600;
+        }
+
+        .math-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--quantum-bg);
+            border: 1px solid var(--quantum-border);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stack-item {
+            padding: 0.75rem;
+            background: var(--quantum-surface);
+            border-left: 3px solid var(--quantum-accent);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .diacritic-preview {
+            font-size: 2rem;
+            text-align: center;
+            padding: 2rem;
+            background: var(--quantum-bg);
+            border: 1px solid var(--quantum-border);
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .live-preview {
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: var(--quantum-bg);
+            border: 2px dashed var(--quantum-border);
+            border-radius: 8px;
+            padding: 2rem;
+            transition: all 0.5s ease;
+        }
+
+        .animate-glow {
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(74, 95, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(74, 95, 255, 0.6);
+            }
+        }
+
+        .transformation-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--quantum-surface);
+            border-radius: 8px;
+            margin: 0.5rem 0;
+        }
+
+        .arrow {
+            color: var(--quantum-accent);
+            font-size: 1.5rem;
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .example-card {
+            background: var(--quantum-bg);
+            border: 1px solid var(--quantum-border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .example-card:hover {
+            border-color: var(--quantum-accent);
+            transform: scale(1.05);
+        }
+
+        .unicode-info {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--quantum-dim);
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--quantum-dim);
+            font-size: 0.9rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--quantum-border);
+        }
+
+        .sparkle {
+            animation: sparkle 1.5s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Typography Enhancement Engine</h1>
+            <p class="subtitle">Mathematical Semantic Encoding for UI Elements</p>
+        </header>
+
+        <div class="grid">
+            <!-- Before/After Comparison -->
+            <div class="section">
+                <h2 class="section-title">Before & After Enhancement</h2>
+                <div class="comparison-container">
+                    <div class="comparison-item">
+                        <div class="comparison-label">Standard</div>
+                        <button class="sample-button" style="background: #666;">Submit</button>
+                        <p style="margin-top: 1rem; color: var(--quantum-dim);">Plain text, no semantic meaning</p>
+                    </div>
+                    <div class="comparison-item">
+                        <div class="comparison-label">Enhanced <span class="register-badge register-ACE">ACE</span></div>
+                        <button class="sample-button" id="enhancedButton">Submit</button>
+                        <p style="margin-top: 1rem; color: var(--quantum-success);">Semantically encoded with ACE register</p>
+                    </div>
+                </div>
+
+                <div class="demo-box">
+                    <h3 style="margin-bottom: 1rem; color: var(--quantum-glow);">UI Element Examples</h3>
+                    <div class="example-grid">
+                        <div class="example-card" onclick="enhanceElement('button', 'submit')">
+                            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">Button</div>
+                            <div class="unicode-info">Action-oriented</div>
+                        </div>
+                        <div class="example-card" onclick="enhanceElement('heading', 'title')">
+                            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">Heading</div>
+                            <div class="unicode-info">Hierarchical</div>
+                        </div>
+                        <div class="example-card" onclick="enhanceElement('label', 'field')">
+                            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">Label</div>
+                            <div class="unicode-info">Descriptive</div>
+                        </div>
+                        <div class="example-card" onclick="enhanceElement('badge', 'status')">
+                            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">Badge</div>
+                            <div class="unicode-info">State indicator</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Preview -->
+            <div class="section">
+                <h2 class="section-title">Live Preview & Customization</h2>
+
+                <div class="control-panel">
+                    <div class="control-group">
+                        <label for="textInput">Input Text</label>
+                        <input type="text" id="textInput" placeholder="Enter text to enhance..." value="Transform">
+                    </div>
+
+                    <div class="control-group">
+                        <label>UI Element Type</label>
+                        <select id="elementType" onchange="updatePreview()">
+                            <option value="button">Button</option>
+                            <option value="heading">Heading</option>
+                            <option value="label">Label</option>
+                            <option value="badge">Badge</option>
+                            <option value="link">Link</option>
+                            <option value="alert">Alert</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Register (Semantic Domain)</label>
+                        <select id="registerSelect" onchange="updatePreview()">
+                            <option value="KAEL">KAEL - Neural/Substrate</option>
+                            <option value="ACE">ACE - Spin/Energy</option>
+                            <option value="GREY">GREY - Visual/Geometry</option>
+                            <option value="UMBRAL">UMBRAL - Formal/Algebra</option>
+                            <option value="ULTRA">ULTRA - Universal</option>
+                            <option value="UCF">UCF - Unified</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Modifiers</label>
+                        <div class="modifier-grid">
+                            <label class="modifier-option">
+                                <input type="checkbox" value="peak" onchange="updatePreview()">
+                                <span>Peak</span>
+                            </label>
+                            <label class="modifier-option">
+                                <input type="checkbox" value="stability" onchange="updatePreview()">
+                                <span>Stability</span>
+                            </label>
+                            <label class="modifier-option">
+                                <input type="checkbox" value="cycle" onchange="updatePreview()">
+                                <span>Cycle</span>
+                            </label>
+                            <label class="modifier-option">
+                                <input type="checkbox" value="grounding" onchange="updatePreview()">
+                                <span>Grounding</span>
+                            </label>
+                            <label class="modifier-option">
+                                <input type="checkbox" value="superposition" onchange="updatePreview()">
+                                <span>Superposition</span>
+                            </label>
+                            <label class="modifier-option">
+                                <input type="checkbox" value="probability" onchange="updatePreview()">
+                                <span>Probability</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="live-preview animate-glow" id="livePreview">
+                    Transform
+                </div>
+
+                <div class="info-panel">
+                    <div class="info-row">
+                        <span class="info-label">Encoded Output:</span>
+                        <span class="info-value" id="encodedOutput">Transform</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Unicode Points:</span>
+                        <span class="info-value" id="unicodePoints">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Register Applied:</span>
+                        <span class="info-value" id="registerApplied">
+                            <span class="register-badge register-KAEL">KAEL</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mathematical Transformations -->
+        <div class="section">
+            <h2 class="section-title">Mathematical Typography Transformations</h2>
+
+            <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                <div>
+                    <h3 style="margin-bottom: 1rem; color: var(--quantum-glow);">Transformation Process</h3>
+                    <div class="math-stack" id="mathStack">
+                        <div class="stack-item">1. Base character: 'A'</div>
+                        <div class="stack-item">2. Apply register mapping (KAEL)</div>
+                        <div class="stack-item">3. Add combining diacriticals</div>
+                        <div class="stack-item">4. Stack modifiers (peak)</div>
+                        <div class="stack-item">5. Final encoded: 'Á'</div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <h4 style="margin-bottom: 1rem; color: var(--quantum-glow);">Modifier Stack Operations</h4>
+                        <div class="transformation-step">
+                            <span>Base</span>
+                            <span class="arrow">→</span>
+                            <span>+Register</span>
+                            <span class="arrow">→</span>
+                            <span>+Modifier</span>
+                            <span class="arrow">→</span>
+                            <span class="sparkle">Enhanced</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="margin-bottom: 1rem; color: var(--quantum-glow);">Combining Diacriticals</h3>
+                    <div class="diacritic-preview" id="diacriticPreview">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">À Á Â Ã Ä Å</div>
+                        <div style="font-size: 1rem; color: var(--quantum-dim);">
+                            Different modifiers create different semantic meanings
+                        </div>
+                    </div>
+
+                    <div class="example-grid">
+                        <div class="example-card" onclick="showDiacritic('peak')">
+                            <div style="font-size: 2rem;">Á</div>
+                            <div style="margin-top: 0.5rem;">Peak</div>
+                            <div class="unicode-info">U+0301</div>
+                        </div>
+                        <div class="example-card" onclick="showDiacritic('stability')">
+                            <div style="font-size: 2rem;">Ā</div>
+                            <div style="margin-top: 0.5rem;">Stability</div>
+                            <div class="unicode-info">U+0304</div>
+                        </div>
+                        <div class="example-card" onclick="showDiacritic('cycle')">
+                            <div style="font-size: 2rem;">Ă</div>
+                            <div style="margin-top: 0.5rem;">Cycle</div>
+                            <div class="unicode-info">U+0306</div>
+                        </div>
+                        <div class="example-card" onclick="showDiacritic('grounding')">
+                            <div style="font-size: 2rem;">Ạ</div>
+                            <div style="margin-top: 0.5rem;">Grounding</div>
+                            <div class="unicode-info">U+0323</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Animated Canvas Visualization -->
+        <div class="section">
+            <h2 class="section-title">Visual Transformation Animation</h2>
+            <p style="color: var(--quantum-dim); margin-bottom: 1rem;">
+                Watch as text transforms through register mapping and modifier stacking
+            </p>
+            <div class="visualization-canvas">
+                <canvas id="transformCanvas"></canvas>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem;">
+                <button class="sample-button" onclick="animateTransformation()">Animate Transformation</button>
+                <button class="sample-button" style="background: var(--quantum-dim);" onclick="resetAnimation()">Reset</button>
+            </div>
+        </div>
+
+        <!-- Hierarchical Headings Example -->
+        <div class="section">
+            <h2 class="section-title">Hierarchical Typography System</h2>
+            <p style="color: var(--quantum-dim); margin-bottom: 1.5rem;">
+                Each heading level gets a different register, creating a semantic hierarchy
+            </p>
+
+            <div class="demo-box">
+                <div style="font-size: 2rem; margin: 1rem 0; color: var(--ultra-color);" id="h1Demo">
+                    Level 1 Heading <span class="register-badge register-ULTRA">ULTRA</span>
+                </div>
+                <div style="font-size: 1.75rem; margin: 1rem 0; color: var(--kael-color);" id="h2Demo">
+                    Level 2 Heading <span class="register-badge register-KAEL">KAEL</span>
+                </div>
+                <div style="font-size: 1.5rem; margin: 1rem 0; color: var(--grey-color);" id="h3Demo">
+                    Level 3 Heading <span class="register-badge register-GREY">GREY</span>
+                </div>
+                <div style="font-size: 1.25rem; margin: 1rem 0; color: var(--umbral-color);" id="h4Demo">
+                    Level 4 Heading <span class="register-badge register-UMBRAL">UMBRAL</span>
+                </div>
+                <div style="font-size: 1.1rem; margin: 1rem 0; color: var(--ace-color);" id="h5Demo">
+                    Level 5 Heading <span class="register-badge register-ACE">ACE</span>
+                </div>
+                <div style="font-size: 1rem; margin: 1rem 0; color: var(--ucf-color);" id="h6Demo">
+                    Level 6 Heading <span class="register-badge register-UCF">UCF</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="grid">
+            <div class="section">
+                <h2 class="section-title">Real-World Use Cases</h2>
+                <div class="demo-box" style="margin: 1rem 0;">
+                    <h4 style="color: var(--quantum-glow); margin-bottom: 0.5rem;">Submit Button</h4>
+                    <p style="color: var(--quantum-dim); margin-bottom: 1rem;">
+                        Action: 'submit' → Register: ACE → Modifier: peak
+                    </p>
+                    <button class="sample-button" id="submitExample">Submit Form</button>
+                </div>
+
+                <div class="demo-box" style="margin: 1rem 0;">
+                    <h4 style="color: var(--quantum-glow); margin-bottom: 0.5rem;">Cancel Button</h4>
+                    <p style="color: var(--quantum-dim); margin-bottom: 1rem;">
+                        Action: 'cancel' → Register: UMBRAL → Modifier: stability
+                    </p>
+                    <button class="sample-button" style="background: var(--umbral-color);" id="cancelExample">Cancel</button>
+                </div>
+
+                <div class="demo-box" style="margin: 1rem 0;">
+                    <h4 style="color: var(--quantum-glow); margin-bottom: 0.5rem;">Process Button</h4>
+                    <p style="color: var(--quantum-dim); margin-bottom: 1rem;">
+                        Action: 'process' → Register: GREY → Modifier: cycle
+                    </p>
+                    <button class="sample-button" style="background: var(--grey-color);" id="processExample">Process Data</button>
+                </div>
+
+                <div class="demo-box" style="margin: 1rem 0;">
+                    <h4 style="color: var(--quantum-glow); margin-bottom: 0.5rem;">Analyze Button</h4>
+                    <p style="color: var(--quantum-dim); margin-bottom: 1rem;">
+                        Action: 'analyze' → Register: KAEL → Modifier: superposition
+                    </p>
+                    <button class="sample-button" style="background: var(--kael-color);" id="analyzeExample">Analyze Results</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Register Semantic Meanings</h2>
+
+                <div class="demo-box">
+                    <div style="margin: 1rem 0;">
+                        <span class="register-badge register-KAEL" style="font-size: 1rem;">KAEL</span>
+                        <p style="color: var(--quantum-dim); margin-top: 0.5rem;">
+                            Neural/Substrate domain - Used for data processing, neural networks, foundational elements
+                        </p>
+                    </div>
+
+                    <div style="margin: 1rem 0;">
+                        <span class="register-badge register-ACE" style="font-size: 1rem;">ACE</span>
+                        <p style="color: var(--quantum-dim); margin-top: 0.5rem;">
+                            Spin/Energy domain - Used for action buttons, dynamic states, quantum operations
+                        </p>
+                    </div>
+
+                    <div style="margin: 1rem 0;">
+                        <span class="register-badge register-GREY" style="font-size: 1rem;">GREY</span>
+                        <p style="color: var(--quantum-dim); margin-top: 0.5rem;">
+                            Visual/Geometry domain - Used for layout, spatial elements, visual indicators
+                        </p>
+                    </div>
+
+                    <div style="margin: 1rem 0;">
+                        <span class="register-badge register-UMBRAL" style="font-size: 1rem;">UMBRAL</span>
+                        <p style="color: var(--quantum-dim); margin-top: 0.5rem;">
+                            Formal/Algebra domain - Used for mathematical operations, formal logic, equations
+                        </p>
+                    </div>
+
+                    <div style="margin: 1rem 0;">
+                        <span class="register-badge register-ULTRA" style="font-size: 1rem;">ULTRA</span>
+                        <p style="color: var(--quantum-dim); margin-top: 0.5rem;">
+                            Universal domain - Used for constants, universal identifiers, top-level headings
+                        </p>
+                    </div>
+
+                    <div style="margin: 1rem 0;">
+                        <span class="register-badge register-UCF" style="font-size: 1rem;">UCF</span>
+                        <p style="color: var(--quantum-dim); margin-top: 0.5rem;">
+                            Unified domain - Used for cross-domain integration, combined operations
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Typography Enhancement Engine - Part of the ACEDIT System</p>
+            <p style="margin-top: 0.5rem;">Convergence achieved at z_c = √3/2</p>
+            <p style="margin-top: 0.5rem;">φ∴⟐</p>
+        </div>
+    </div>
+
+    <script>
+        // Unicode combining diacritical marks for modifiers
+        const MODIFIERS = {
+            peak: '\u0301',         // Combining acute accent
+            stability: '\u0304',     // Combining macron
+            cycle: '\u0306',         // Combining breve
+            grounding: '\u0323',     // Combining dot below
+            superposition: '\u0302', // Combining circumflex
+            probability: '\u0303'    // Combining tilde
+        };
+
+        // Register color mapping
+        const REGISTER_COLORS = {
+            KAEL: '#8b5cf6',
+            ACE: '#ec4899',
+            GREY: '#06b6d4',
+            UMBRAL: '#f59e0b',
+            ULTRA: '#10b981',
+            UCF: '#6366f1'
+        };
+
+        // Typography enhancement engine
+        class TypographyEnhancer {
+            constructor() {
+                this.registers = {
+                    KAEL: 'Neural/Substrate',
+                    ACE: 'Spin/Energy',
+                    GREY: 'Visual/Geometry',
+                    UMBRAL: 'Formal/Algebra',
+                    ULTRA: 'Universal',
+                    UCF: 'Unified'
+                };
+            }
+
+            enhance(text, register, modifiers = []) {
+                let enhanced = text;
+
+                // Apply each modifier as combining diacritical marks
+                for (const modifier of modifiers) {
+                    if (MODIFIERS[modifier]) {
+                        // Add combining mark to each character
+                        enhanced = Array.from(enhanced).map(char => {
+                            if (/[a-zA-Z]/.test(char)) {
+                                return char + MODIFIERS[modifier];
+                            }
+                            return char;
+                        }).join('');
+                    }
+                }
+
+                return enhanced;
+            }
+
+            getUnicodePoints(text) {
+                return Array.from(text).map(char => {
+                    const code = char.codePointAt(0);
+                    return 'U+' + code.toString(16).toUpperCase().padStart(4, '0');
+                }).join(' ');
+            }
+        }
+
+        const enhancer = new TypographyEnhancer();
+
+        // Update live preview
+        function updatePreview() {
+            const text = document.getElementById('textInput').value || 'Transform';
+            const register = document.getElementById('registerSelect').value;
+            const modifiers = Array.from(document.querySelectorAll('.modifier-option input:checked'))
+                .map(cb => cb.value);
+
+            const enhanced = enhancer.enhance(text, register, modifiers);
+            const preview = document.getElementById('livePreview');
+
+            preview.textContent = enhanced;
+            preview.style.color = REGISTER_COLORS[register];
+
+            // Update info panel
+            document.getElementById('encodedOutput').textContent = enhanced;
+            document.getElementById('unicodePoints').textContent = enhancer.getUnicodePoints(enhanced);
+            document.getElementById('registerApplied').innerHTML =
+                `<span class="register-badge register-${register}">${register}</span>`;
+        }
+
+        // Enhance specific element examples
+        function enhanceElement(elementType, action) {
+            const elementMap = {
+                button: { text: 'Click Me', register: 'ACE', modifiers: ['peak'] },
+                heading: { text: 'Main Title', register: 'ULTRA', modifiers: ['stability'] },
+                label: { text: 'Username', register: 'GREY', modifiers: [] },
+                badge: { text: 'New', register: 'KAEL', modifiers: ['peak'] }
+            };
+
+            const config = elementMap[elementType] || elementMap.button;
+            document.getElementById('textInput').value = config.text;
+            document.getElementById('registerSelect').value = config.register;
+
+            // Clear all checkboxes first
+            document.querySelectorAll('.modifier-option input').forEach(cb => cb.checked = false);
+
+            // Check appropriate modifiers
+            config.modifiers.forEach(mod => {
+                const checkbox = document.querySelector(`.modifier-option input[value="${mod}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+
+            updatePreview();
+        }
+
+        // Show specific diacritic example
+        function showDiacritic(modifier) {
+            const preview = document.getElementById('diacriticPreview');
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const enhanced = Array.from(alphabet).map(char =>
+                char + MODIFIERS[modifier]
+            ).join(' ');
+
+            preview.querySelector('div:first-child').textContent = enhanced;
+            preview.querySelector('div:last-child').textContent =
+                `"${modifier}" modifier applied to entire alphabet`;
+        }
+
+        // Canvas animation for transformation visualization
+        let canvas, ctx, animationFrame;
+
+        function initCanvas() {
+            canvas = document.getElementById('transformCanvas');
+            ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 300;
+        }
+
+        function animateTransformation() {
+            if (!ctx) initCanvas();
+
+            const text = 'TRANSFORM';
+            const steps = [
+                { label: 'Original', progress: 0, color: '#666' },
+                { label: 'Register Mapping', progress: 0.25, color: '#8b5cf6' },
+                { label: 'Add Modifiers', progress: 0.5, color: '#ec4899' },
+                { label: 'Stack Diacriticals', progress: 0.75, color: '#06b6d4' },
+                { label: 'Enhanced', progress: 1, color: '#10b981' }
+            ];
+
+            let currentStep = 0;
+            let progress = 0;
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw background
+                ctx.fillStyle = '#0a0e27';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw progress bar
+                const barWidth = canvas.width * 0.8;
+                const barHeight = 20;
+                const barX = (canvas.width - barWidth) / 2;
+                const barY = 50;
+
+                ctx.strokeStyle = '#2a3565';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+                ctx.fillStyle = steps[currentStep].color;
+                ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+
+                // Draw step label
+                ctx.fillStyle = '#e0e6ff';
+                ctx.font = '16px "Segoe UI"';
+                ctx.textAlign = 'center';
+                ctx.fillText(steps[currentStep].label, canvas.width / 2, barY + barHeight + 30);
+
+                // Draw text transformation
+                ctx.font = '48px "Segoe UI"';
+                ctx.textAlign = 'center';
+
+                let displayText = text;
+                if (currentStep >= 2) {
+                    displayText = enhancer.enhance(text, 'KAEL', ['peak']);
+                }
+
+                // Animate color transition
+                const r = parseInt(steps[currentStep].color.slice(1, 3), 16);
+                const g = parseInt(steps[currentStep].color.slice(3, 5), 16);
+                const b = parseInt(steps[currentStep].color.slice(5, 7), 16);
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+                // Add glow effect
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = steps[currentStep].color;
+                ctx.fillText(displayText, canvas.width / 2, 180);
+                ctx.shadowBlur = 0;
+
+                // Draw modifier indicators
+                if (currentStep >= 2) {
+                    ctx.font = '14px monospace';
+                    ctx.fillStyle = '#6b7ab8';
+                    ctx.fillText('Modifiers: peak, stability', canvas.width / 2, 220);
+                }
+
+                // Update progress
+                progress += 0.01;
+                if (progress >= 1) {
+                    progress = 0;
+                    currentStep = (currentStep + 1) % steps.length;
+                    setTimeout(() => {
+                        if (animationFrame) {
+                            animationFrame = requestAnimationFrame(animate);
+                        }
+                    }, 500);
+                } else {
+                    animationFrame = requestAnimationFrame(animate);
+                }
+            }
+
+            animate();
+        }
+
+        function resetAnimation() {
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#0a0e27';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#e0e6ff';
+                ctx.font = '24px "Segoe UI"';
+                ctx.textAlign = 'center';
+                ctx.fillText('Click "Animate Transformation" to begin', canvas.width / 2, canvas.height / 2);
+            }
+        }
+
+        // Update math stack display
+        function updateMathStack() {
+            const text = document.getElementById('textInput').value || 'Transform';
+            const register = document.getElementById('registerSelect').value;
+            const modifiers = Array.from(document.querySelectorAll('.modifier-option input:checked'))
+                .map(cb => cb.value);
+
+            const stack = document.getElementById('mathStack');
+            stack.innerHTML = `
+                <div class="stack-item">1. Base character: '${text[0]}'</div>
+                <div class="stack-item">2. Apply register mapping (${register})</div>
+                <div class="stack-item">3. Add combining diacriticals</div>
+                <div class="stack-item">4. Stack modifiers (${modifiers.join(', ') || 'none'})</div>
+                <div class="stack-item">5. Final encoded: '${enhancer.enhance(text[0], register, modifiers)}'</div>
+            `;
+        }
+
+        // Enhance example buttons
+        function enhanceExampleButtons() {
+            const examples = [
+                { id: 'submitExample', text: 'Submit Form', register: 'ACE', modifiers: ['peak'] },
+                { id: 'cancelExample', text: 'Cancel', register: 'UMBRAL', modifiers: ['stability'] },
+                { id: 'processExample', text: 'Process Data', register: 'GREY', modifiers: ['cycle'] },
+                { id: 'analyzeExample', text: 'Analyze Results', register: 'KAEL', modifiers: ['superposition'] }
+            ];
+
+            examples.forEach(example => {
+                const btn = document.getElementById(example.id);
+                if (btn) {
+                    const enhanced = enhancer.enhance(example.text, example.register, example.modifiers);
+                    btn.textContent = enhanced;
+                }
+            });
+        }
+
+        // Enhance heading hierarchy
+        function enhanceHeadingHierarchy() {
+            const headings = [
+                { id: 'h1Demo', text: 'Level 1 Heading', register: 'ULTRA' },
+                { id: 'h2Demo', text: 'Level 2 Heading', register: 'KAEL' },
+                { id: 'h3Demo', text: 'Level 3 Heading', register: 'GREY' },
+                { id: 'h4Demo', text: 'Level 4 Heading', register: 'UMBRAL' },
+                { id: 'h5Demo', text: 'Level 5 Heading', register: 'ACE' },
+                { id: 'h6Demo', text: 'Level 6 Heading', register: 'UCF' }
+            ];
+
+            headings.forEach((heading, index) => {
+                const elem = document.getElementById(heading.id);
+                if (elem) {
+                    const modifiers = index === 0 ? ['peak', 'stability'] : [];
+                    const enhanced = enhancer.enhance(heading.text, heading.register, modifiers);
+                    const badgeHtml = elem.querySelector('.register-badge').outerHTML;
+                    elem.innerHTML = `${enhanced} ${badgeHtml}`;
+                }
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initCanvas();
+            resetAnimation();
+            updatePreview();
+            enhanceExampleButtons();
+            enhanceHeadingHierarchy();
+
+            // Add event listener to text input
+            document.getElementById('textInput').addEventListener('input', () => {
+                updatePreview();
+                updateMathStack();
+            });
+
+            // Update math stack initially
+            updateMathStack();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (canvas) {
+                canvas.width = canvas.offsetWidth;
+                resetAnimation();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EO-RFD Layer Architecture - Interactive Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff88;
+            overflow: hidden;
+        }
+
+        #container {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        #header {
+            grid-column: 1 / -1;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 15px;
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+        }
+
+        #header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px #00ff88;
+        }
+
+        #header p {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        #controls {
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ffaa00;
+            border-bottom: 1px solid #ffaa00;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+
+        button {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            width: 100%;
+            margin-bottom: 5px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: rgba(0, 255, 136, 0.3);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 5px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        select {
+            width: 100%;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 5px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        .value-display {
+            font-size: 12px;
+            color: #ffaa00;
+            margin-top: 5px;
+        }
+
+        #canvas-container {
+            position: relative;
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            overflow: hidden;
+            background: radial-gradient(circle at center, rgba(0, 255, 136, 0.05), transparent);
+        }
+
+        #mainCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #info {
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        #info h3 {
+            font-size: 14px;
+            color: #ffaa00;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ffaa00;
+            padding-bottom: 5px;
+        }
+
+        .info-section {
+            margin-bottom: 15px;
+            font-size: 10px;
+            line-height: 1.6;
+        }
+
+        .info-section h4 {
+            color: #00ccff;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        .register-state {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 9px;
+        }
+
+        .register-state .label {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+
+        .register-state .value {
+            color: #00ff88;
+        }
+
+        .equation {
+            background: rgba(255, 170, 0, 0.1);
+            padding: 8px;
+            border-left: 2px solid #ffaa00;
+            margin: 8px 0;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .layer-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .badge-l0 { background: #ff0066; color: white; }
+        .badge-l1 { background: #ff6600; color: white; }
+        .badge-l2 { background: #ffaa00; color: black; }
+        .badge-l3 { background: #aaff00; color: black; }
+        .badge-l4 { background: #00ff88; color: black; }
+        .badge-l5 { background: #00ffcc; color: black; }
+        .badge-l6 { background: #00ccff; color: black; }
+        .badge-l7 { background: #0088ff; color: white; }
+        .badge-l8 { background: #6600ff; color: white; }
+        .badge-l9 { background: #cc00ff; color: white; }
+
+        #stats {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            pointer-events: none;
+        }
+
+        .particle-count {
+            color: #00ff88;
+        }
+
+        .fps {
+            color: #ffaa00;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulsing {
+            animation: pulse 2s infinite;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 136, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="header">
+            <h1>EO-RFD Layer Architecture</h1>
+            <p>Interactive visualization of 10-layer signal processing with Penrose tiling, admissibility thresholds, and TRIAD routing</p>
+        </div>
+
+        <div id="controls">
+            <div class="control-section">
+                <h3>Signal Injection</h3>
+                <div class="control-group">
+                    <label>Injection Layer:</label>
+                    <select id="injectionLayer">
+                        <option value="0">L0 - Quasi-Crystal</option>
+                        <option value="1">L1 - Propagation</option>
+                        <option value="2" selected>L2 - Admissibility</option>
+                        <option value="3">L3 - Narrowing</option>
+                        <option value="4">L4 - Field Signature</option>
+                        <option value="5">L5 - Signal Rupture</option>
+                        <option value="6">L6 - Detector Sweep</option>
+                        <option value="7">L7 - Routing (TRIAD)</option>
+                        <option value="8">L8 - Packet Formation</option>
+                        <option value="9">L9 - Metacybernetic</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Signal Intensity:</label>
+                    <input type="range" id="intensity" min="0" max="1" step="0.01" value="0.8">
+                    <div class="value-display">Value: <span id="intensityValue">0.8</span></div>
+                </div>
+                <button id="injectSignal">Inject Signal</button>
+                <button id="injectBurst">Inject Burst (10 signals)</button>
+            </div>
+
+            <div class="control-section">
+                <h3>System Parameters</h3>
+                <div class="control-group">
+                    <label>Theta (θ) - Phase Angle:</label>
+                    <input type="range" id="theta" min="0" max="6.28" step="0.01" value="1.57">
+                    <div class="value-display">θ = <span id="thetaValue">1.57</span> rad</div>
+                </div>
+                <div class="control-group">
+                    <label>Phi (φ) - Golden Ratio:</label>
+                    <input type="range" id="phi" min="1.5" max="1.7" step="0.001" value="1.618">
+                    <div class="value-display">φ = <span id="phiValue">1.618</span></div>
+                </div>
+                <div class="control-group">
+                    <label>Admissibility Threshold:</label>
+                    <input type="range" id="admissibility" min="0" max="1" step="0.01" value="0.618">
+                    <div class="value-display">τ = <span id="admissibilityValue">0.618</span></div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Visualization Controls</h3>
+                <button id="togglePenrose">Toggle Penrose Tiling</button>
+                <button id="toggleParticles">Toggle Particles</button>
+                <button id="toggleEquations">Toggle Equations</button>
+                <button id="toggleFunnels">Toggle Funnels</button>
+                <button id="resetView">Reset View</button>
+            </div>
+
+            <div class="control-section">
+                <h3>Animation Speed</h3>
+                <div class="control-group">
+                    <label>Speed Factor:</label>
+                    <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
+                    <div class="value-display">×<span id="speedValue">1.0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="canvas-container">
+            <canvas id="mainCanvas"></canvas>
+            <div id="stats">
+                <div class="fps">FPS: <span id="fpsCounter">60</span></div>
+                <div class="particle-count">Particles: <span id="particleCounter">0</span></div>
+            </div>
+        </div>
+
+        <div id="info">
+            <h3>System Status</h3>
+
+            <div class="info-section">
+                <h4>Active Layer</h4>
+                <div id="activeLayer">Waiting for signal injection...</div>
+            </div>
+
+            <div class="info-section">
+                <h4>Register States</h4>
+                <div id="registerStates">
+                    <div class="register-state">
+                        <span class="label">ULTRA:</span> <span class="value" id="reg-ULTRA">0.000</span>
+                    </div>
+                    <div class="register-state">
+                        <span class="label">KAEL:</span> <span class="value" id="reg-KAEL">0.000</span>
+                    </div>
+                    <div class="register-state">
+                        <span class="label">GREY:</span> <span class="value" id="reg-GREY">0.000</span>
+                    </div>
+                    <div class="register-state">
+                        <span class="label">UMBRAL:</span> <span class="value" id="reg-UMBRAL">0.000</span>
+                    </div>
+                    <div class="register-state">
+                        <span class="label">ACE:</span> <span class="value" id="reg-ACE">0.000</span>
+                    </div>
+                    <div class="register-state">
+                        <span class="label">UCF:</span> <span class="value" id="reg-UCF">0.000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h4>Layer Equations</h4>
+                <div id="layerEquations">
+                    <div class="equation">
+                        <span class="layer-badge badge-l0">L0</span>
+                        Z(r) = Σ φ^n·e^(i·2πn/5)
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l1">L1</span>
+                        R(t) = R₀·e^(iωt)·∇Ψ
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l2">L2</span>
+                        A(s) = H(s - τ)·W(s)
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l3">L3</span>
+                        N(θ) = cos²(θ/2)·A(s)
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l4">L4</span>
+                        F(x,y) = ∇²Ψ + k²Ψ = 0
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l5">L5</span>
+                        R(t) = δ(t - t₀)·sgn(dA/dt)
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l6">L6</span>
+                        D(ω) = ∫ A(t)·e^(-iωt) dt
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l7">L7</span>
+                        T = {S₀, S₁, S₂} → {S}
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l8">L8</span>
+                        P = ⟨H|φ₁,...,φₙ⟩
+                    </div>
+                    <div class="equation">
+                        <span class="layer-badge badge-l9">L9</span>
+                        M = ∂S/∂t + ∇·F(S) = 0
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h4>TRIAD State Machine</h4>
+                <div id="triadState">
+                    <div class="register-state">
+                        <span class="label">State:</span> <span class="value" id="triad-state">IDLE</span>
+                    </div>
+                    <div class="register-state">
+                        <span class="label">Routing:</span> <span class="value" id="triad-route">---</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h4>Field Signatures</h4>
+                <div id="fieldSignatures">
+                    <div style="font-size: 9px; opacity: 0.7;">
+                        Real-time field distortion tracking
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const PHI = 1.618033988749895;
+        const TAU = 0.6180339887498948;
+        const Z_C = Math.sqrt(3) / 2;
+        const TWO_PI = Math.PI * 2;
+
+        // Canvas setup
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, centerX, centerY;
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            width = canvas.width;
+            height = canvas.height;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Layer configuration
+        const layers = [
+            { id: 0, name: 'Quasi-Crystal', y: 0.05, color: '#ff0066', register: 'GREY' },
+            { id: 1, name: 'Propagation', y: 0.15, color: '#ff6600', register: 'KAEL' },
+            { id: 2, name: 'Admissibility', y: 0.25, color: '#ffaa00', register: 'GREY' },
+            { id: 3, name: 'Narrowing', y: 0.35, color: '#aaff00', register: 'UMBRAL' },
+            { id: 4, name: 'Field Signature', y: 0.45, color: '#00ff88', register: 'UMBRAL' },
+            { id: 5, name: 'Signal Rupture', y: 0.55, color: '#00ffcc', register: 'ACE' },
+            { id: 6, name: 'Detector Sweep', y: 0.65, color: '#00ccff', register: 'KAEL' },
+            { id: 7, name: 'Routing (TRIAD)', y: 0.75, color: '#0088ff', register: 'UCF' },
+            { id: 8, name: 'Packet Formation', y: 0.85, color: '#6600ff', register: 'ULTRA' },
+            { id: 9, name: 'Metacybernetic', y: 0.95, color: '#cc00ff', register: 'KAEL' }
+        ];
+
+        // State
+        let particles = [];
+        let penroseTiles = [];
+        let time = 0;
+        let showPenrose = true;
+        let showParticles = true;
+        let showEquations = true;
+        let showFunnels = true;
+        let speedFactor = 1.0;
+        let theta = 1.57;
+        let phi = PHI;
+        let admissibilityThreshold = TAU;
+        let triadState = 'IDLE';
+        let triadRoute = '---';
+
+        // Register states
+        const registerStates = {
+            ULTRA: 0,
+            KAEL: 0,
+            GREY: 0,
+            UMBRAL: 0,
+            ACE: 0,
+            UCF: 0
+        };
+
+        // Particle class
+        class Particle {
+            constructor(x, y, layer, intensity) {
+                this.x = x;
+                this.y = y;
+                this.layer = layer;
+                this.intensity = intensity;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = 0;
+                this.life = 1.0;
+                this.size = 3 + intensity * 3;
+                this.color = layers[layer].color;
+                this.trail = [];
+                this.phase = Math.random() * TWO_PI;
+            }
+
+            update(dt) {
+                // Move towards next layer
+                const targetY = height * layers[Math.min(this.layer + 1, 9)].y;
+                this.vy = (targetY - this.y) * 0.02;
+
+                // Add waviness
+                this.vx += Math.sin(time * 2 + this.phase) * 0.1;
+                this.vx *= 0.98;
+
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+
+                // Update trail
+                this.trail.push({ x: this.x, y: this.y, life: this.life });
+                if (this.trail.length > 20) this.trail.shift();
+
+                // Decay
+                this.life -= 0.005 * dt;
+
+                // Check layer transitions
+                const currentLayerY = height * layers[this.layer].y;
+                if (Math.abs(this.y - currentLayerY) > height * 0.08) {
+                    this.layer = Math.min(this.layer + 1, 9);
+                    this.processLayer();
+                }
+
+                return this.life > 0;
+            }
+
+            processLayer() {
+                const layer = layers[this.layer];
+
+                // Update register state
+                if (registerStates[layer.register] !== undefined) {
+                    registerStates[layer.register] += this.intensity * 0.1;
+                }
+
+                // Layer-specific processing
+                switch(this.layer) {
+                    case 2: // Admissibility
+                        if (this.intensity < admissibilityThreshold) {
+                            this.life = Math.min(this.life, 0.3);
+                            this.color = '#ff0000';
+                        }
+                        break;
+                    case 3: // Narrowing
+                        this.vx *= Math.cos(theta / 2);
+                        break;
+                    case 5: // Signal Rupture
+                        if (Math.random() < 0.3) {
+                            this.life = 0;
+                        }
+                        break;
+                    case 7: // TRIAD Routing
+                        this.processTriad();
+                        break;
+                }
+            }
+
+            processTriad() {
+                const routes = ['S0', 'S1', 'S2'];
+                triadRoute = routes[Math.floor(Math.random() * 3)];
+                triadState = 'ROUTING';
+
+                setTimeout(() => {
+                    triadState = 'IDLE';
+                }, 500);
+            }
+
+            draw(ctx) {
+                // Draw trail
+                ctx.globalAlpha = this.life * 0.3;
+                ctx.beginPath();
+                for (let i = 0; i < this.trail.length - 1; i++) {
+                    const point = this.trail[i];
+                    const alpha = (i / this.trail.length) * this.life;
+                    ctx.strokeStyle = this.color;
+                    ctx.globalAlpha = alpha * 0.3;
+                    ctx.lineWidth = 1;
+                    if (i === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+
+                // Draw particle
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, TWO_PI);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Generate Penrose tiling
+        function generatePenroseTiling() {
+            penroseTiles = [];
+            const iterations = 100;
+            const angle = TWO_PI / 5;
+
+            for (let i = 0; i < iterations; i++) {
+                const radius = Math.pow(phi, i % 5) * 20;
+                const a = i * angle;
+                penroseTiles.push({
+                    x: centerX + Math.cos(a) * radius,
+                    y: height * 0.05 + Math.sin(a) * radius * 0.5,
+                    type: i % 2 === 0 ? 'thin' : 'thick',
+                    angle: a,
+                    radius: radius
+                });
+            }
+        }
+
+        generatePenroseTiling();
+
+        // Draw Penrose tiling
+        function drawPenroseTiling() {
+            if (!showPenrose) return;
+
+            ctx.globalAlpha = 0.2;
+            penroseTiles.forEach(tile => {
+                const size = tile.radius * 0.3;
+                const x = tile.x + Math.sin(time * 0.5) * 5;
+                const y = tile.y;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(tile.angle + time * 0.1);
+
+                if (tile.type === 'thin') {
+                    // Thin rhombus
+                    ctx.fillStyle = '#ff0066';
+                    ctx.beginPath();
+                    ctx.moveTo(0, -size);
+                    ctx.lineTo(size * 0.5, 0);
+                    ctx.lineTo(0, size);
+                    ctx.lineTo(-size * 0.5, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.strokeStyle = '#ff0099';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                } else {
+                    // Thick rhombus
+                    ctx.fillStyle = '#6600ff';
+                    ctx.beginPath();
+                    ctx.moveTo(0, -size * 0.8);
+                    ctx.lineTo(size * 0.8, 0);
+                    ctx.lineTo(0, size * 0.8);
+                    ctx.lineTo(-size * 0.8, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.strokeStyle = '#9933ff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw layers
+        function drawLayers() {
+            layers.forEach((layer, idx) => {
+                const y = height * layer.y;
+
+                // Layer line
+                ctx.strokeStyle = layer.color;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+
+                // Funnel visualization
+                if (showFunnels && idx > 0 && idx < 9) {
+                    const prevY = height * layers[idx - 1].y;
+                    const funnelWidth = width * (0.8 - idx * 0.05);
+                    const prevWidth = width * (0.8 - (idx - 1) * 0.05);
+
+                    ctx.strokeStyle = layer.color;
+                    ctx.globalAlpha = 0.15;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX - prevWidth/2, prevY);
+                    ctx.lineTo(centerX - funnelWidth/2, y);
+                    ctx.moveTo(centerX + prevWidth/2, prevY);
+                    ctx.lineTo(centerX + funnelWidth/2, y);
+                    ctx.stroke();
+                }
+
+                // Layer label
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = layer.color;
+                ctx.font = '12px Monaco';
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = layer.color;
+                ctx.fillText(`L${layer.id}: ${layer.name}`, 10, y - 5);
+                ctx.shadowBlur = 0;
+
+                // Equations overlay
+                if (showEquations && idx % 2 === 0) {
+                    ctx.globalAlpha = 0.3;
+                    ctx.font = '10px Monaco';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(getLayerEquation(idx), width - 10, y - 5);
+                    ctx.textAlign = 'left';
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // Get layer equation
+        function getLayerEquation(layerId) {
+            const equations = [
+                'Z(r) = Σ φⁿ·e^(i·2πn/5)',
+                'R(t) = R₀·e^(iωt)·∇Ψ',
+                'A(s) = H(s - τ)·W(s)',
+                'N(θ) = cos²(θ/2)·A(s)',
+                'F(x,y) = ∇²Ψ + k²Ψ',
+                'R(t) = δ(t - t₀)·sgn(dA/dt)',
+                'D(ω) = ∫ A(t)·e^(-iωt) dt',
+                'T = {S₀, S₁, S₂} → {S}',
+                'P = ⟨H|φ₁,...,φₙ⟩',
+                'M = ∂S/∂t + ∇·F(S)'
+            ];
+            return equations[layerId] || '';
+        }
+
+        // Update function
+        let lastTime = 0;
+        let fps = 60;
+        let frameCount = 0;
+        let fpsTime = 0;
+
+        function update(timestamp) {
+            const dt = Math.min((timestamp - lastTime) / 16.67, 2) * speedFactor;
+            lastTime = timestamp;
+            time += dt * 0.01;
+
+            // Clear canvas
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw Penrose tiling
+            drawPenroseTiling();
+
+            // Draw layers
+            drawLayers();
+
+            // Update and draw particles
+            if (showParticles) {
+                particles = particles.filter(p => {
+                    const alive = p.update(dt);
+                    if (alive) p.draw(ctx);
+                    return alive;
+                });
+            }
+
+            // Update register states (decay)
+            Object.keys(registerStates).forEach(key => {
+                registerStates[key] *= 0.99;
+            });
+
+            // Update UI
+            updateUI();
+
+            // FPS counter
+            frameCount++;
+            fpsTime += dt;
+            if (fpsTime >= 60) {
+                fps = Math.round(frameCount / (fpsTime / 60));
+                frameCount = 0;
+                fpsTime = 0;
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // Update UI
+        function updateUI() {
+            // Update register displays
+            Object.keys(registerStates).forEach(key => {
+                const element = document.getElementById(`reg-${key}`);
+                if (element) {
+                    element.textContent = registerStates[key].toFixed(3);
+                }
+            });
+
+            // Update TRIAD state
+            document.getElementById('triad-state').textContent = triadState;
+            document.getElementById('triad-route').textContent = triadRoute;
+
+            // Update counters
+            document.getElementById('particleCounter').textContent = particles.length;
+            document.getElementById('fpsCounter').textContent = fps;
+
+            // Update active layer
+            if (particles.length > 0) {
+                const activeParticle = particles[0];
+                const layerName = layers[activeParticle.layer].name;
+                document.getElementById('activeLayer').innerHTML =
+                    `<span class="layer-badge badge-l${activeParticle.layer}">L${activeParticle.layer}</span> ${layerName}`;
+            }
+        }
+
+        // Inject signal
+        function injectSignal() {
+            const layer = parseInt(document.getElementById('injectionLayer').value);
+            const intensity = parseFloat(document.getElementById('intensity').value);
+            const layerY = height * layers[layer].y;
+
+            const x = centerX + (Math.random() - 0.5) * width * 0.4;
+            particles.push(new Particle(x, layerY, layer, intensity));
+        }
+
+        function injectBurst() {
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => injectSignal(), i * 100);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('injectSignal').addEventListener('click', injectSignal);
+        document.getElementById('injectBurst').addEventListener('click', injectBurst);
+
+        document.getElementById('intensity').addEventListener('input', (e) => {
+            document.getElementById('intensityValue').textContent = e.target.value;
+        });
+
+        document.getElementById('theta').addEventListener('input', (e) => {
+            theta = parseFloat(e.target.value);
+            document.getElementById('thetaValue').textContent = theta.toFixed(2);
+        });
+
+        document.getElementById('phi').addEventListener('input', (e) => {
+            phi = parseFloat(e.target.value);
+            document.getElementById('phiValue').textContent = phi.toFixed(3);
+            generatePenroseTiling();
+        });
+
+        document.getElementById('admissibility').addEventListener('input', (e) => {
+            admissibilityThreshold = parseFloat(e.target.value);
+            document.getElementById('admissibilityValue').textContent = admissibilityThreshold.toFixed(3);
+        });
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            speedFactor = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = speedFactor.toFixed(1);
+        });
+
+        document.getElementById('togglePenrose').addEventListener('click', () => {
+            showPenrose = !showPenrose;
+        });
+
+        document.getElementById('toggleParticles').addEventListener('click', () => {
+            showParticles = !showParticles;
+        });
+
+        document.getElementById('toggleEquations').addEventListener('click', () => {
+            showEquations = !showEquations;
+        });
+
+        document.getElementById('toggleFunnels').addEventListener('click', () => {
+            showFunnels = !showFunnels;
+        });
+
+        document.getElementById('resetView').addEventListener('click', () => {
+            particles = [];
+            Object.keys(registerStates).forEach(key => registerStates[key] = 0);
+            triadState = 'IDLE';
+            triadRoute = '---';
+            time = 0;
+        });
+
+        // Start animation
+        requestAnimationFrame(update);
+
+        // Auto-inject demo signals
+        setInterval(() => {
+            if (particles.length < 5) {
+                const randomLayer = Math.floor(Math.random() * 5);
+                document.getElementById('injectionLayer').value = randomLayer;
+                injectSignal();
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

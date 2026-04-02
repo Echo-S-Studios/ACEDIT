@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalBus Communication Patterns - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Berkeley Mono', 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+            color: #00ff88;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #00ff88;
+            margin-bottom: 30px;
+            background: rgba(0, 255, 136, 0.05);
+            border-radius: 10px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #00ddff;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px #00ddff;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: rgba(10, 10, 30, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .panel h2 {
+            color: #00ddff;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #00ddff;
+        }
+
+        .network-canvas {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff88;
+            border-radius: 5px;
+            cursor: crosshair;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00ff88 0%, #00ddff 100%);
+            color: #0a0a1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Berkeley Mono', monospace;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        input, select {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-family: 'Berkeley Mono', monospace;
+        }
+
+        .event-log {
+            height: 300px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff88;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 0.85em;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-left: 3px solid #00ff88;
+            padding-left: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .log-entry.broadcast {
+            border-left-color: #ff00ff;
+        }
+
+        .log-entry.targeted {
+            border-left-color: #00ddff;
+        }
+
+        .log-entry.priority {
+            border-left-color: #ffff00;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .metric-card {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            color: #00ddff;
+            text-shadow: 0 0 10px #00ddff;
+            font-weight: bold;
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            color: #00ff88;
+            margin-top: 5px;
+        }
+
+        .equation-display {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ddff;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.1em;
+            color: #00ddff;
+            text-align: center;
+            overflow-x: auto;
+        }
+
+        .node {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00ff88;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.7em;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+        }
+
+        .node:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.8);
+        }
+
+        .node.selected {
+            border-color: #ffff00;
+            box-shadow: 0 0 25px rgba(255, 255, 0, 0.8);
+        }
+
+        .node.pulsing {
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .signal-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .queue-viz {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .queue-item {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            border-radius: 3px;
+            padding: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .priority-high {
+            border-color: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .priority-medium {
+            border-color: #ffff00;
+        }
+
+        .priority-low {
+            border-color: #00ff88;
+        }
+
+        canvas {
+            border-radius: 5px;
+        }
+
+        .matrix-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .matrix-cell {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            padding: 10px;
+            text-align: center;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        .topology-viz {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .topology-node {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 221, 255, 0.2));
+            border: 2px solid #00ff88;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .topology-node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+        }
+
+        .connection-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, #00ff88, #00ddff);
+            transform-origin: left center;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .message-type-selector {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .message-type-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #00ff88;
+            background: rgba(0, 0, 0, 0.5);
+            color: #00ff88;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .message-type-btn.active {
+            background: linear-gradient(135deg, #00ff88, #00ddff);
+            color: #0a0a1a;
+        }
+
+        .event-bubble-viz {
+            position: relative;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff88;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid #00ff88;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            animation: bubbleRise 3s ease-in-out infinite;
+        }
+
+        @keyframes bubbleRise {
+            0% { bottom: -50px; opacity: 0; }
+            50% { opacity: 1; }
+            100% { bottom: 100%; opacity: 0; }
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .graph-viz {
+            position: relative;
+            height: 400px;
+        }
+
+        .scroll-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ddff;
+        }
+
+        .register-indicator {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+        .register-KAEL { background: rgba(255, 100, 255, 0.3); color: #ff64ff; }
+        .register-ACE { background: rgba(255, 0, 0, 0.3); color: #ff6666; }
+        .register-GREY { background: rgba(128, 128, 128, 0.3); color: #cccccc; }
+        .register-UMBRAL { background: rgba(128, 0, 255, 0.3); color: #cc88ff; }
+        .register-ULTRA { background: rgba(255, 255, 0, 0.3); color: #ffff66; }
+        .register-UCF { background: rgba(0, 255, 255, 0.3); color: #66ffff; }
+
+        .stats-bar {
+            height: 20px;
+            background: rgba(0, 255, 136, 0.3);
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .stats-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00ddff);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SignalBus Communication Patterns</h1>
+            <p class="subtitle">Event-Driven Architecture Visualization & Real-Time Signal Flow</p>
+        </header>
+
+        <div class="grid">
+            <!-- Network Topology -->
+            <div class="panel full-width">
+                <h2>Interactive Network Topology</h2>
+                <canvas id="networkCanvas" class="network-canvas"></canvas>
+                <div class="controls">
+                    <button onclick="signalBus.addNode()">Add Node</button>
+                    <button onclick="signalBus.clearNetwork()">Clear Network</button>
+                    <button onclick="signalBus.createRandomTopology()">Random Topology</button>
+                    <button onclick="signalBus.createStarTopology()">Star Topology</button>
+                    <button onclick="signalBus.createMeshTopology()">Mesh Topology</button>
+                </div>
+            </div>
+
+            <!-- Signal Sender -->
+            <div class="panel">
+                <h2>Signal Transmission</h2>
+                <div class="message-type-selector">
+                    <button class="message-type-btn active" onclick="signalBus.setMessageType('broadcast')">
+                        Broadcast
+                    </button>
+                    <button class="message-type-btn" onclick="signalBus.setMessageType('targeted')">
+                        Targeted
+                    </button>
+                    <button class="message-type-btn" onclick="signalBus.setMessageType('multiplexed')">
+                        Multiplexed
+                    </button>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <label>Signal Payload:</label>
+                    <input type="text" id="signalPayload" placeholder="Enter message" style="width: 100%; margin: 10px 0;">
+
+                    <label>Register Domain:</label>
+                    <select id="registerSelect" style="width: 100%; margin: 10px 0;">
+                        <option value="KAEL">KAEL (Neural/Substrate)</option>
+                        <option value="ACE">ACE (Spin/Energy)</option>
+                        <option value="GREY">GREY (Visual/Geometry)</option>
+                        <option value="UMBRAL">UMBRAL (Formal/Algebra)</option>
+                        <option value="ULTRA">ULTRA (Universal)</option>
+                        <option value="UCF">UCF (Unified)</option>
+                    </select>
+
+                    <label>Priority Level:</label>
+                    <select id="prioritySelect" style="width: 100%; margin: 10px 0;">
+                        <option value="high">High Priority</option>
+                        <option value="medium" selected>Medium Priority</option>
+                        <option value="low">Low Priority</option>
+                    </select>
+
+                    <button onclick="signalBus.sendSignal()" style="width: 100%; margin-top: 10px;">
+                        Send Signal
+                    </button>
+                </div>
+
+                <div class="equation-display">
+                    Signal Propagation: S(t) = A·e<sup>-λt</sup>·cos(ωt + φ)
+                </div>
+            </div>
+
+            <!-- Event Log -->
+            <div class="panel">
+                <h2>Event Log & Signal History</h2>
+                <div class="event-log" id="eventLog">
+                    <div class="log-entry">System initialized. Ready to transmit signals...</div>
+                </div>
+                <div class="controls">
+                    <button onclick="signalBus.clearLog()">Clear Log</button>
+                    <button onclick="signalBus.exportLog()">Export Log</button>
+                </div>
+            </div>
+
+            <!-- Metrics Dashboard -->
+            <div class="panel full-width">
+                <h2>Real-Time Metrics & Performance</h2>
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="signalCount">0</div>
+                        <div class="metric-label">Signals Sent</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="avgLatency">0</div>
+                        <div class="metric-label">Avg Latency (ms)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="throughput">0</div>
+                        <div class="metric-label">Throughput (msg/s)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="activeNodes">0</div>
+                        <div class="metric-label">Active Nodes</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="queueSize">0</div>
+                        <div class="metric-label">Queue Size</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="networkLoad">0%</div>
+                        <div class="metric-label">Network Load</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Priority Queue -->
+            <div class="panel">
+                <h2>Priority Queue Visualization</h2>
+                <div class="equation-display">
+                    Queue Theory: λ = arrival rate, μ = service rate<br>
+                    ρ = λ/μ (utilization), W<sub>q</sub> = λ/(μ(μ-λ))
+                </div>
+                <div class="queue-viz" id="queueViz">
+                    <div style="text-align: center; color: #666; padding: 20px;">
+                        Queue is empty
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Bubbling -->
+            <div class="panel">
+                <h2>Event Bubbling & Capturing</h2>
+                <div class="event-bubble-viz" id="bubbleViz">
+                </div>
+                <div class="controls">
+                    <button onclick="signalBus.triggerBubbleEvent()">Trigger Bubble</button>
+                    <button onclick="signalBus.triggerCaptureEvent()">Trigger Capture</button>
+                </div>
+            </div>
+
+            <!-- Register Routing -->
+            <div class="panel full-width">
+                <h2>Register-Based Routing Matrix</h2>
+                <div class="equation-display">
+                    Routing Matrix: R = [r<sub>ij</sub>] where r<sub>ij</sub> = P(route | source<sub>i</sub>, dest<sub>j</sub>)
+                </div>
+                <canvas id="routingCanvas" width="800" height="300" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #00ff88; border-radius: 5px;"></canvas>
+            </div>
+
+            <!-- Signal Transformation -->
+            <div class="panel">
+                <h2>Signal Transformation Matrix</h2>
+                <div class="equation-display">
+                    Transform: T(s) = A·s + b<br>
+                    T = [t<sub>11</sub> t<sub>12</sub>; t<sub>21</sub> t<sub>22</sub>]
+                </div>
+                <div class="matrix-display" id="transformMatrix">
+                </div>
+            </div>
+
+            <!-- Graph Theory -->
+            <div class="panel">
+                <h2>Network Graph Theory</h2>
+                <div class="equation-display">
+                    Adjacency Matrix: A = [a<sub>ij</sub>]<br>
+                    Degree: deg(v) = Σa<sub>ij</sub><br>
+                    Path Length: d(u,v) = min hops
+                </div>
+                <div id="graphStats" style="margin-top: 15px;">
+                    <div style="margin: 10px 0;">
+                        <strong>Network Density:</strong> <span id="networkDensity">0.00</span>
+                        <div class="stats-bar"><div class="stats-fill" id="densityBar"></div></div>
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <strong>Avg Clustering:</strong> <span id="avgClustering">0.00</span>
+                        <div class="stats-bar"><div class="stats-fill" id="clusterBar"></div></div>
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <strong>Network Diameter:</strong> <span id="networkDiameter">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signal Multiplexing -->
+            <div class="panel full-width">
+                <h2>Signal Multiplexing Visualization</h2>
+                <canvas id="multiplexCanvas" width="1400" height="300" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #00ff88; border-radius: 5px;"></canvas>
+                <div class="controls">
+                    <button onclick="signalBus.addMultiplexedSignal('KAEL')">Add KAEL Signal</button>
+                    <button onclick="signalBus.addMultiplexedSignal('ACE')">Add ACE Signal</button>
+                    <button onclick="signalBus.addMultiplexedSignal('GREY')">Add GREY Signal</button>
+                    <button onclick="signalBus.clearMultiplex()">Clear Multiplex</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SignalBusDemo {
+            constructor() {
+                this.nodes = [];
+                this.edges = [];
+                this.signals = [];
+                this.messageType = 'broadcast';
+                this.selectedNode = null;
+                this.eventLog = [];
+                this.metrics = {
+                    signalCount: 0,
+                    totalLatency: 0,
+                    lastSecondSignals: [],
+                    queuedMessages: []
+                };
+                this.registers = ['KAEL', 'ACE', 'GREY', 'UMBRAL', 'ULTRA', 'UCF'];
+                this.registerColors = {
+                    'KAEL': '#ff64ff',
+                    'ACE': '#ff6666',
+                    'GREY': '#cccccc',
+                    'UMBRAL': '#cc88ff',
+                    'ULTRA': '#ffff66',
+                    'UCF': '#66ffff'
+                };
+                this.multiplexedSignals = [];
+
+                this.setupCanvas();
+                this.createRandomTopology();
+                this.animate();
+                this.updateMetrics();
+                this.drawRoutingMatrix();
+                this.updateTransformMatrix();
+                this.animateMultiplex();
+            }
+
+            setupCanvas() {
+                this.canvas = document.getElementById('networkCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+
+                this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+            }
+
+            addNode() {
+                const node = {
+                    id: this.nodes.length,
+                    x: Math.random() * (this.canvas.width - 100) + 50,
+                    y: Math.random() * (this.canvas.height - 100) + 50,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    register: this.registers[Math.floor(Math.random() * this.registers.length)],
+                    active: false,
+                    queue: []
+                };
+                this.nodes.push(node);
+                this.logEvent(`Node ${node.id} added with register ${node.register}`, 'broadcast');
+                return node;
+            }
+
+            createRandomTopology() {
+                this.clearNetwork();
+                const nodeCount = 8;
+
+                for (let i = 0; i < nodeCount; i++) {
+                    this.addNode();
+                }
+
+                // Create random edges
+                for (let i = 0; i < this.nodes.length; i++) {
+                    for (let j = i + 1; j < this.nodes.length; j++) {
+                        if (Math.random() > 0.6) {
+                            this.edges.push({ from: i, to: j, active: false });
+                        }
+                    }
+                }
+
+                this.logEvent('Random topology created', 'broadcast');
+            }
+
+            createStarTopology() {
+                this.clearNetwork();
+                const center = this.addNode();
+                center.x = this.canvas.width / 2;
+                center.y = this.canvas.height / 2;
+
+                for (let i = 0; i < 7; i++) {
+                    const angle = (i / 7) * Math.PI * 2;
+                    const radius = 150;
+                    const node = this.addNode();
+                    node.x = center.x + Math.cos(angle) * radius;
+                    node.y = center.y + Math.sin(angle) * radius;
+                    this.edges.push({ from: 0, to: node.id, active: false });
+                }
+
+                this.logEvent('Star topology created', 'broadcast');
+            }
+
+            createMeshTopology() {
+                this.clearNetwork();
+                const nodeCount = 6;
+
+                for (let i = 0; i < nodeCount; i++) {
+                    this.addNode();
+                }
+
+                // Full mesh - connect all nodes
+                for (let i = 0; i < this.nodes.length; i++) {
+                    for (let j = i + 1; j < this.nodes.length; j++) {
+                        this.edges.push({ from: i, to: j, active: false });
+                    }
+                }
+
+                this.logEvent('Mesh topology created', 'broadcast');
+            }
+
+            clearNetwork() {
+                this.nodes = [];
+                this.edges = [];
+                this.signals = [];
+                this.selectedNode = null;
+            }
+
+            handleCanvasClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+
+                for (let node of this.nodes) {
+                    const dist = Math.hypot(node.x - x, node.y - y);
+                    if (dist < 20) {
+                        this.selectedNode = node.id;
+                        this.logEvent(`Node ${node.id} selected (${node.register})`, 'targeted');
+                        return;
+                    }
+                }
+            }
+
+            sendSignal() {
+                if (this.nodes.length === 0) {
+                    this.logEvent('Error: No nodes in network', 'broadcast');
+                    return;
+                }
+
+                const payload = document.getElementById('signalPayload').value || 'Signal';
+                const register = document.getElementById('registerSelect').value;
+                const priority = document.getElementById('prioritySelect').value;
+
+                let targets = [];
+                if (this.messageType === 'broadcast') {
+                    targets = this.nodes.map(n => n.id);
+                } else if (this.messageType === 'targeted') {
+                    if (this.selectedNode !== null) {
+                        targets = [this.selectedNode];
+                    } else {
+                        this.logEvent('Error: No node selected for targeted message', 'targeted');
+                        return;
+                    }
+                } else if (this.messageType === 'multiplexed') {
+                    targets = this.nodes.filter(n => n.register === register).map(n => n.id);
+                }
+
+                const signal = {
+                    id: Date.now(),
+                    payload,
+                    register,
+                    priority,
+                    targets,
+                    source: Math.floor(Math.random() * this.nodes.length),
+                    createdAt: Date.now(),
+                    particles: []
+                };
+
+                // Create signal particles for each target
+                for (let targetId of targets) {
+                    if (this.nodes[targetId]) {
+                        const source = this.nodes[signal.source];
+                        const target = this.nodes[targetId];
+
+                        signal.particles.push({
+                            x: source.x,
+                            y: source.y,
+                            targetX: target.x,
+                            targetY: target.y,
+                            targetId,
+                            progress: 0,
+                            speed: 0.02 + Math.random() * 0.01
+                        });
+
+                        // Add to queue
+                        this.addToQueue(targetId, signal, priority);
+                    }
+                }
+
+                this.signals.push(signal);
+                this.metrics.signalCount++;
+                this.metrics.lastSecondSignals.push(Date.now());
+
+                const typeLabel = this.messageType.charAt(0).toUpperCase() + this.messageType.slice(1);
+                this.logEvent(
+                    `${typeLabel} signal sent: "${payload}" [${register}] to ${targets.length} node(s)`,
+                    this.messageType,
+                    register
+                );
+
+                // Activate source and target edges
+                this.nodes[signal.source].active = true;
+                setTimeout(() => this.nodes[signal.source].active = false, 500);
+            }
+
+            addToQueue(nodeId, signal, priority) {
+                const priorityValue = priority === 'high' ? 3 : priority === 'medium' ? 2 : 1;
+                this.metrics.queuedMessages.push({
+                    nodeId,
+                    signal,
+                    priority,
+                    priorityValue,
+                    timestamp: Date.now()
+                });
+
+                // Sort queue by priority
+                this.metrics.queuedMessages.sort((a, b) => b.priorityValue - a.priorityValue);
+
+                this.updateQueueViz();
+            }
+
+            updateQueueViz() {
+                const queueViz = document.getElementById('queueViz');
+
+                if (this.metrics.queuedMessages.length === 0) {
+                    queueViz.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Queue is empty</div>';
+                    return;
+                }
+
+                queueViz.innerHTML = this.metrics.queuedMessages.slice(0, 10).map(msg => `
+                    <div class="queue-item priority-${msg.priority}">
+                        <span>Node ${msg.nodeId}: ${msg.signal.payload}</span>
+                        <span class="register-indicator register-${msg.signal.register}">${msg.signal.register}</span>
+                    </div>
+                `).join('');
+            }
+
+            processQueue() {
+                if (this.metrics.queuedMessages.length > 0) {
+                    const msg = this.metrics.queuedMessages.shift();
+                    const latency = Date.now() - msg.timestamp;
+                    this.metrics.totalLatency += latency;
+
+                    if (this.nodes[msg.nodeId]) {
+                        this.nodes[msg.nodeId].active = true;
+                        setTimeout(() => this.nodes[msg.nodeId].active = false, 300);
+                    }
+
+                    this.updateQueueViz();
+                }
+            }
+
+            setMessageType(type) {
+                this.messageType = type;
+
+                // Update button states
+                document.querySelectorAll('.message-type-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            }
+
+            logEvent(message, type = 'broadcast', register = null) {
+                const entry = {
+                    timestamp: new Date().toLocaleTimeString(),
+                    message,
+                    type,
+                    register
+                };
+                this.eventLog.unshift(entry);
+
+                const logDiv = document.getElementById('eventLog');
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${type}`;
+                logEntry.innerHTML = `
+                    <span style="color: #666;">[${entry.timestamp}]</span>
+                    ${message}
+                    ${register ? `<span class="register-indicator register-${register}">${register}</span>` : ''}
+                `;
+                logDiv.insertBefore(logEntry, logDiv.firstChild);
+
+                // Keep only last 100 entries
+                while (logDiv.children.length > 100) {
+                    logDiv.removeChild(logDiv.lastChild);
+                }
+            }
+
+            clearLog() {
+                this.eventLog = [];
+                document.getElementById('eventLog').innerHTML = '<div class="log-entry">Log cleared</div>';
+            }
+
+            exportLog() {
+                const logText = this.eventLog.map(e =>
+                    `[${e.timestamp}] ${e.message}`
+                ).join('\n');
+
+                const blob = new Blob([logText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `signalbus-log-${Date.now()}.txt`;
+                a.click();
+
+                this.logEvent('Log exported', 'broadcast');
+            }
+
+            updateMetrics() {
+                // Update signal count
+                document.getElementById('signalCount').textContent = this.metrics.signalCount;
+
+                // Calculate average latency
+                const avgLatency = this.metrics.signalCount > 0
+                    ? (this.metrics.totalLatency / this.metrics.signalCount).toFixed(2)
+                    : 0;
+                document.getElementById('avgLatency').textContent = avgLatency;
+
+                // Calculate throughput (signals per second)
+                const now = Date.now();
+                this.metrics.lastSecondSignals = this.metrics.lastSecondSignals.filter(t => now - t < 1000);
+                document.getElementById('throughput').textContent = this.metrics.lastSecondSignals.length;
+
+                // Active nodes
+                document.getElementById('activeNodes').textContent = this.nodes.length;
+
+                // Queue size
+                document.getElementById('queueSize').textContent = this.metrics.queuedMessages.length;
+
+                // Network load
+                const maxLoad = this.nodes.length * 10; // arbitrary max
+                const currentLoad = this.metrics.queuedMessages.length;
+                const loadPercent = maxLoad > 0 ? Math.min(100, (currentLoad / maxLoad * 100)).toFixed(0) : 0;
+                document.getElementById('networkLoad').textContent = loadPercent + '%';
+
+                // Update graph theory stats
+                this.updateGraphStats();
+
+                // Process one queued message
+                if (Math.random() > 0.7) {
+                    this.processQueue();
+                }
+
+                setTimeout(() => this.updateMetrics(), 100);
+            }
+
+            updateGraphStats() {
+                if (this.nodes.length < 2) {
+                    document.getElementById('networkDensity').textContent = '0.00';
+                    document.getElementById('avgClustering').textContent = '0.00';
+                    document.getElementById('networkDiameter').textContent = '0';
+                    document.getElementById('densityBar').style.width = '0%';
+                    document.getElementById('clusterBar').style.width = '0%';
+                    return;
+                }
+
+                // Network density
+                const maxEdges = (this.nodes.length * (this.nodes.length - 1)) / 2;
+                const density = this.edges.length / maxEdges;
+                document.getElementById('networkDensity').textContent = density.toFixed(2);
+                document.getElementById('densityBar').style.width = (density * 100) + '%';
+
+                // Average clustering coefficient (simplified)
+                const clustering = Math.min(1, this.edges.length / this.nodes.length / 2);
+                document.getElementById('avgClustering').textContent = clustering.toFixed(2);
+                document.getElementById('clusterBar').style.width = (clustering * 100) + '%';
+
+                // Network diameter (simplified - max hops)
+                const diameter = Math.ceil(Math.log2(this.nodes.length + 1));
+                document.getElementById('networkDiameter').textContent = diameter;
+            }
+
+            drawRoutingMatrix() {
+                const canvas = document.getElementById('routingCanvas');
+                const ctx = canvas.getContext('2d');
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const cellWidth = canvas.width / this.registers.length;
+                    const cellHeight = canvas.height / this.registers.length;
+
+                    // Draw matrix cells
+                    for (let i = 0; i < this.registers.length; i++) {
+                        for (let j = 0; j < this.registers.length; j++) {
+                            const x = j * cellWidth;
+                            const y = i * cellHeight;
+
+                            // Calculate routing probability (diagonal stronger)
+                            const prob = i === j ? 0.9 : 0.1 + Math.random() * 0.2;
+
+                            // Draw cell
+                            ctx.fillStyle = `rgba(0, 255, 136, ${prob * 0.3})`;
+                            ctx.fillRect(x, y, cellWidth - 2, cellHeight - 2);
+
+                            // Draw border
+                            ctx.strokeStyle = this.registerColors[this.registers[i]];
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(x, y, cellWidth - 2, cellHeight - 2);
+
+                            // Draw probability
+                            ctx.fillStyle = '#00ff88';
+                            ctx.font = '14px Berkeley Mono';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(prob.toFixed(2), x + cellWidth / 2, y + cellHeight / 2);
+                        }
+                    }
+
+                    // Draw labels
+                    ctx.fillStyle = '#00ddff';
+                    ctx.font = '12px Berkeley Mono';
+                    this.registers.forEach((reg, i) => {
+                        ctx.fillText(reg, i * cellWidth + cellWidth / 2, canvas.height - 10);
+                        ctx.save();
+                        ctx.translate(10, i * cellHeight + cellHeight / 2);
+                        ctx.rotate(-Math.PI / 2);
+                        ctx.fillText(reg, 0, 0);
+                        ctx.restore();
+                    });
+
+                    requestAnimationFrame(animate);
+                };
+
+                animate();
+            }
+
+            updateTransformMatrix() {
+                const matrixDiv = document.getElementById('transformMatrix');
+
+                const update = () => {
+                    const matrix = [
+                        [Math.cos(Date.now() / 1000), -Math.sin(Date.now() / 1000)],
+                        [Math.sin(Date.now() / 1000), Math.cos(Date.now() / 1000)]
+                    ];
+
+                    matrixDiv.innerHTML = matrix.flat().map(val => `
+                        <div class="matrix-cell">${val.toFixed(3)}</div>
+                    `).join('');
+
+                    setTimeout(update, 100);
+                };
+
+                update();
+            }
+
+            triggerBubbleEvent() {
+                const bubbleViz = document.getElementById('bubbleViz');
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.style.left = Math.random() * (bubbleViz.offsetWidth - 60) + 'px';
+                bubble.style.width = bubble.style.height = (30 + Math.random() * 40) + 'px';
+                bubble.style.background = `radial-gradient(circle, ${this.registerColors[this.registers[Math.floor(Math.random() * this.registers.length)]]}, transparent)`;
+                bubble.style.animationDuration = (2 + Math.random() * 2) + 's';
+                bubble.textContent = '▲';
+
+                bubbleViz.appendChild(bubble);
+
+                setTimeout(() => bubble.remove(), 4000);
+                this.logEvent('Bubble event triggered', 'broadcast');
+            }
+
+            triggerCaptureEvent() {
+                const bubbleViz = document.getElementById('bubbleViz');
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.style.left = Math.random() * (bubbleViz.offsetWidth - 60) + 'px';
+                bubble.style.width = bubble.style.height = (30 + Math.random() * 40) + 'px';
+                bubble.style.background = `radial-gradient(circle, #ff00ff, transparent)`;
+                bubble.style.animation = 'none';
+                bubble.style.bottom = '80%';
+                bubble.textContent = '▼';
+
+                bubbleViz.appendChild(bubble);
+
+                let pos = 80;
+                const fall = setInterval(() => {
+                    pos -= 2;
+                    bubble.style.bottom = pos + '%';
+                    if (pos <= -10) {
+                        clearInterval(fall);
+                        bubble.remove();
+                    }
+                }, 30);
+
+                this.logEvent('Capture event triggered', 'broadcast');
+            }
+
+            addMultiplexedSignal(register) {
+                this.multiplexedSignals.push({
+                    register,
+                    frequency: 0.5 + Math.random() * 2,
+                    amplitude: 30 + Math.random() * 40,
+                    phase: Math.random() * Math.PI * 2,
+                    color: this.registerColors[register]
+                });
+
+                this.logEvent(`Multiplexed signal added: ${register}`, 'multiplexed', register);
+            }
+
+            clearMultiplex() {
+                this.multiplexedSignals = [];
+                this.logEvent('Multiplex cleared', 'broadcast');
+            }
+
+            animateMultiplex() {
+                const canvas = document.getElementById('multiplexCanvas');
+                const ctx = canvas.getContext('2d');
+
+                const animate = () => {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const centerY = canvas.height / 2;
+                    const time = Date.now() / 1000;
+
+                    // Draw each multiplexed signal
+                    this.multiplexedSignals.forEach((sig, index) => {
+                        ctx.strokeStyle = sig.color;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+
+                        for (let x = 0; x < canvas.width; x++) {
+                            const y = centerY + sig.amplitude * Math.sin(
+                                sig.frequency * x * 0.02 + time * 2 + sig.phase
+                            ) + (index - this.multiplexedSignals.length / 2) * 20;
+
+                            if (x === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+
+                        ctx.stroke();
+                    });
+
+                    requestAnimationFrame(animate);
+                };
+
+                animate();
+            }
+
+            animate() {
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Update node physics
+                this.nodes.forEach(node => {
+                    node.x += node.vx;
+                    node.y += node.vy;
+
+                    // Bounce off walls
+                    if (node.x < 20 || node.x > this.canvas.width - 20) node.vx *= -1;
+                    if (node.y < 20 || node.y > this.canvas.height - 20) node.vy *= -1;
+
+                    // Keep in bounds
+                    node.x = Math.max(20, Math.min(this.canvas.width - 20, node.x));
+                    node.y = Math.max(20, Math.min(this.canvas.height - 20, node.y));
+                });
+
+                // Draw edges
+                this.ctx.strokeStyle = '#00ff88';
+                this.ctx.lineWidth = 1;
+                this.edges.forEach(edge => {
+                    const from = this.nodes[edge.from];
+                    const to = this.nodes[edge.to];
+                    if (!from || !to) return;
+
+                    this.ctx.globalAlpha = edge.active ? 1 : 0.3;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(from.x, from.y);
+                    this.ctx.lineTo(to.x, to.y);
+                    this.ctx.stroke();
+
+                    if (edge.active) {
+                        edge.active = false;
+                    }
+                });
+                this.ctx.globalAlpha = 1;
+
+                // Draw nodes
+                this.nodes.forEach((node, i) => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(node.x, node.y, 20, 0, Math.PI * 2);
+                    this.ctx.fillStyle = node.active
+                        ? this.registerColors[node.register]
+                        : 'rgba(10, 10, 30, 0.8)';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = this.selectedNode === i ? '#ffff00' : this.registerColors[node.register];
+                    this.ctx.lineWidth = this.selectedNode === i ? 3 : 2;
+                    this.ctx.stroke();
+
+                    // Draw label
+                    this.ctx.fillStyle = '#00ff88';
+                    this.ctx.font = '12px Berkeley Mono';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(`N${i}`, node.x, node.y);
+                });
+
+                // Update and draw signal particles
+                this.signals = this.signals.filter(signal => {
+                    signal.particles = signal.particles.filter(particle => {
+                        particle.progress += particle.speed;
+
+                        if (particle.progress >= 1) {
+                            // Particle reached target
+                            if (this.nodes[particle.targetId]) {
+                                this.nodes[particle.targetId].active = true;
+
+                                // Find and activate edge
+                                this.edges.forEach(edge => {
+                                    if ((edge.from === signal.source && edge.to === particle.targetId) ||
+                                        (edge.to === signal.source && edge.from === particle.targetId)) {
+                                        edge.active = true;
+                                    }
+                                });
+                            }
+                            return false;
+                        }
+
+                        particle.x = signal.particles[0].x + (particle.targetX - signal.particles[0].x) * particle.progress;
+                        particle.y = signal.particles[0].y + (particle.targetY - signal.particles[0].y) * particle.progress;
+
+                        // Draw particle
+                        this.ctx.beginPath();
+                        this.ctx.arc(particle.x, particle.y, 4, 0, Math.PI * 2);
+                        this.ctx.fillStyle = this.registerColors[signal.register];
+                        this.ctx.shadowBlur = 15;
+                        this.ctx.shadowColor = this.registerColors[signal.register];
+                        this.ctx.fill();
+                        this.ctx.shadowBlur = 0;
+
+                        return true;
+                    });
+
+                    return signal.particles.length > 0;
+                });
+
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // Initialize the demo
+        const signalBus = new SignalBusDemo();
+
+        // Add some demo signals periodically
+        setInterval(() => {
+            if (Math.random() > 0.9 && signalBus.nodes.length > 0) {
+                const demoPayloads = ['HEARTBEAT', 'SYNC', 'UPDATE', 'QUERY', 'RESPONSE'];
+                document.getElementById('signalPayload').value = demoPayloads[Math.floor(Math.random() * demoPayloads.length)];
+                signalBus.sendSignal();
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

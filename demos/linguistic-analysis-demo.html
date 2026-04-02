@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linguistic Analysis Tool - ACEDIT System</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1145 50%, #0f0520 100%);
+            color: #00ffcc;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(0, 255, 204, 0.05);
+            border: 2px solid rgba(0, 255, 204, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 255, 204, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 255, 204, 0.8);
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #9d4edd;
+            position: relative;
+            z-index: 1;
+        }
+
+        .formula-display {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(157, 78, 221, 0.1);
+            border: 1px solid rgba(157, 78, 221, 0.3);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.3em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: rgba(10, 14, 39, 0.8);
+            border: 2px solid rgba(0, 255, 204, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .panel:hover {
+            border-color: rgba(0, 255, 204, 0.6);
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+        }
+
+        .panel h2 {
+            margin-bottom: 20px;
+            color: #ff006e;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px rgba(255, 0, 110, 0.5);
+        }
+
+        .input-section {
+            grid-column: 1 / -1;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(0, 255, 204, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            color: #00ffcc;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: rgba(0, 255, 204, 0.8);
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #ff006e 0%, #9d4edd 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(157, 78, 221, 0.8);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .metric {
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(0, 255, 204, 0.05);
+            border-left: 4px solid #00ffcc;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-label {
+            font-weight: bold;
+            color: #9d4edd;
+        }
+
+        .metric-value {
+            font-size: 1.3em;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 350px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .register-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .register-card {
+            background: rgba(157, 78, 221, 0.1);
+            border: 2px solid rgba(157, 78, 221, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .register-card:hover {
+            border-color: rgba(157, 78, 221, 0.8);
+            transform: scale(1.05);
+        }
+
+        .register-name {
+            font-weight: bold;
+            color: #ff006e;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .register-value {
+            font-size: 2em;
+            color: #00ffcc;
+            text-shadow: 0 0 15px rgba(0, 255, 204, 0.8);
+        }
+
+        .word-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            min-height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .word-item {
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .word-item:hover {
+            background: rgba(0, 255, 204, 0.3);
+            transform: scale(1.1);
+        }
+
+        .semantic-cluster {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 0, 110, 0.05);
+            border: 2px solid rgba(255, 0, 110, 0.3);
+            border-radius: 10px;
+        }
+
+        .cluster-header {
+            font-weight: bold;
+            color: #ff006e;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .cluster-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .cluster-word {
+            background: rgba(157, 78, 221, 0.2);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            border: 1px solid rgba(157, 78, 221, 0.4);
+        }
+
+        #density-graph, #register-pie, #coherence-formula, #register-3d {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+        }
+
+        .animation-container {
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .phoneme-viz {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 3px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .vowel {
+            background: rgba(0, 255, 204, 0.3);
+            border: 1px solid #00ffcc;
+        }
+
+        .consonant {
+            background: rgba(157, 78, 221, 0.3);
+            border: 1px solid #9d4edd;
+        }
+
+        .stress-marker {
+            font-weight: bold;
+            color: #ff006e;
+            text-shadow: 0 0 10px rgba(255, 0, 110, 0.8);
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 255, 204, 0.05);
+            border: 2px solid rgba(0, 255, 204, 0.3);
+            border-radius: 10px;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            color: #ff006e;
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(255, 0, 110, 0.5);
+        }
+
+        .stat-label {
+            color: #9d4edd;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #00ffcc;
+            font-size: 1.2em;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            border: 3px solid rgba(0, 255, 204, 0.3);
+            border-top: 3px solid #00ffcc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Linguistic Analysis Tool</h1>
+            <p class="subtitle">ACEDIT System - Semantic Pattern Analyzer</p>
+            <div class="formula-display">
+                Coherence Threshold: z<sub>c</sub> = √3/2 ≈ 0.866
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="panel input-section">
+                <h2>Text Input for Analysis</h2>
+                <textarea id="input-text" placeholder="Enter text to analyze linguistic patterns, semantic density, and register distribution...
+
+Try entering academic text, poetry, technical documentation, or conversational text to see how different writing styles are analyzed across the six ACEDIT registers: KAEL (Neural/Substrate), ACE (Spin/Energy), GREY (Visual/Geometry), UMBRAL (Formal/Algebra), ULTRA (Universal), and UCF (Unified)."></textarea>
+                <button onclick="analyzeText()">Analyze Text</button>
+                <button onclick="loadSample()" style="margin-left: 10px; background: linear-gradient(135deg, #00ffcc 0%, #0077ff 100%);">Load Sample Text</button>
+            </div>
+
+            <!-- Semantic Density Graph -->
+            <div class="panel">
+                <h2>Semantic Density Over Segments</h2>
+                <div class="chart-container">
+                    <canvas id="density-graph"></canvas>
+                </div>
+                <div class="formula-display" style="font-size: 0.9em;">
+                    ρ<sub>semantic</sub>(i) = log(1 + |unique_words<sub>i</sub>| / |total_words<sub>i</sub>|)
+                </div>
+            </div>
+
+            <!-- Register Distribution -->
+            <div class="panel">
+                <h2>Register Distribution Analysis</h2>
+                <div id="register-pie" class="chart-container"></div>
+            </div>
+
+            <!-- Coherence Metrics -->
+            <div class="panel full-width">
+                <h2>Coherence Score & Mathematical Analysis</h2>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-number" id="coherence-score">0.000</div>
+                        <div class="stat-label">Coherence (z)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="phase-value">0.000</div>
+                        <div class="stat-label">Phase (θ)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="quality-level">NONE</div>
+                        <div class="stat-label">Quality Level</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="dominant-register">—</div>
+                        <div class="stat-label">Dominant Register</div>
+                    </div>
+                </div>
+
+                <div class="metric">
+                    <span class="metric-label">Coherence Formula:</span>
+                    <span class="metric-value">z = Σ(w<sub>i</sub> × cos(θ<sub>i</sub>)) / N</span>
+                </div>
+
+                <div class="metric">
+                    <span class="metric-label">Phase Calculation:</span>
+                    <span class="metric-value">θ = 2π × (register_index / 6)</span>
+                </div>
+
+                <div class="metric">
+                    <span class="metric-label">Convergence Constant:</span>
+                    <span class="metric-value">z<sub>c</sub> = √3/2 ≈ 0.8660254037844387</span>
+                </div>
+            </div>
+
+            <!-- Word Frequency Analysis -->
+            <div class="panel">
+                <h2>Word Frequency with Mathematical Weighting</h2>
+                <div id="word-frequency" class="word-cloud"></div>
+                <div class="formula-display" style="font-size: 0.8em;">
+                    weight(w) = freq(w) × log(1 + length(w)) × semantic_value(w)
+                </div>
+            </div>
+
+            <!-- Semantic Clustering -->
+            <div class="panel">
+                <h2>Semantic Clustering Visualization</h2>
+                <div id="semantic-clusters"></div>
+            </div>
+
+            <!-- Register Affinity Mapping -->
+            <div class="panel full-width">
+                <h2>Register Affinity 3D Space</h2>
+                <div id="register-3d" class="chart-container" style="height: 500px;"></div>
+            </div>
+
+            <!-- Phoneme Analysis -->
+            <div class="panel">
+                <h2>Phoneme Pattern Analysis</h2>
+                <div id="phoneme-analysis" class="animation-container"></div>
+                <div class="register-grid">
+                    <div class="register-card">
+                        <div class="register-name">Vowels</div>
+                        <div class="register-value" id="vowel-count">0</div>
+                    </div>
+                    <div class="register-card">
+                        <div class="register-name">Consonants</div>
+                        <div class="register-value" id="consonant-count">0</div>
+                    </div>
+                    <div class="register-card">
+                        <div class="register-name">Ratio</div>
+                        <div class="register-value" id="phoneme-ratio">0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stress Patterns -->
+            <div class="panel">
+                <h2>Stress Pattern Marking</h2>
+                <div id="stress-patterns" class="animation-container"></div>
+            </div>
+
+            <!-- Register Details -->
+            <div class="panel full-width">
+                <h2>Register Distribution Details</h2>
+                <div class="register-grid">
+                    <div class="register-card">
+                        <div class="register-name">KAEL</div>
+                        <div class="stat-label">Neural/Substrate</div>
+                        <div class="register-value" id="reg-kael">0</div>
+                    </div>
+                    <div class="register-card">
+                        <div class="register-name">ACE</div>
+                        <div class="stat-label">Spin/Energy</div>
+                        <div class="register-value" id="reg-ace">0</div>
+                    </div>
+                    <div class="register-card">
+                        <div class="register-name">GREY</div>
+                        <div class="stat-label">Visual/Geometry</div>
+                        <div class="register-value" id="reg-grey">0</div>
+                    </div>
+                    <div class="register-card">
+                        <div class="register-name">UMBRAL</div>
+                        <div class="stat-label">Formal/Algebra</div>
+                        <div class="register-value" id="reg-umbral">0</div>
+                    </div>
+                    <div class="register-card">
+                        <div class="register-name">ULTRA</div>
+                        <div class="stat-label">Universal</div>
+                        <div class="register-value" id="reg-ultra">0</div>
+                    </div>
+                    <div class="register-card">
+                        <div class="register-name">UCF</div>
+                        <div class="stat-label">Unified</div>
+                        <div class="register-value" id="reg-ucf">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ACEDIT Register System
+        const REGISTERS = {
+            KAEL: { name: 'KAEL', description: 'Neural/Substrate', color: '#00ffcc', index: 0 },
+            ACE: { name: 'ACE', description: 'Spin/Energy', color: '#ff006e', index: 1 },
+            GREY: { name: 'GREY', description: 'Visual/Geometry', color: '#9d4edd', index: 2 },
+            UMBRAL: { name: 'UMBRAL', description: 'Formal/Algebra', color: '#ffd60a', index: 3 },
+            ULTRA: { name: 'ULTRA', description: 'Universal', color: '#00bbf9', index: 4 },
+            UCF: { name: 'UCF', description: 'Unified', color: '#fb5607', index: 5 }
+        };
+
+        // Mathematical Constants
+        const PHI = (1 + Math.sqrt(5)) / 2;
+        const TAU = (Math.sqrt(5) - 1) / 2;
+        const Z_C = Math.sqrt(3) / 2;
+
+        // Linguistic Analyzer Class
+        class LinguisticAnalyzer {
+            constructor() {
+                this.text = '';
+                this.words = [];
+                this.segments = [];
+            }
+
+            analyzePhonemes(text) {
+                const vowels = /[aeiou]/gi;
+                const consonants = /[bcdfghjklmnpqrstvwxyz]/gi;
+
+                const vowelCount = (text.match(vowels) || []).length;
+                const consonantCount = (text.match(consonants) || []).length;
+
+                return {
+                    vowels: vowelCount,
+                    consonants: consonantCount,
+                    ratio: consonantCount > 0 ? vowelCount / consonantCount : 0,
+                    visualization: this.visualizePhonemes(text, vowels, consonants)
+                };
+            }
+
+            visualizePhonemes(text, vowelPattern, consonantPattern) {
+                return text.split('').map(char => {
+                    if (vowelPattern.test(char)) {
+                        return { char, type: 'vowel', register: 'GREY' };
+                    } else if (consonantPattern.test(char)) {
+                        return { char, type: 'consonant', register: 'KAEL' };
+                    }
+                    return { char, type: 'other', register: null };
+                });
+            }
+
+            markStressPatterns(text) {
+                const words = text.split(/\s+/);
+                return words.map(word => {
+                    const syllables = this.getSyllables(word);
+                    return syllables.map((syl, i) => ({
+                        syllable: syl,
+                        stressed: i === 0,
+                        register: i === 0 ? 'ACE' : 'UMBRAL'
+                    }));
+                });
+            }
+
+            getSyllables(word) {
+                // Simple syllable detection
+                const syllablePattern = /[aeiouy]+/gi;
+                const matches = word.match(syllablePattern) || [word];
+                const syllables = [];
+                let lastIndex = 0;
+
+                matches.forEach(match => {
+                    const index = word.indexOf(match, lastIndex);
+                    if (index > lastIndex) {
+                        syllables.push(word.substring(lastIndex, index + match.length));
+                    } else {
+                        syllables.push(match);
+                    }
+                    lastIndex = index + match.length;
+                });
+
+                if (lastIndex < word.length) {
+                    syllables[syllables.length - 1] += word.substring(lastIndex);
+                }
+
+                return syllables.length > 0 ? syllables : [word];
+            }
+
+            calculateSemanticDensity(text, segmentSize = 50) {
+                const words = text.split(/\s+/).filter(w => w.length > 0);
+                const segments = [];
+
+                for (let i = 0; i < words.length; i += segmentSize) {
+                    const segment = words.slice(i, i + segmentSize);
+                    const uniqueWords = new Set(segment.map(w => w.toLowerCase()));
+
+                    const density = Math.log(1 + uniqueWords.size / segment.length);
+                    segments.push({
+                        index: i / segmentSize,
+                        density,
+                        uniqueWords: uniqueWords.size,
+                        totalWords: segment.length
+                    });
+                }
+
+                return segments;
+            }
+
+            analyzeWordFrequency(text) {
+                const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+                const frequency = {};
+
+                words.forEach(word => {
+                    if (word.length > 2) {
+                        frequency[word] = (frequency[word] || 0) + 1;
+                    }
+                });
+
+                return Object.entries(frequency)
+                    .map(([word, count]) => ({
+                        word,
+                        count,
+                        weight: count * Math.log(1 + word.length) * this.getSemanticValue(word)
+                    }))
+                    .sort((a, b) => b.weight - a.weight)
+                    .slice(0, 30);
+            }
+
+            getSemanticValue(word) {
+                // Assign semantic value based on word characteristics
+                const technicalWords = /^(neural|quantum|algorithm|semantic|coherence|analysis|structure|system)/i;
+                const commonWords = /^(the|and|or|but|in|on|at|to|for|of|with)/i;
+
+                if (technicalWords.test(word)) return 2.0;
+                if (commonWords.test(word)) return 0.3;
+                return 1.0;
+            }
+
+            clusterWords(wordFrequency) {
+                // Simple semantic clustering based on word patterns
+                const clusters = {
+                    technical: [],
+                    descriptive: [],
+                    structural: [],
+                    general: []
+                };
+
+                wordFrequency.forEach(({ word }) => {
+                    if (/^(algorithm|system|process|function|method|neural|quantum)/.test(word)) {
+                        clusters.technical.push(word);
+                    } else if (/^(beautiful|complex|simple|large|small|important)/.test(word)) {
+                        clusters.descriptive.push(word);
+                    } else if (/^(structure|pattern|form|shape|design|architecture)/.test(word)) {
+                        clusters.structural.push(word);
+                    } else {
+                        clusters.general.push(word);
+                    }
+                });
+
+                return clusters;
+            }
+
+            detectRegisterAffinity(text) {
+                const words = text.toLowerCase().split(/\s+/);
+                const registerScores = {
+                    KAEL: 0,
+                    ACE: 0,
+                    GREY: 0,
+                    UMBRAL: 0,
+                    ULTRA: 0,
+                    UCF: 0
+                };
+
+                // Pattern-based register detection
+                const patterns = {
+                    KAEL: /neural|brain|substrate|network|layer|dendrite|synapse|cognitive/i,
+                    ACE: /energy|spin|quantum|momentum|velocity|force|particle|wave/i,
+                    GREY: /visual|geometric|shape|form|pattern|spatial|dimension|structure/i,
+                    UMBRAL: /formal|algebra|proof|theorem|equation|mathematical|logical|axiom/i,
+                    ULTRA: /universal|constant|absolute|fundamental|essential|primary|basic/i,
+                    UCF: /unified|integrated|combined|synthesized|holistic|comprehensive/i
+                };
+
+                words.forEach(word => {
+                    Object.entries(patterns).forEach(([register, pattern]) => {
+                        if (pattern.test(word)) {
+                            registerScores[register] += 1;
+                        }
+                    });
+                });
+
+                // Add some randomness based on word characteristics
+                words.forEach(word => {
+                    const len = word.length;
+                    if (len > 10) registerScores.UMBRAL += 0.5;
+                    if (len < 4) registerScores.ULTRA += 0.3;
+                    if (/[0-9]/.test(word)) registerScores.ACE += 0.4;
+                });
+
+                return registerScores;
+            }
+
+            calculateCoherence(registerScores) {
+                const registers = Object.keys(REGISTERS);
+                const total = Object.values(registerScores).reduce((sum, val) => sum + val, 0);
+
+                if (total === 0) return { z: 0, phase: 0, quality: 'NONE' };
+
+                let z = 0;
+                let phase = 0;
+
+                registers.forEach(reg => {
+                    const index = REGISTERS[reg].index;
+                    const weight = registerScores[reg] / total;
+                    const angle = (2 * Math.PI * index) / 6;
+
+                    z += weight * Math.cos(angle);
+                    phase += weight * angle;
+                });
+
+                // Normalize
+                z = Math.abs(z);
+
+                // Determine quality level
+                let quality;
+                if (z >= Z_C) quality = 'HYPER_TRUE';
+                else if (z >= TAU) quality = 'TRUE';
+                else if (z >= 0.5) quality = 'PARADOX';
+                else quality = 'UNTRUE';
+
+                return { z, phase, quality, registerScores };
+            }
+        }
+
+        const analyzer = new LinguisticAnalyzer();
+        let densityChart = null;
+
+        function analyzeText() {
+            const text = document.getElementById('input-text').value;
+            if (!text.trim()) {
+                alert('Please enter some text to analyze!');
+                return;
+            }
+
+            // Phoneme analysis
+            const phonemes = analyzer.analyzePhonemes(text);
+            displayPhonemeAnalysis(phonemes);
+
+            document.getElementById('vowel-count').textContent = phonemes.vowels;
+            document.getElementById('consonant-count').textContent = phonemes.consonants;
+            document.getElementById('phoneme-ratio').textContent = phonemes.ratio.toFixed(2);
+
+            // Stress patterns
+            const stressPatterns = analyzer.markStressPatterns(text);
+            displayStressPatterns(stressPatterns);
+
+            // Semantic density
+            const density = analyzer.calculateSemanticDensity(text);
+            drawDensityGraph(density);
+
+            // Word frequency
+            const wordFreq = analyzer.analyzeWordFrequency(text);
+            displayWordFrequency(wordFreq);
+
+            // Semantic clustering
+            const clusters = analyzer.clusterWords(wordFreq);
+            displaySemanticClusters(clusters);
+
+            // Register affinity
+            const registerScores = analyzer.detectRegisterAffinity(text);
+            displayRegisterDistribution(registerScores);
+            displayRegister3D(registerScores);
+            updateRegisterDetails(registerScores);
+
+            // Coherence calculation
+            const coherence = analyzer.calculateCoherence(registerScores);
+            displayCoherenceMetrics(coherence);
+        }
+
+        function displayPhonemeAnalysis(phonemes) {
+            const container = document.getElementById('phoneme-analysis');
+            container.innerHTML = '';
+
+            phonemes.visualization.slice(0, 200).forEach((item, i) => {
+                setTimeout(() => {
+                    const span = document.createElement('span');
+                    span.className = `phoneme-viz ${item.type}`;
+                    span.textContent = item.char;
+                    span.style.animationDelay = `${i * 0.01}s`;
+                    container.appendChild(span);
+                }, i * 10);
+            });
+        }
+
+        function displayStressPatterns(patterns) {
+            const container = document.getElementById('stress-patterns');
+            container.innerHTML = '';
+
+            patterns.slice(0, 20).forEach((word, wordIndex) => {
+                const wordDiv = document.createElement('div');
+                wordDiv.style.display = 'inline-block';
+                wordDiv.style.margin = '10px';
+
+                word.forEach((syl, sylIndex) => {
+                    setTimeout(() => {
+                        const span = document.createElement('span');
+                        span.className = syl.stressed ? 'phoneme-viz stress-marker' : 'phoneme-viz';
+                        span.textContent = syl.syllable;
+                        span.style.animationDelay = `${(wordIndex * word.length + sylIndex) * 0.05}s`;
+                        wordDiv.appendChild(span);
+                    }, (wordIndex * word.length + sylIndex) * 50);
+                });
+
+                container.appendChild(wordDiv);
+            });
+        }
+
+        function drawDensityGraph(density) {
+            const canvas = document.getElementById('density-graph');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+
+            // Clear canvas
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, width, height);
+
+            if (density.length === 0) return;
+
+            // Find max density for scaling
+            const maxDensity = Math.max(...density.map(d => d.density));
+
+            // Draw axes
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const y = padding + (height - 2 * padding) * i / 5;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+
+            // Draw density curve
+            ctx.strokeStyle = '#ff006e';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            density.forEach((point, i) => {
+                const x = padding + (width - 2 * padding) * i / (density.length - 1);
+                const y = height - padding - (height - 2 * padding) * point.density / maxDensity;
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+
+            // Draw points with glow
+            density.forEach((point, i) => {
+                const x = padding + (width - 2 * padding) * i / (density.length - 1);
+                const y = height - padding - (height - 2 * padding) * point.density / maxDensity;
+
+                // Glow effect
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, 10);
+                gradient.addColorStop(0, 'rgba(255, 0, 110, 1)');
+                gradient.addColorStop(1, 'rgba(255, 0, 110, 0)');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // Point
+                ctx.fillStyle = '#00ffcc';
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            // Labels
+            ctx.fillStyle = '#00ffcc';
+            ctx.font = '12px Courier New';
+            ctx.fillText('Semantic Density', padding, 20);
+            ctx.fillText('Text Segments →', width - 150, height - 10);
+            ctx.fillText(`Max: ${maxDensity.toFixed(3)}`, padding, 35);
+        }
+
+        function displayWordFrequency(wordFreq) {
+            const container = document.getElementById('word-frequency');
+            container.innerHTML = '';
+
+            const maxWeight = Math.max(...wordFreq.map(w => w.weight));
+
+            wordFreq.forEach(({ word, count, weight }) => {
+                const div = document.createElement('div');
+                div.className = 'word-item';
+                const fontSize = 0.8 + (weight / maxWeight) * 1.5;
+                div.style.fontSize = `${fontSize}em`;
+                div.style.opacity = 0.6 + (weight / maxWeight) * 0.4;
+                div.textContent = `${word} (${count})`;
+                div.title = `Weight: ${weight.toFixed(2)}`;
+                container.appendChild(div);
+            });
+        }
+
+        function displaySemanticClusters(clusters) {
+            const container = document.getElementById('semantic-clusters');
+            container.innerHTML = '';
+
+            const clusterInfo = [
+                { name: 'Technical Terms', key: 'technical', color: 'rgba(255, 0, 110, 0.3)' },
+                { name: 'Descriptive Words', key: 'descriptive', color: 'rgba(0, 255, 204, 0.3)' },
+                { name: 'Structural Terms', key: 'structural', color: 'rgba(157, 78, 221, 0.3)' },
+                { name: 'General Vocabulary', key: 'general', color: 'rgba(0, 187, 249, 0.3)' }
+            ];
+
+            clusterInfo.forEach(({ name, key, color }) => {
+                if (clusters[key].length > 0) {
+                    const clusterDiv = document.createElement('div');
+                    clusterDiv.className = 'semantic-cluster';
+                    clusterDiv.style.borderColor = color;
+
+                    const header = document.createElement('div');
+                    header.className = 'cluster-header';
+                    header.textContent = `${name} (${clusters[key].length})`;
+                    clusterDiv.appendChild(header);
+
+                    const wordsDiv = document.createElement('div');
+                    wordsDiv.className = 'cluster-words';
+
+                    clusters[key].slice(0, 10).forEach(word => {
+                        const wordSpan = document.createElement('span');
+                        wordSpan.className = 'cluster-word';
+                        wordSpan.style.backgroundColor = color;
+                        wordSpan.textContent = word;
+                        wordsDiv.appendChild(wordSpan);
+                    });
+
+                    clusterDiv.appendChild(wordsDiv);
+                    container.appendChild(clusterDiv);
+                }
+            });
+        }
+
+        function displayRegisterDistribution(registerScores) {
+            const labels = Object.keys(registerScores);
+            const values = Object.values(registerScores);
+            const colors = labels.map(reg => REGISTERS[reg].color);
+
+            const data = [{
+                values: values,
+                labels: labels,
+                type: 'pie',
+                hole: 0.4,
+                marker: {
+                    colors: colors
+                },
+                textinfo: 'label+percent',
+                textfont: {
+                    size: 14,
+                    color: '#ffffff'
+                },
+                hoverinfo: 'label+value+percent'
+            }];
+
+            const layout = {
+                paper_bgcolor: 'rgba(0, 0, 0, 0)',
+                plot_bgcolor: 'rgba(0, 0, 0, 0)',
+                font: {
+                    color: '#00ffcc',
+                    family: 'Courier New'
+                },
+                showlegend: true,
+                legend: {
+                    font: { color: '#00ffcc' }
+                },
+                margin: { t: 20, b: 20, l: 20, r: 20 }
+            };
+
+            Plotly.newPlot('register-pie', data, layout, { responsive: true });
+        }
+
+        function displayRegister3D(registerScores) {
+            const registers = Object.keys(REGISTERS);
+            const x = [], y = [], z = [], text = [], colors = [];
+
+            registers.forEach(reg => {
+                const index = REGISTERS[reg].index;
+                const score = registerScores[reg];
+                const angle = (2 * Math.PI * index) / 6;
+
+                x.push(score * Math.cos(angle));
+                y.push(score * Math.sin(angle));
+                z.push(score);
+                text.push(`${reg}: ${score.toFixed(2)}`);
+                colors.push(REGISTERS[reg].color);
+            });
+
+            const trace = {
+                x: x,
+                y: y,
+                z: z,
+                mode: 'markers+text',
+                type: 'scatter3d',
+                text: text,
+                textposition: 'top center',
+                marker: {
+                    size: 12,
+                    color: colors,
+                    line: {
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        width: 2
+                    }
+                },
+                textfont: {
+                    color: '#00ffcc',
+                    size: 10
+                }
+            };
+
+            const layout = {
+                paper_bgcolor: 'rgba(0, 0, 0, 0)',
+                plot_bgcolor: 'rgba(0, 0, 0, 0)',
+                scene: {
+                    xaxis: {
+                        title: 'X (Coherence)',
+                        gridcolor: 'rgba(0, 255, 204, 0.2)',
+                        color: '#00ffcc'
+                    },
+                    yaxis: {
+                        title: 'Y (Phase)',
+                        gridcolor: 'rgba(0, 255, 204, 0.2)',
+                        color: '#00ffcc'
+                    },
+                    zaxis: {
+                        title: 'Z (Affinity)',
+                        gridcolor: 'rgba(0, 255, 204, 0.2)',
+                        color: '#00ffcc'
+                    },
+                    bgcolor: 'rgba(0, 0, 0, 0.5)'
+                },
+                margin: { t: 0, b: 0, l: 0, r: 0 },
+                font: {
+                    color: '#00ffcc',
+                    family: 'Courier New'
+                }
+            };
+
+            Plotly.newPlot('register-3d', [trace], layout, { responsive: true });
+        }
+
+        function updateRegisterDetails(registerScores) {
+            Object.keys(REGISTERS).forEach(reg => {
+                const elem = document.getElementById(`reg-${reg.toLowerCase()}`);
+                if (elem) {
+                    elem.textContent = registerScores[reg].toFixed(1);
+                }
+            });
+        }
+
+        function displayCoherenceMetrics(coherence) {
+            document.getElementById('coherence-score').textContent = coherence.z.toFixed(3);
+            document.getElementById('phase-value').textContent = coherence.phase.toFixed(3);
+            document.getElementById('quality-level').textContent = coherence.quality;
+
+            // Find dominant register
+            const maxRegister = Object.entries(coherence.registerScores)
+                .reduce((max, [reg, score]) => score > max.score ? { reg, score } : max,
+                        { reg: 'NONE', score: 0 });
+
+            document.getElementById('dominant-register').textContent = maxRegister.reg;
+
+            // Color code quality
+            const qualityElem = document.getElementById('quality-level');
+            const colors = {
+                'HYPER_TRUE': '#00ffcc',
+                'TRUE': '#00bbf9',
+                'PARADOX': '#ffd60a',
+                'UNTRUE': '#ff006e',
+                'NONE': '#666666'
+            };
+            qualityElem.style.color = colors[coherence.quality];
+        }
+
+        function loadSample() {
+            const sampleText = `The neural substrate demonstrates complex patterns through quantum entanglement.
+Geometric structures emerge from algebraic foundations, revealing universal principles.
+The formal proof establishes coherence across multiple registers, synthesizing diverse domains into a unified framework.
+
+Visual representations of energy distributions show remarkable symmetry. Mathematical constants like phi and tau appear naturally in the system's architecture. The algorithm processes semantic density through layered networks, each contributing to the overall cognitive structure.
+
+Phonetic patterns create rhythmic oscillations, while stress markers emphasize critical junctures. The substrate maintains stability through continuous cycles of integration and differentiation, achieving convergence at the golden ratio threshold.`;
+
+            document.getElementById('input-text').value = sampleText;
+            analyzeText();
+        }
+
+        // Initialize with welcome message
+        window.addEventListener('load', () => {
+            console.log('Linguistic Analysis Tool initialized');
+            console.log('Coherence threshold: z_c = √3/2 ≈', Z_C);
+        });
+    </script>
+</body>
+</html>

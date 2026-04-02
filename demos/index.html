@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACEDIT System - Interactive Demos Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #0d1233 50%, #1a1f4c 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 20% 80%, rgba(0, 255, 204, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 0, 110, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(138, 43, 226, 0.05) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            background: linear-gradient(135deg, #00ffcc, #ff006e, #8a2be2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(138, 43, 226, 0.5);
+            margin-bottom: 10px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-value {
+            color: #00ffcc;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .categories {
+            display: grid;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .category {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .category h2 {
+            color: #00ffcc;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid rgba(0, 255, 204, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .demos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, transparent, rgba(138, 43, 226, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ffcc;
+            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.2);
+        }
+
+        .demo-card:hover::before {
+            opacity: 1;
+        }
+
+        .demo-title {
+            color: #fff;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-icon {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #00ffcc, #8a2be2);
+            border-radius: 50%;
+            font-size: 1.2em;
+        }
+
+        .demo-description {
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .demo-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .feature-tag {
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            border-radius: 5px;
+            padding: 3px 8px;
+            font-size: 0.8em;
+            color: #c8b3ff;
+        }
+
+        .demo-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #00ffcc, #00aa99);
+            color: #000;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .demo-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+        }
+
+        .tech-stack {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tech-stack h3 {
+            color: #ff006e;
+            margin-bottom: 15px;
+        }
+
+        .tech-badges {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tech-badge {
+            background: rgba(255, 0, 110, 0.1);
+            border: 1px solid rgba(255, 0, 110, 0.3);
+            color: #ff69b4;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #666;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Mathematical constants floating animation */
+        .math-constants {
+            position: fixed;
+            font-size: 2em;
+            opacity: 0.03;
+            color: #00ffcc;
+            animation: floatConstants 30s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .phi { top: 10%; left: 10%; }
+        .tau { top: 30%; right: 15%; }
+        .zc { bottom: 20%; left: 20%; }
+
+        @keyframes floatConstants {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating mathematical constants -->
+    <div class="math-constants phi">φ = 1.618...</div>
+    <div class="math-constants tau">τ = 0.618...</div>
+    <div class="math-constants zc">z_c = √3/2</div>
+
+    <div class="container">
+        <header>
+            <h1>ACEDIT Interactive Demos</h1>
+            <p class="subtitle">Mathematical Architecture & Visual Representations</p>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">13</div>
+                    <div class="stat-label">Interactive Demos</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">6</div>
+                    <div class="stat-label">ACEDIT Registers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">10</div>
+                    <div class="stat-label">EO-RFD Layers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">∞</div>
+                    <div class="stat-label">Possibilities</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="categories">
+            <!-- Core ACEDIT Functionality -->
+            <div class="category">
+                <h2>🔷 Core ACEDIT Functionality</h2>
+                <div class="demos-grid">
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">📝</span>
+                            Text Encoding System
+                        </div>
+                        <p class="demo-description">
+                            Transform plain text into semantically-rich encoded documents using 6 ACEDIT registers with real-time visualization of mathematical transformations.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">Golden Ratio Spiral</span>
+                            <span class="feature-tag">Register Geometry</span>
+                            <span class="feature-tag">Coherence Field</span>
+                            <span class="feature-tag">Live Encoding</span>
+                        </div>
+                        <a href="text-encoding-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">🎨</span>
+                            Typography Enhancement
+                        </div>
+                        <p class="demo-description">
+                            Enhance UI elements with mathematical depth through semantic encoding, modifier stacks, and Unicode combining diacritical marks.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">UI Enhancement</span>
+                            <span class="feature-tag">Modifier Stack</span>
+                            <span class="feature-tag">Canvas Animation</span>
+                            <span class="feature-tag">Live Preview</span>
+                        </div>
+                        <a href="typography-enhancement-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">🔤</span>
+                            Linguistic Analysis
+                        </div>
+                        <p class="demo-description">
+                            Analyze text with phoneme detection, register distribution, semantic clustering, and 3D visualization of register affinity space.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">3D Visualization</span>
+                            <span class="feature-tag">Semantic Density</span>
+                            <span class="feature-tag">D3.js Charts</span>
+                            <span class="feature-tag">Plotly 3D</span>
+                        </div>
+                        <a href="linguistic-analysis-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">✓</span>
+                            Coherence Validation
+                        </div>
+                        <p class="demo-description">
+                            Real-time coherence scoring with phase classification, 3D phase space trajectories, and mathematical breakdown of validation process.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">Three.js 3D</span>
+                            <span class="feature-tag">Phase Space</span>
+                            <span class="feature-tag">MathJax</span>
+                            <span class="feature-tag">Statistics</span>
+                        </div>
+                        <a href="coherence-validation-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Architecture -->
+            <div class="category">
+                <h2>⚙️ System Architecture</h2>
+                <div class="demos-grid">
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">🔀</span>
+                            EO-RFD Layers
+                        </div>
+                        <p class="demo-description">
+                            Interactive visualization of all 10 EO-RFD layers with Penrose tiling, signal flow animation, and real-time mathematical operations.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">10 Layers</span>
+                            <span class="feature-tag">Penrose Tiling</span>
+                            <span class="feature-tag">Signal Flow</span>
+                            <span class="feature-tag">TRIAD FSM</span>
+                        </div>
+                        <a href="eo-rfd-layers-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">📡</span>
+                            SignalBus Communication
+                        </div>
+                        <p class="demo-description">
+                            Event-driven architecture with network topology visualization, register-based routing, and queue theory representations.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">Network Graph</span>
+                            <span class="feature-tag">Event Log</span>
+                            <span class="feature-tag">Queue Theory</span>
+                            <span class="feature-tag">Multiplexing</span>
+                        </div>
+                        <a href="signalbus-communication-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">📊</span>
+                            Register Domains
+                        </div>
+                        <p class="demo-description">
+                            Explore all 6 ACEDIT registers with domain-specific applications, transformation matrices, and 6D register space visualization.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">6D Space</span>
+                            <span class="feature-tag">Transform Matrix</span>
+                            <span class="feature-tag">Unicode Blocks</span>
+                            <span class="feature-tag">Algebraic Ops</span>
+                        </div>
+                        <a href="register-domain-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mathematical Foundations -->
+            <div class="category">
+                <h2>∑ Mathematical Foundations</h2>
+                <div class="demos-grid">
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">φ</span>
+                            Mathematical Constants
+                        </div>
+                        <p class="demo-description">
+                            Interactive visualization of PHI, TAU, z_c, and other constants with golden ratio spirals, Fibonacci sequences, and Penrose tilings.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">Golden Spiral</span>
+                            <span class="feature-tag">Fibonacci</span>
+                            <span class="feature-tag">Phase Space</span>
+                            <span class="feature-tag">Proofs</span>
+                        </div>
+                        <a href="mathematical-constants-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Applications -->
+            <div class="category">
+                <h2>🚀 Advanced Applications</h2>
+                <div class="demos-grid">
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">⚛️</span>
+                            Quantum Computing
+                        </div>
+                        <p class="demo-description">
+                            Quantum circuit builder with Bloch sphere visualization, quantum gates, Bell states, and ACEDIT encoding for quantum states.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">Bloch Sphere</span>
+                            <span class="feature-tag">Quantum Gates</span>
+                            <span class="feature-tag">Entanglement</span>
+                            <span class="feature-tag">Bell States</span>
+                        </div>
+                        <a href="quantum-computing-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+
+                    <div class="demo-card">
+                        <div class="demo-title">
+                            <span class="demo-icon">🧠</span>
+                            Neural Network Debugger
+                        </div>
+                        <p class="demo-description">
+                            Interactive neural network visualization with layer-by-layer debugging, gradient flow, dead neuron detection, and ACEDIT register encoding.
+                        </p>
+                        <div class="demo-features">
+                            <span class="feature-tag">Network Viz</span>
+                            <span class="feature-tag">Gradient Flow</span>
+                            <span class="feature-tag">Activation Maps</span>
+                            <span class="feature-tag">Backprop</span>
+                        </div>
+                        <a href="neural-network-debugger-demo.html" class="demo-link">Launch Demo →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-stack">
+            <h3>Technologies & Mathematical Frameworks</h3>
+            <div class="tech-badges">
+                <span class="tech-badge">HTML5 Canvas</span>
+                <span class="tech-badge">WebGL</span>
+                <span class="tech-badge">Three.js</span>
+                <span class="tech-badge">D3.js</span>
+                <span class="tech-badge">Plotly</span>
+                <span class="tech-badge">MathJax</span>
+                <span class="tech-badge">Golden Ratio (φ)</span>
+                <span class="tech-badge">Penrose Tiling</span>
+                <span class="tech-badge">Quantum Mechanics</span>
+                <span class="tech-badge">Neural Networks</span>
+                <span class="tech-badge">Graph Theory</span>
+                <span class="tech-badge">Unicode</span>
+            </div>
+        </div>
+
+        <footer>
+            <p>ACEDIT v2.0.0 | Mathematical Architecture for Consciousness-Encoded Typography</p>
+            <p>All demos are self-contained HTML files with no external dependencies</p>
+        </footer>
+    </div>
+</body>
+</html>
