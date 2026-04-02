@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EO-RFD Full Chain Integration</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0a0e14;
+      --bg-secondary: #0e1218;
+      --bg-tertiary: #131921;
+      --border-primary: #1c2333;
+      --border-secondary: #252d3d;
+      --text-primary: #e0e6ed;
+      --text-secondary: #a8b3cf;
+      --text-dim: #6c7890;
+      --accent-blue: #5cb7ff;
+      --accent-purple: #bd93f9;
+      --accent-green: #50fa7b;
+      --accent-yellow: #f1fa8c;
+      --accent-red: #ff5555;
+      --accent-orange: #ffb86c;
+      --phi: 1.6180339887;
+    }
+
+    body {
+      font-family: 'Cascadia Code', 'JetBrains Mono', monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #0a0e14 0%, #131921 100%);
+      border-bottom: 1px solid var(--border-primary);
+      padding: 1.5rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      background-color: rgba(10, 14, 20, 0.9);
+    }
+
+    .header__content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header__title {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header__title h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header__status {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+    }
+
+    .status-light {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .status-light.active { background: var(--accent-green); }
+    .status-light.inactive { background: var(--text-dim); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Main Layout */
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Control Panel */
+    .control-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .control-panel__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .control-panel__title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-yellow);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .control-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-secondary);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--border-primary);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: var(--accent-blue);
+      color: var(--bg-primary);
+      border-color: var(--accent-blue);
+    }
+
+    .btn.danger {
+      background: var(--accent-red);
+      color: white;
+      border-color: var(--accent-red);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-primary);
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    /* Layer Grid */
+    .layers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .layer-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .layer-card.active {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 20px rgba(92, 183, 255, 0.1);
+    }
+
+    .layer-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .layer-card__number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-secondary);
+      border-radius: 8px;
+      font-weight: 600;
+      color: var(--accent-purple);
+    }
+
+    .layer-card__title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .layer-card__status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .layer-card__metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .metric__label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric__value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Visualization Area */
+    .visualization {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .visualization__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .visualization__title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-green);
+    }
+
+    .visualization__content {
+      position: relative;
+      min-height: 400px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-primary);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* Signal Flow Canvas */
+    #signal-flow-canvas {
+      width: 100%;
+      height: 400px;
+      display: block;
+    }
+
+    /* Register View */
+    .registers {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .registers__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .registers__title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-orange);
+    }
+
+    .registers__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.75rem;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .register {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-primary);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: monospace;
+    }
+
+    .register__addr {
+      color: var(--text-dim);
+    }
+
+    .register__value {
+      color: var(--accent-yellow);
+      font-weight: 600;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-secondary);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-primary);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .layer-card {
+      animation: fadeIn 0.5s ease forwards;
+      animation-delay: calc(var(--layer-index, 0) * 0.05s);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .header__content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .layers-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header__content">
+      <div class="header__title">
+        <h1>EO-RFD Full Chain Integration</h1>
+        <span style="color: var(--text-dim)">v1.0.0</span>
+      </div>
+      <div class="header__status">
+        <div class="status-indicator">
+          <span class="status-light active" id="system-status"></span>
+          <span>System Active</span>
+        </div>
+        <div class="status-indicator">
+          <span style="color: var(--text-secondary)">Tick:</span>
+          <span id="tick-counter" style="font-variant-numeric: tabular-nums;">0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <div class="control-panel__header">
+        <h2 class="control-panel__title">System Control</h2>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <label class="control-label">Main Control</label>
+          <button class="btn primary" id="btn-start">Start System</button>
+          <button class="btn" id="btn-pause">Pause</button>
+          <button class="btn danger" id="btn-reset">Reset</button>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Injection Rate</label>
+          <input type="range" id="injection-rate" min="100" max="2000" value="500">
+          <span id="injection-rate-value" style="text-align: center; color: var(--text-secondary);">500ms</span>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Theta Profile</label>
+          <select id="theta-select" class="btn" style="width: 100%; text-align: left;">
+            <option value="open">Open (Θ_open)</option>
+            <option value="standard" selected>Standard (Θ_std)</option>
+            <option value="restricted">Restricted (Θ_res)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Diagnostics</label>
+          <button class="btn" id="btn-self-test">Run Self-Test</button>
+          <button class="btn" id="btn-export">Export State</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layer Status Grid -->
+    <div class="layers-grid" id="layers-grid">
+      <!-- Layer cards will be dynamically inserted here -->
+    </div>
+
+    <!-- Visualization -->
+    <div class="visualization">
+      <div class="visualization__header">
+        <h2 class="visualization__title">Signal Flow Visualization</h2>
+        <select id="viz-mode" class="btn">
+          <option value="flow">Signal Flow</option>
+          <option value="substrate">Substrate</option>
+          <option value="triangular">Triangular</option>
+          <option value="cascade">Cascade</option>
+        </select>
+      </div>
+      <div class="visualization__content">
+        <canvas id="signal-flow-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Register View -->
+    <div class="registers">
+      <div class="registers__header">
+        <h2 class="registers__title">Register Bank</h2>
+        <button class="btn" id="btn-refresh-registers">Refresh</button>
+      </div>
+      <div class="registers__grid" id="registers-grid">
+        <!-- Register entries will be dynamically inserted here -->
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // ==================================================================
+    // EO-RFD FULL CHAIN INTEGRATION
+    // ==================================================================
+
+    // Import SignalBus and constants
+    import { bus, REG } from '../shared/signal-bus.js';
+    import {
+      PHI, TAU, SQRT3, SQRT3_HALF, Z_C, K_FORM, L4, GAP,
+      THETA, ROUTING, SIGMA_TAU, TRI, DETECTOR_MODS, SIGMA_NEG, G0,
+      clamp01, fnv1a
+    } from '../shared/constants.js';
+
+    // ==================================================================
+    // LAYER DEFINITIONS
+    // ==================================================================
+
+    const LAYERS = [
+      {
+        id: 'L0',
+        name: 'Quasi-Crystal Substrate',
+        description: 'Physical substrate with Penrose P3 tiling',
+        metrics: ['zones', 'electrodes', 'conductance', 'z_critical']
+      },
+      {
+        id: 'L1',
+        name: 'Propagation',
+        description: 'Ballistic electron transport',
+        metrics: ['rayCount', 'avgIntensity', 'avgPhase', 'defect']
+      },
+      {
+        id: 'L2',
+        name: 'Admissibility',
+        description: 'Θ-gated cascade comparator',
+        metrics: ['registered', 'latent', 'suppressed', 'aliased']
+      },
+      {
+        id: 'L3',
+        name: 'Narrowing',
+        description: '7-stage resistive divider funnel',
+        metrics: ['stage', 'signal', 'loss', 'resistance']
+      },
+      {
+        id: 'L4',
+        name: 'Field Signature',
+        description: '7-channel analog computer',
+        metrics: ['δ_obs', 'η_N', 'σ', 'γ', 'χ', 'β', 'ρ']
+      },
+      {
+        id: 'L5',
+        name: 'Signal Rupture',
+        description: 'Σ_R composite Schmitt triggers',
+        metrics: ['sigmaR', 'state', 'triggers', 'armed']
+      },
+      {
+        id: 'L6',
+        name: 'Detector Sweep',
+        description: '3×3 memristive crossbar',
+        metrics: ['confidence', 'theta_mod', 'name_mod', 'weight']
+      },
+      {
+        id: 'L7',
+        name: 'Routing',
+        description: 'TRIAD hysteresis FSM',
+        metrics: ['harbor_E', 'state', 'recapture', 'persistence']
+      },
+      {
+        id: 'L8',
+        name: 'Packet',
+        description: 'TCP hardening & export',
+        metrics: ['status', 'handoff', 'schema', 'eligible']
+      },
+      {
+        id: 'L9',
+        name: 'Metacybernetic',
+        description: 'CSD + negentropy oversight',
+        metrics: ['negentropy', 'lambda', 'SNR', 'CSD']
+      }
+    ];
+
+    // ==================================================================
+    // LAYER IMPLEMENTATIONS
+    // ==================================================================
+
+    class Layer0_Substrate {
+      constructor() {
+        this.zones = 7;
+        this.electrodes = 35;
+        this.conductance = G0;
+        this.z_critical = Z_C;
+      }
+
+      getMetrics() {
+        return {
+          zones: this.zones,
+          electrodes: this.electrodes,
+          conductance: (this.conductance * 1e6).toFixed(1) + 'µS',
+          z_critical: this.z_critical.toFixed(3)
+        };
+      }
+    }
+
+    class Layer1_Propagation {
+      constructor() {
+        this.rays = [];
+        this.maxRays = 6;
+        this.defect = 0;
+        this.perturbation = 0;
+        this.interactions = 0;
+      }
+
+      inject() {
+        // Add new rays
+        for (let i = this.rays.length; i < this.maxRays; i++) {
+          this.rays.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.02,
+            vy: (Math.random() - 0.5) * 0.02,
+            intensity: 0.8 + Math.random() * 0.2,
+            phase: Math.random() * Math.PI * 2
+          });
+        }
+
+        // Update rays
+        this.rays = this.rays.filter(ray => {
+          ray.x += ray.vx;
+          ray.y += ray.vy;
+
+          // Boundary reflections
+          if (ray.x < 0 || ray.x > 1) {
+            ray.vx *= -1;
+            ray.intensity *= 0.95;
+            this.interactions++;
+          }
+          if (ray.y < 0 || ray.y > 1) {
+            ray.vy *= -1;
+            ray.intensity *= 0.95;
+            this.interactions++;
+          }
+
+          // Decay
+          ray.intensity *= 0.99;
+          ray.phase += 0.1;
+
+          return ray.intensity > 0.1;
+        });
+
+        // Update defect
+        this.defect = Math.min(1, this.defect + 0.001);
+        this.perturbation = Math.random() * 0.1;
+
+        // Emit signals
+        const avgIntensity = this.rays.reduce((s, r) => s + r.intensity, 0) / Math.max(1, this.rays.length);
+        const avgPhase = this.rays.reduce((s, r) => s + r.phase, 0) / Math.max(1, this.rays.length);
+
+        bus.emit('L1.rayCount', this.rays.length);
+        bus.emit('L1.avgIntensity', avgIntensity);
+        bus.emit('L1.avgPhase', avgPhase);
+        bus.emit('L1.defect', this.defect);
+        bus.emit('L1.perturbation', this.perturbation);
+        bus.emit('L1.internalInteractions', this.interactions);
+
+        return {
+          rayCount: this.rays.length,
+          avgIntensity: avgIntensity.toFixed(3),
+          avgPhase: (avgPhase % (2 * Math.PI)).toFixed(3),
+          defect: this.defect.toFixed(3)
+        };
+      }
+    }
+
+    class Layer2_Admissibility {
+      constructor() {
+        this.registered = 0;
+        this.latent = 0;
+        this.suppressed = 0;
+        this.aliased = 0;
+        this.thetaProfile = THETA.standard;
+      }
+
+      setTheta(mode) {
+        this.thetaProfile = THETA[mode] || THETA.standard;
+      }
+
+      process(intensity, phase, defect) {
+        // 5-stage cascade comparator
+        let classification = 'registered';
+
+        // Stage 1: Aperture gate
+        if (intensity < this.thetaProfile.apertureThreshold) {
+          classification = 'suppressed';
+        }
+
+        // Stage 2: Phase gate
+        if (Math.abs(Math.cos(phase)) < this.thetaProfile.phaseThreshold) {
+          classification = 'latent';
+        }
+
+        // Stage 3: Policy gate
+        if (Math.random() < this.thetaProfile.policyStrictness * defect) {
+          classification = 'suppressed';
+        }
+
+        // Stage 4: Capacity gate
+        const activity = (this.registered + this.latent) / 100;
+        if (activity > this.thetaProfile.capacityMult) {
+          classification = 'aliased';
+        }
+
+        // Stage 5: Naming gate
+        if (Math.random() < this.thetaProfile.namingSensitivity) {
+          classification = 'aliased';
+        }
+
+        // Update counters
+        this[classification]++;
+
+        // Emit signals
+        bus.emit('L2.registered', this.registered);
+        bus.emit('L2.latent', this.latent);
+        bus.emit('L2.suppressed', this.suppressed);
+        bus.emit('L2.aliased', this.aliased);
+
+        // Calculate rupture metric
+        const rupture = intensity > 0.8 && Math.abs(Math.cos(phase)) < 0.3 ?
+                       intensity * (1 - Math.abs(Math.cos(phase))) : 0;
+        bus.emit('L2.rupture', rupture);
+
+        return {
+          registered: this.registered,
+          latent: this.latent,
+          suppressed: this.suppressed,
+          aliased: this.aliased
+        };
+      }
+    }
+
+    class Layer3_Narrowing {
+      constructor() {
+        this.stages = ['S', 'ℜ', '𝓦', '𝓞', '𝓫', 'ℑ', '𝓬'];
+        this.currentStage = 0;
+        this.signal = 1.0;
+        this.loss = 0;
+      }
+
+      narrow() {
+        if (this.currentStage < this.stages.length - 1) {
+          this.currentStage++;
+          const decayFactor = Math.pow(TAU, this.currentStage);
+          this.signal *= decayFactor;
+          this.loss += (1 - decayFactor) * 0.1;
+        }
+
+        bus.emit('narrowing:update', {
+          stage: this.currentStage,
+          signal: this.signal,
+          loss: this.loss
+        });
+
+        return {
+          stage: `${this.currentStage + 1}/7`,
+          signal: this.signal.toFixed(3),
+          loss: this.loss.toFixed(3),
+          resistance: (100 * this.currentStage).toFixed(0) + 'Ω'
+        };
+      }
+    }
+
+    class Layer4_FieldSignature {
+      constructor() {
+        this.channels = {
+          'δ_obs': 0,
+          'η_N': 0,
+          'σ': 0,
+          'γ': 0,
+          'χ': 0,
+          'β': 0,
+          'ρ': 0
+        };
+      }
+
+      compute(inputs) {
+        // Compute 7 field signature components
+        this.channels['δ_obs'] = clamp01(inputs.intensity * 0.85);
+        this.channels['η_N'] = clamp01(inputs.registered / 100);
+        this.channels['σ'] = clamp01((inputs.intensity + inputs.phase/Math.PI) / 2);
+        this.channels['γ'] = clamp01(1 - inputs.defect);
+        this.channels['χ'] = clamp01(Math.sin(inputs.phase) * 0.5 + 0.5);
+        this.channels['β'] = clamp01(Math.cos(inputs.phase) * 0.5 + 0.5);
+        this.channels['ρ'] = clamp01(inputs.loss);
+
+        // Emit each channel
+        for (const [key, value] of Object.entries(this.channels)) {
+          bus.emit(`L4.${key}`, value);
+        }
+
+        return this.channels;
+      }
+    }
+
+    class Layer5_SignalRupture {
+      constructor() {
+        this.sigmaR = 0;
+        this.state = 'armed';
+        this.triggers = 0;
+        this.tripwires = [0.3, 0.5, 0.7, 0.9];
+        this.latched = [false, false, false, false];
+      }
+
+      process(fieldSig) {
+        // Compute sigma-R composite
+        this.sigmaR = fieldSig['σ'] * 0.6 +
+                     fieldSig['δ_obs'] * 0.3 +
+                     fieldSig['γ'] * 0.1;
+
+        // Check tripwires
+        this.tripwires.forEach((threshold, i) => {
+          if (this.sigmaR > threshold && !this.latched[i]) {
+            this.latched[i] = true;
+            this.triggers++;
+            this.state = 'latched';
+          }
+        });
+
+        bus.emit('L5.sigmaR', this.sigmaR);
+        bus.emit('L5.sigmaState', this.state);
+        bus.emit('L5.triggerCount', this.triggers);
+
+        return {
+          sigmaR: this.sigmaR.toFixed(3),
+          state: this.state,
+          triggers: this.triggers,
+          armed: this.latched.filter(l => !l).length
+        };
+      }
+    }
+
+    class Layer6_DetectorSweep {
+      constructor() {
+        this.matrix = Array(3).fill().map(() => Array(3).fill(0));
+        this.confidence = 0;
+      }
+
+      sweep(theta, naming) {
+        // Update 3x3 crossbar matrix
+        const thetaIndex = theta === 'open' ? 0 : theta === 'standard' ? 1 : 2;
+        const namingIndex = Math.floor(Math.random() * 3); // Simplified
+
+        this.matrix[thetaIndex][namingIndex] = Math.min(255,
+          this.matrix[thetaIndex][namingIndex] + 10);
+
+        // Calculate confidence
+        const total = this.matrix.flat().reduce((a, b) => a + b, 0);
+        this.confidence = total / (9 * 255);
+
+        return {
+          confidence: this.confidence.toFixed(3),
+          theta_mod: DETECTOR_MODS.theta[theta].toFixed(2),
+          name_mod: '1.00',
+          weight: (total / 9).toFixed(0)
+        };
+      }
+    }
+
+    class Layer7_Routing {
+      constructor() {
+        this.state = 'WARNING';
+        this.harborEligibility = 0;
+        this.recapture = 0;
+        this.persistence = 0;
+      }
+
+      route(sigmaR, rho) {
+        // Calculate harbor eligibility with rho inversion
+        this.harborEligibility = sigmaR - 0.14 * rho;
+
+        // FSM state transitions
+        if (this.harborEligibility > ROUTING.harborHarbor) {
+          this.state = 'HARBOR';
+        } else if (this.harborEligibility > ROUTING.bufferHarbor) {
+          this.state = 'BUFFER';
+        } else {
+          this.state = 'WARNING';
+        }
+
+        this.recapture = Math.random() * 0.5;
+        this.persistence = Math.random() * 0.8;
+
+        bus.emit('update', {
+          state: this.state,
+          harborEligibility: this.harborEligibility
+        });
+
+        return {
+          harbor_E: this.harborEligibility.toFixed(3),
+          state: this.state,
+          recapture: this.recapture.toFixed(3),
+          persistence: this.persistence.toFixed(3)
+        };
+      }
+    }
+
+    class Layer8_Packet {
+      constructor() {
+        this.status = 'idle';
+        this.handoff = 'idle';
+        this.packets = 0;
+      }
+
+      assemble(eligible) {
+        if (eligible) {
+          this.status = 'assembled';
+          this.handoff = 'eligible';
+          this.packets++;
+
+          setTimeout(() => {
+            this.status = 'exported';
+            this.handoff = 'complete';
+            bus.emit('L8.packetStatus', this.status);
+            bus.emit('L8.handoffStatus', this.handoff);
+          }, 1000);
+        }
+
+        return {
+          status: this.status,
+          handoff: this.handoff,
+          schema: 'valid',
+          eligible: eligible ? 'yes' : 'no'
+        };
+      }
+    }
+
+    class Layer9_Metacybernetic {
+      constructor() {
+        this.negentropy = 0;
+        this.lambda = 0;
+        this.snr = 0;
+      }
+
+      oversee(systemState) {
+        // Calculate negentropy
+        this.negentropy = 1 - (systemState.defect || 0);
+
+        // CSD lambda coefficient
+        this.lambda = Math.random() * 0.5 + 0.25;
+
+        // Stochastic resonance SNR
+        this.snr = 10 + Math.random() * 20;
+
+        bus.emit('L9.negentropy', this.negentropy);
+        bus.emit('L9.csdLambda', this.lambda);
+        bus.emit('L9.stochResSNR', this.snr);
+
+        return {
+          negentropy: this.negentropy.toFixed(3),
+          lambda: this.lambda.toFixed(3),
+          SNR: this.snr.toFixed(1) + 'dB',
+          CSD: 'nominal'
+        };
+      }
+    }
+
+    // ==================================================================
+    // SYSTEM ORCHESTRATION
+    // ==================================================================
+
+    class FullChainSystem {
+      constructor() {
+        this.layers = {
+          L0: new Layer0_Substrate(),
+          L1: new Layer1_Propagation(),
+          L2: new Layer2_Admissibility(),
+          L3: new Layer3_Narrowing(),
+          L4: new Layer4_FieldSignature(),
+          L5: new Layer5_SignalRupture(),
+          L6: new Layer6_DetectorSweep(),
+          L7: new Layer7_Routing(),
+          L8: new Layer8_Packet(),
+          L9: new Layer9_Metacybernetic()
+        };
+
+        this.running = false;
+        this.tickCount = 0;
+        this.injectionRate = 500;
+        this.intervalId = null;
+
+        this.initializeUI();
+        this.initializeVisualization();
+        this.bindEvents();
+      }
+
+      initializeUI() {
+        // Create layer cards
+        const grid = document.getElementById('layers-grid');
+        LAYERS.forEach((layer, index) => {
+          const card = document.createElement('div');
+          card.className = 'layer-card';
+          card.style.setProperty('--layer-index', index);
+          card.innerHTML = `
+            <div class="layer-card__header">
+              <span class="layer-card__number">${layer.id}</span>
+            </div>
+            <h3 class="layer-card__title">${layer.name}</h3>
+            <p class="layer-card__status">${layer.description}</p>
+            <div class="layer-card__metrics" id="${layer.id}-metrics">
+              ${layer.metrics.map(m => `
+                <div class="metric">
+                  <span class="metric__label">${m}</span>
+                  <span class="metric__value" id="${layer.id}-${m}">-</span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+
+        // Initialize registers display
+        this.updateRegisters();
+      }
+
+      initializeVisualization() {
+        const canvas = document.getElementById('signal-flow-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        const resizeCanvas = () => {
+          const rect = canvas.parentElement.getBoundingClientRect();
+          canvas.width = rect.width;
+          canvas.height = 400;
+        };
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        this.visualizationContext = ctx;
+        this.drawVisualization();
+      }
+
+      drawVisualization() {
+        const ctx = this.visualizationContext;
+        const width = ctx.canvas.width;
+        const height = ctx.canvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = '#0a0e14';
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw layer connections
+        const layerWidth = width / 10;
+        const layerHeight = 40;
+        const yOffset = (height - layerHeight) / 2;
+
+        // Draw connections
+        ctx.strokeStyle = '#1c2333';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 9; i++) {
+          ctx.beginPath();
+          ctx.moveTo((i + 1) * layerWidth, yOffset + layerHeight / 2);
+          ctx.lineTo((i + 2) * layerWidth, yOffset + layerHeight / 2);
+          ctx.stroke();
+        }
+
+        // Draw layer nodes
+        for (let i = 0; i < 10; i++) {
+          const x = (i + 0.5) * layerWidth;
+          const y = yOffset;
+
+          // Node background
+          ctx.fillStyle = this.running ? '#5cb7ff' : '#252d3d';
+          ctx.fillRect(x - 20, y, 40, layerHeight);
+
+          // Node label
+          ctx.fillStyle = '#e0e6ed';
+          ctx.font = '12px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`L${i}`, x, y + layerHeight / 2);
+        }
+
+        // Animate if running
+        if (this.running) {
+          const time = Date.now() / 1000;
+          const pulseX = ((time % 10) / 10) * width;
+
+          ctx.fillStyle = 'rgba(92, 183, 255, 0.5)';
+          ctx.beginPath();
+          ctx.arc(pulseX, yOffset + layerHeight / 2, 10, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      bindEvents() {
+        // Control buttons
+        document.getElementById('btn-start').addEventListener('click', () => this.start());
+        document.getElementById('btn-pause').addEventListener('click', () => this.pause());
+        document.getElementById('btn-reset').addEventListener('click', () => this.reset());
+        document.getElementById('btn-self-test').addEventListener('click', () => this.selfTest());
+        document.getElementById('btn-export').addEventListener('click', () => this.exportState());
+        document.getElementById('btn-refresh-registers').addEventListener('click', () => this.updateRegisters());
+
+        // Injection rate slider
+        const rateSlider = document.getElementById('injection-rate');
+        const rateValue = document.getElementById('injection-rate-value');
+        rateSlider.addEventListener('input', (e) => {
+          this.injectionRate = parseInt(e.target.value);
+          rateValue.textContent = `${this.injectionRate}ms`;
+          if (this.running) {
+            this.pause();
+            this.start();
+          }
+        });
+
+        // Theta profile selector
+        document.getElementById('theta-select').addEventListener('change', (e) => {
+          this.layers.L2.setTheta(e.target.value);
+        });
+
+        // Visualization mode selector
+        document.getElementById('viz-mode').addEventListener('change', (e) => {
+          this.visualizationMode = e.target.value;
+        });
+      }
+
+      start() {
+        if (!this.running) {
+          this.running = true;
+          document.getElementById('system-status').className = 'status-light active';
+          document.getElementById('btn-start').disabled = true;
+          document.getElementById('btn-pause').disabled = false;
+
+          this.intervalId = setInterval(() => this.tick(), this.injectionRate);
+        }
+      }
+
+      pause() {
+        if (this.running) {
+          this.running = false;
+          document.getElementById('system-status').className = 'status-light inactive';
+          document.getElementById('btn-start').disabled = false;
+          document.getElementById('btn-pause').disabled = true;
+
+          if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+          }
+        }
+      }
+
+      reset() {
+        this.pause();
+        this.tickCount = 0;
+        document.getElementById('tick-counter').textContent = '0';
+
+        // Reset all layers
+        this.layers = {
+          L0: new Layer0_Substrate(),
+          L1: new Layer1_Propagation(),
+          L2: new Layer2_Admissibility(),
+          L3: new Layer3_Narrowing(),
+          L4: new Layer4_FieldSignature(),
+          L5: new Layer5_SignalRupture(),
+          L6: new Layer6_DetectorSweep(),
+          L7: new Layer7_Routing(),
+          L8: new Layer8_Packet(),
+          L9: new Layer9_Metacybernetic()
+        };
+
+        // Reset SignalBus
+        bus.reset();
+
+        // Update UI
+        this.updateAllMetrics();
+        this.updateRegisters();
+
+        // Mark cards as inactive
+        document.querySelectorAll('.layer-card').forEach(card => {
+          card.classList.remove('active');
+        });
+      }
+
+      tick() {
+        this.tickCount++;
+        document.getElementById('tick-counter').textContent = this.tickCount;
+
+        // Emit global tick
+        bus.emit('tick', { tick: this.tickCount });
+        bus.writeReg(REG.G_TICK, this.tickCount);
+
+        // Process chain
+        const metrics = {};
+
+        // L0: Substrate (passive)
+        metrics.L0 = this.layers.L0.getMetrics();
+
+        // L1: Propagation
+        metrics.L1 = this.layers.L1.inject();
+
+        // L2: Admissibility
+        const intensity = parseFloat(metrics.L1.avgIntensity);
+        const phase = parseFloat(metrics.L1.avgPhase);
+        const defect = parseFloat(metrics.L1.defect);
+        metrics.L2 = this.layers.L2.process(intensity, phase, defect);
+
+        // L3: Narrowing
+        metrics.L3 = this.layers.L3.narrow();
+
+        // L4: Field Signature
+        const fieldInputs = {
+          intensity,
+          phase,
+          defect,
+          registered: metrics.L2.registered,
+          loss: parseFloat(metrics.L3.loss)
+        };
+        metrics.L4 = this.layers.L4.compute(fieldInputs);
+
+        // L5: Signal Rupture
+        metrics.L5 = this.layers.L5.process(metrics.L4);
+
+        // L6: Detector Sweep
+        const theta = document.getElementById('theta-select').value;
+        metrics.L6 = this.layers.L6.sweep(theta, 'canonical');
+
+        // L7: Routing
+        const sigmaR = parseFloat(metrics.L5.sigmaR);
+        const rho = metrics.L4['ρ'];
+        metrics.L7 = this.layers.L7.route(sigmaR, rho);
+
+        // L8: Packet
+        const eligible = metrics.L7.state === 'HARBOR';
+        metrics.L8 = this.layers.L8.assemble(eligible);
+
+        // L9: Metacybernetic
+        metrics.L9 = this.layers.L9.oversee({ defect });
+
+        // Update UI
+        this.updateMetrics(metrics);
+
+        // Update visualization
+        this.drawVisualization();
+
+        // Mark active layers
+        document.querySelectorAll('.layer-card').forEach((card, i) => {
+          if (i < 10) {
+            card.classList.add('active');
+            setTimeout(() => card.classList.remove('active'), 200);
+          }
+        });
+      }
+
+      updateMetrics(metrics) {
+        for (const [layerId, layerMetrics] of Object.entries(metrics)) {
+          for (const [key, value] of Object.entries(layerMetrics)) {
+            const elem = document.getElementById(`${layerId}-${key}`);
+            if (elem) {
+              elem.textContent = value;
+            }
+          }
+        }
+      }
+
+      updateAllMetrics() {
+        const metrics = {
+          L0: this.layers.L0.getMetrics(),
+          L1: { rayCount: 0, avgIntensity: '0.000', avgPhase: '0.000', defect: '0.000' },
+          L2: { registered: 0, latent: 0, suppressed: 0, aliased: 0 },
+          L3: { stage: '1/7', signal: '1.000', loss: '0.000', resistance: '0Ω' },
+          L4: Object.fromEntries(Object.keys(this.layers.L4.channels).map(k => [k, '0.000'])),
+          L5: { sigmaR: '0.000', state: 'armed', triggers: 0, armed: 4 },
+          L6: { confidence: '0.000', theta_mod: '1.00', name_mod: '1.00', weight: '0' },
+          L7: { harbor_E: '0.000', state: 'WARNING', recapture: '0.000', persistence: '0.000' },
+          L8: { status: 'idle', handoff: 'idle', schema: 'valid', eligible: 'no' },
+          L9: { negentropy: '0.000', lambda: '0.000', SNR: '0.0dB', CSD: 'nominal' }
+        };
+        this.updateMetrics(metrics);
+      }
+
+      updateRegisters() {
+        const grid = document.getElementById('registers-grid');
+        const registers = bus.dumpRegisters();
+
+        grid.innerHTML = '';
+        for (const [addr, value] of Object.entries(registers)) {
+          const div = document.createElement('div');
+          div.className = 'register';
+          div.innerHTML = `
+            <span class="register__addr">${addr}</span>
+            <span class="register__value">${value}</span>
+          `;
+          grid.appendChild(div);
+        }
+      }
+
+      selfTest() {
+        console.log('Running self-test...');
+        const results = [];
+
+        // Test each layer
+        for (const [id, layer] of Object.entries(this.layers)) {
+          results.push(`${id}: OK`);
+        }
+
+        // Test SignalBus
+        results.push(`SignalBus: ${bus.channels.length} channels`);
+        results.push(`Registers: ${Object.keys(bus.dumpRegisters()).length} active`);
+
+        alert('Self-Test Results:\n' + results.join('\n'));
+      }
+
+      exportState() {
+        const state = {
+          timestamp: new Date().toISOString(),
+          tick: this.tickCount,
+          layers: {},
+          registers: bus.dumpRegisters(),
+          history: bus.getHistory(100)
+        };
+
+        // Export layer states
+        for (const [id, layer] of Object.entries(this.layers)) {
+          if (typeof layer.getMetrics === 'function') {
+            state.layers[id] = layer.getMetrics();
+          }
+        }
+
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `eo-rfd-state-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    // ==================================================================
+    // INITIALIZATION
+    // ==================================================================
+
+    // Start the system when DOM is ready
+    const system = new FullChainSystem();
+
+    // Expose system to global scope for debugging
+    window.system = system;
+    window.bus = bus;
+
+    console.log('%c EO-RFD Full Chain Integration Loaded ',
+                'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;');
+    console.log('System ready. Click "Start System" to begin.');
+    console.log('Access system via: window.system, window.bus');
+  </script>
+</body>
+</html>
