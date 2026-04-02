@@ -312,6 +312,12 @@
     .category--frameworks .category__title { color: var(--accent-purple); }
     .category--tools .category__title { color: var(--accent-orange); }
     .category--dashboards .category__title { color: var(--accent-pink); }
+    .category--demos .category__title {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
     /* Footer */
     .footer {
@@ -398,11 +404,11 @@
       <p class="header__subtitle">Complete HTML File Index - Academic Consciousness-Encoded Design for Interactive Typography</p>
       <div class="header__stats">
         <div class="stat">
-          <span class="stat__value">21</span>
+          <span class="stat__value">32</span>
           <span class="stat__label">HTML Files</span>
         </div>
         <div class="stat">
-          <span class="stat__value">6</span>
+          <span class="stat__value">7</span>
           <span class="stat__label">Categories</span>
         </div>
         <div class="stat">
@@ -425,6 +431,7 @@
       <a href="#frameworks" class="nav__link">🏗️ Frameworks</a>
       <a href="#tools" class="nav__link">🛠️ Tools</a>
       <a href="#dashboards" class="nav__link">📊 Dashboards</a>
+      <a href="#demos" class="nav__link">🚀 Interactive Demos</a>
       <a href="https://github.com/Echo-S-Studios/ACEDIT" class="nav__link">📦 GitHub</a>
     </div>
   </nav>
@@ -842,8 +849,118 @@
       </div>
     </section>
 
+    <!-- Interactive Demos Section -->
+    <section id="demos" class="category category--demos" style="--category-index: 5">
+      <div class="category__header">
+        <span class="category__icon">🚀</span>
+        <h2 class="category__title">Interactive Demos Gallery</h2>
+        <span class="category__count">11 demos</span>
+      </div>
+      <div class="file-grid">
+        <a href="demos/index.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🎨</span>
+            <h3 class="file-card__title">Interactive Demos Gallery</h3>
+          </div>
+          <div class="file-card__path">demos/index.html</div>
+          <p class="file-card__description">
+            Comprehensive gallery of 11 interactive HTML demos showcasing the ACEDIT system's mathematical architecture and visual representations.
+            Includes demos for text encoding, typography enhancement, linguistic analysis, coherence validation, EO-RFD layers, SignalBus communication,
+            register domains, mathematical constants, quantum computing, and neural networks. All demos feature real-time visualizations, mathematical formulas,
+            and ACEDIT register integration with a dark quantum theme.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">NEW</span>
+            <span class="badge badge--interactive">Interactive</span>
+            <span class="badge">Gallery</span>
+            <span class="badge">Pure JS</span>
+          </div>
+        </a>
+
+        <a href="demos/text-encoding-demo.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">📝</span>
+            <h3 class="file-card__title">Text Encoding System</h3>
+          </div>
+          <div class="file-card__path">demos/text-encoding-demo.html</div>
+          <p class="file-card__description">
+            Real-time text encoding with golden ratio visualizations, register geometry, and coherence field animations.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">NEW</span>
+            <span class="badge badge--interactive">Interactive</span>
+            <span class="badge">Canvas</span>
+          </div>
+        </a>
+
+        <a href="demos/eo-rfd-layers-demo.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🔀</span>
+            <h3 class="file-card__title">EO-RFD Layer Visualization</h3>
+          </div>
+          <div class="file-card__path">demos/eo-rfd-layers-demo.html</div>
+          <p class="file-card__description">
+            10-layer signal processing with Penrose tiling, animated signal flow, and TRIAD routing state machine.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">NEW</span>
+            <span class="badge badge--interactive">Interactive</span>
+            <span class="badge">Animation</span>
+          </div>
+        </a>
+
+        <a href="demos/quantum-computing-demo.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">⚛️</span>
+            <h3 class="file-card__title">Quantum Computing Interface</h3>
+          </div>
+          <div class="file-card__path">demos/quantum-computing-demo.html</div>
+          <p class="file-card__description">
+            Bloch sphere visualization, quantum gates, Bell states, and entanglement with ACEDIT register encoding.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">NEW</span>
+            <span class="badge badge--interactive">Interactive</span>
+            <span class="badge">3D</span>
+          </div>
+        </a>
+
+        <a href="demos/neural-network-debugger-demo.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">🧠</span>
+            <h3 class="file-card__title">Neural Network Debugger</h3>
+          </div>
+          <div class="file-card__path">demos/neural-network-debugger-demo.html</div>
+          <p class="file-card__description">
+            Layer-by-layer network visualization with gradient flow, activation heatmaps, and dead neuron detection.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">NEW</span>
+            <span class="badge badge--interactive">Interactive</span>
+            <span class="badge">AI/ML</span>
+          </div>
+        </a>
+
+        <a href="demos/coherence-validation-demo.html" class="file-card">
+          <div class="file-card__header">
+            <span class="file-card__icon">✓</span>
+            <h3 class="file-card__title">Coherence Validation System</h3>
+          </div>
+          <div class="file-card__path">demos/coherence-validation-demo.html</div>
+          <p class="file-card__description">
+            Phase space trajectories, 3D visualization with Three.js, and mathematical coherence scoring.
+          </p>
+          <div class="file-card__badges">
+            <span class="badge badge--new">NEW</span>
+            <span class="badge badge--interactive">Interactive</span>
+            <span class="badge">Three.js</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
     <!-- Quick Links Section -->
-    <section class="category" style="--category-index: 5">
+    <section class="category" style="--category-index: 6">
       <div class="category__header">
         <span class="category__icon">⚡</span>
         <h2 class="category__title">Quick Access</h2>
