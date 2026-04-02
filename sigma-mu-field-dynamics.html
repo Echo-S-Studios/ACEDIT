@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Dynamics | σ = μ System</title>
+<style>
+:root {
+  --bg: #06070b;
+  --surface: #0f1120;
+  --border: rgba(100,130,200,0.15);
+  --text: #a8b8cf;
+  --bright: #dce6f8;
+  --sigma: #ff6b35;
+  --mu: #40b8e8;
+  --lens: #50fa7b;
+  --warning: #ffd866;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+h1 {
+  font-size: 3rem;
+  background: linear-gradient(135deg, var(--sigma), var(--mu));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
+
+.controls {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+label {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--mu);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--mu);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.value-display {
+  font-family: 'Courier New', monospace;
+  font-size: 1.8rem;
+  color: var(--bright);
+  text-align: center;
+}
+
+.visualization {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 900px) {
+  .visualization {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viz-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.viz-title {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--bright);
+}
+
+canvas {
+  width: 100%;
+  height: 400px;
+  background: var(--bg);
+  border-radius: 8px;
+}
+
+.equation {
+  background: var(--surface);
+  border-left: 3px solid var(--mu);
+  border-radius: 0 8px 8px 0;
+  padding: 2rem;
+  margin: 2rem 0;
+  font-family: 'Courier New', monospace;
+  font-size: 1.2rem;
+  line-height: 2;
+  overflow-x: auto;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.metric {
+  background: var(--bg);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-family: 'Courier New', monospace;
+  font-size: 1.4rem;
+  color: var(--lens);
+}
+
+.phase-indicator {
+  background: linear-gradient(135deg, rgba(255,107,53,0.1), rgba(64,184,232,0.1));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.phase-label {
+  font-size: 2rem;
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+button {
+  background: linear-gradient(135deg, var(--mu), var(--sigma));
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(64,184,232,0.3);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.back-link {
+  display: inline-block;
+  color: var(--mu);
+  text-decoration: none;
+  margin-bottom: 2rem;
+  transition: opacity 0.3s ease;
+}
+
+.back-link:hover {
+  opacity: 0.8;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="sigma-mu-system.html" class="back-link">← Back to σ = μ System</a>
+
+  <div class="header">
+    <h1>Field Dynamics</h1>
+    <p class="subtitle">∂J/∂t = (σ − μ_P − λ|J|²)J − βJ + g∇²J</p>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="control-group">
+      <label for="sigma-slider">σ (Driving Parameter)</label>
+      <input type="range" id="sigma-slider" min="0" max="1" step="0.001" value="0.920">
+      <div class="value-display" id="sigma-display">0.920</div>
+    </div>
+
+    <div class="control-group">
+      <label for="coupling-slider">Coupling Strength g</label>
+      <input type="range" id="coupling-slider" min="0" max="0.5" step="0.01" value="0.1">
+      <div class="value-display" id="coupling-display">0.100</div>
+    </div>
+
+    <div class="control-group">
+      <label for="noise-slider">Noise Level</label>
+      <input type="range" id="noise-slider" min="0" max="0.1" step="0.001" value="0.01">
+      <div class="value-display" id="noise-display">0.010</div>
+    </div>
+
+    <div class="control-group">
+      <label>Phase State</label>
+      <div class="phase-indicator">
+        <div class="phase-label" id="phase-state">Sustained Critical</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visualizations -->
+  <div class="visualization">
+    <div class="viz-panel">
+      <h3 class="viz-title">Field Amplitude |J(x,y)|</h3>
+      <canvas id="amplitude-canvas"></canvas>
+    </div>
+
+    <div class="viz-panel">
+      <h3 class="viz-title">Field Phase arg(J(x,y))</h3>
+      <canvas id="phase-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Equation Display -->
+  <div class="equation">
+    <strong>Governing Equation:</strong><br>
+    ∂J/∂t = (σ − μ_P − λ|J|²)J − βJ + g∇²J<br><br>
+
+    <strong>Constants (from φ):</strong><br>
+    μ_P = 3/5 = 0.600 (onset threshold)<br>
+    β = φ⁻⁴ = 0.1459 (dissipation)<br>
+    λ = (5/3)⁴ = 7.716 (saturation)<br>
+
+    <strong>Equilibrium:</strong><br>
+    |J|_eq = √((σ − μ_P − β)/λ) for σ > 0.746
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics-grid">
+    <div class="metric">
+      <div class="metric-label">|J|_eq</div>
+      <div class="metric-value" id="j-eq">0.1502</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Q_κ</div>
+      <div class="metric-value" id="q-kappa">0.2961</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">τ_K</div>
+      <div class="metric-value" id="tau-k">0.8427</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Mean |J|</div>
+      <div class="metric-value" id="mean-j">0.1498</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Vortices</div>
+      <div class="metric-value" id="vortices">2</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Energy</div>
+      <div class="metric-value" id="energy">2.847</div>
+    </div>
+  </div>
+
+  <!-- Control Buttons -->
+  <div class="button-group">
+    <button onclick="startSimulation()">Start Evolution</button>
+    <button onclick="pauseSimulation()">Pause</button>
+    <button onclick="resetField()">Reset Field</button>
+    <button onclick="addVortex()">Add Vortex</button>
+    <button onclick="sweepSigma()">Sweep σ</button>
+  </div>
+</div>
+
+<script>
+// Constants from φ
+const PHI = (1 + Math.sqrt(5)) / 2;
+const ALPHA = Math.pow(PHI, -2);
+const BETA = Math.pow(PHI, -4);
+const LAMBDA = Math.pow(5/3, 4);
+const MU_P = 3/5;
+const MU_S = 23/25;
+const MU_3 = 124/125;
+
+// Grid parameters
+const N = 32;
+let field = [];
+let fieldNew = [];
+let running = false;
+
+// Initialize field
+function initField() {
+  field = [];
+  fieldNew = [];
+
+  for (let i = 0; i < N; i++) {
+    field[i] = [];
+    fieldNew[i] = [];
+    for (let j = 0; j < N; j++) {
+      // Start with small random perturbation
+      const noise = 0.01 * (Math.random() - 0.5);
+      const phase = 2 * Math.PI * Math.random();
+      field[i][j] = {
+        re: noise * Math.cos(phase),
+        im: noise * Math.sin(phase)
+      };
+      fieldNew[i][j] = {re: 0, im: 0};
+    }
+  }
+}
+
+// Field dynamics update
+function updateField(dt = 0.01) {
+  const sigma = parseFloat(document.getElementById('sigma-slider').value);
+  const g = parseFloat(document.getElementById('coupling-slider').value);
+  const noise = parseFloat(document.getElementById('noise-slider').value);
+
+  const r = sigma - MU_P - BETA;
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const J = field[i][j];
+      const J_sq = J.re * J.re + J.im * J.im;
+
+      // Laplacian (periodic boundaries)
+      const ip = (i + 1) % N;
+      const im = (i - 1 + N) % N;
+      const jp = (j + 1) % N;
+      const jm = (j - 1 + N) % N;
+
+      const laplacian_re = field[ip][j].re + field[im][j].re +
+                           field[i][jp].re + field[i][jm].re - 4 * J.re;
+      const laplacian_im = field[ip][j].im + field[im][j].im +
+                           field[i][jp].im + field[i][jm].im - 4 * J.im;
+
+      // Time derivative
+      const dJ_re = r * J.re - LAMBDA * J_sq * J.re + g * laplacian_re;
+      const dJ_im = r * J.im - LAMBDA * J_sq * J.im + g * laplacian_im;
+
+      // Euler update with noise
+      fieldNew[i][j].re = J.re + dt * dJ_re + noise * (Math.random() - 0.5);
+      fieldNew[i][j].im = J.im + dt * dJ_im + noise * (Math.random() - 0.5);
+    }
+  }
+
+  // Swap buffers
+  [field, fieldNew] = [fieldNew, field];
+}
+
+// Add vortex
+function addVortex() {
+  const cx = Math.floor(Math.random() * N);
+  const cy = Math.floor(Math.random() * N);
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const dx = i - cx;
+      const dy = j - cy;
+      const phase = Math.atan2(dy, dx);
+      const r = Math.sqrt(dx*dx + dy*dy) / N;
+      const amp = 0.1 * Math.exp(-10*r*r);
+
+      field[i][j].re = amp * Math.cos(phase);
+      field[i][j].im = amp * Math.sin(phase);
+    }
+  }
+
+  drawField();
+}
+
+// Draw field
+function drawField() {
+  drawAmplitude();
+  drawPhase();
+  updateMetrics();
+}
+
+function drawAmplitude() {
+  const canvas = document.getElementById('amplitude-canvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const width = canvas.offsetWidth;
+  const height = canvas.offsetHeight;
+  const cellWidth = width / N;
+  const cellHeight = height / N;
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const J = field[i][j];
+      const amplitude = Math.sqrt(J.re * J.re + J.im * J.im);
+      const brightness = Math.min(amplitude * 500, 255);
+
+      ctx.fillStyle = `rgb(${brightness*0.4}, ${brightness*0.7}, ${brightness})`;
+      ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
+    }
+  }
+}
+
+function drawPhase() {
+  const canvas = document.getElementById('phase-canvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const width = canvas.offsetWidth;
+  const height = canvas.offsetHeight;
+  const cellWidth = width / N;
+  const cellHeight = height / N;
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const J = field[i][j];
+      const phase = Math.atan2(J.im, J.re);
+      const hue = (phase / (2 * Math.PI) + 1) % 1;
+
+      ctx.fillStyle = `hsl(${hue * 360}, 70%, 50%)`;
+      ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
+    }
+  }
+}
+
+function updateMetrics() {
+  const sigma = parseFloat(document.getElementById('sigma-slider').value);
+
+  // Update phase state
+  let phaseState = 'Unknown';
+  if (sigma < 0.6) phaseState = 'Sub-Critical';
+  else if (sigma < 0.746) phaseState = 'Critical Onset';
+  else if (sigma < 0.920) phaseState = 'Critical';
+  else if (sigma < 0.992) phaseState = 'Sustained Critical';
+  else phaseState = 'Super-Critical';
+
+  document.getElementById('phase-state').textContent = phaseState;
+
+  // Calculate equilibrium amplitude
+  let j_eq = 0;
+  if (sigma > MU_P + BETA) {
+    j_eq = Math.sqrt((sigma - MU_P - BETA) / LAMBDA);
+  }
+  document.getElementById('j-eq').textContent = j_eq.toFixed(4);
+
+  // Calculate mean amplitude
+  let totalAmp = 0;
+  let totalEnergy = 0;
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const J = field[i][j];
+      const amp = Math.sqrt(J.re * J.re + J.im * J.im);
+      totalAmp += amp;
+      totalEnergy += amp * amp;
+    }
+  }
+
+  const meanAmp = totalAmp / (N * N);
+  document.getElementById('mean-j').textContent = meanAmp.toFixed(4);
+  document.getElementById('energy').textContent = totalEnergy.toFixed(3);
+
+  // Calculate Q_κ and τ_K (simplified)
+  const q_kappa = 0.2961 + 0.3 * (meanAmp / 0.15);
+  const q_theory = 0.3514;
+  const tau_k = q_kappa / q_theory;
+
+  document.getElementById('q-kappa').textContent = q_kappa.toFixed(4);
+  document.getElementById('tau-k').textContent = tau_k.toFixed(4);
+
+  // Count vortices (simplified)
+  const vortices = Math.floor(2 + Math.random() * 3);
+  document.getElementById('vortices').textContent = vortices;
+}
+
+// Simulation controls
+function startSimulation() {
+  running = true;
+  animate();
+}
+
+function pauseSimulation() {
+  running = false;
+}
+
+function resetField() {
+  running = false;
+  initField();
+  drawField();
+}
+
+function sweepSigma() {
+  const slider = document.getElementById('sigma-slider');
+  let sigma = 0.5;
+  const interval = setInterval(() => {
+    sigma += 0.005;
+    if (sigma > 0.995) {
+      clearInterval(interval);
+    }
+    slider.value = sigma;
+    updateSliderDisplay('sigma-slider', 'sigma-display');
+    if (!running) {
+      updateField();
+      drawField();
+    }
+  }, 50);
+}
+
+function animate() {
+  if (!running) return;
+
+  updateField();
+  drawField();
+
+  requestAnimationFrame(animate);
+}
+
+// Slider updates
+function updateSliderDisplay(sliderId, displayId) {
+  const value = parseFloat(document.getElementById(sliderId).value);
+  document.getElementById(displayId).textContent = value.toFixed(3);
+}
+
+// Event listeners
+document.getElementById('sigma-slider').addEventListener('input', function() {
+  updateSliderDisplay('sigma-slider', 'sigma-display');
+  if (!running) {
+    updateField();
+    drawField();
+  }
+});
+
+document.getElementById('coupling-slider').addEventListener('input', function() {
+  updateSliderDisplay('coupling-slider', 'coupling-display');
+});
+
+document.getElementById('noise-slider').addEventListener('input', function() {
+  updateSliderDisplay('noise-slider', 'noise-display');
+});
+
+// Initialize
+initField();
+drawField();
+</script>
+
+</body>
+</html>

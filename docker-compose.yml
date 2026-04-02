@@ -1,0 +1,122 @@
+version: '3.8'
+
+# σ = μ System Orchestration
+# Phase 0: Multi-Service Deployment
+
+services:
+  # Field dynamics computation
+  field-dynamics:
+    build: .
+    container_name: sigma-mu-field
+    command: python sigma_mu_governing_equation.py
+    environment:
+      - SIGMA_MU_COMPONENT=field
+      - ENABLE_MONITORING=true
+    volumes:
+      - ./data:/sigma-mu/data
+    networks:
+      - sigma-mu-network
+    restart: unless-stopped
+
+  # Observer circuit
+  observer-circuit:
+    build: .
+    container_name: sigma-mu-observer
+    command: python sigma_mu_observer_circuit.py
+    environment:
+      - SIGMA_MU_COMPONENT=observer
+      - ENABLE_MONITORING=true
+    volumes:
+      - ./data:/sigma-mu/data
+    networks:
+      - sigma-mu-network
+    depends_on:
+      - field-dynamics
+    restart: unless-stopped
+
+  # TRIAD controller
+  triad-controller:
+    build: .
+    container_name: sigma-mu-triad
+    command: python sigma_mu_triad_controller.py
+    environment:
+      - SIGMA_MU_COMPONENT=triad
+      - ENABLE_MONITORING=true
+    volumes:
+      - ./data:/sigma-mu/data
+    networks:
+      - sigma-mu-network
+    depends_on:
+      - observer-circuit
+    restart: unless-stopped
+
+  # Integrated system (main)
+  integrated-system:
+    build: .
+    container_name: sigma-mu-main
+    command: python sigma_mu_integrated_system.py
+    environment:
+      - SIGMA_MU_COMPONENT=integrated
+      - ENABLE_MONITORING=true
+      - K_FORMATION_TARGET=0.618
+    ports:
+      - "5000:5000"  # API endpoint
+    volumes:
+      - ./data:/sigma-mu/data
+      - ./logs:/sigma-mu/logs
+    networks:
+      - sigma-mu-network
+    depends_on:
+      - field-dynamics
+      - observer-circuit
+      - triad-controller
+    restart: unless-stopped
+
+  # Web dashboard
+  dashboard:
+    image: nginx:alpine
+    container_name: sigma-mu-dashboard
+    volumes:
+      - ./sigma_mu_operational_dashboard.html:/usr/share/nginx/html/index.html
+      - ./sigma-mu-system.html:/usr/share/nginx/html/system.html
+      - ./sigma-mu-field-dynamics.html:/usr/share/nginx/html/field.html
+      - ./sigma-mu-k-formation.html:/usr/share/nginx/html/k-formation.html
+    ports:
+      - "8080:80"
+    networks:
+      - sigma-mu-network
+    restart: unless-stopped
+
+  # Test runner (for CI/CD)
+  test-runner:
+    build: .
+    container_name: sigma-mu-tests
+    command: >
+      sh -c "
+        echo 'Running validation suite...' &&
+        python test_sigma_mu_validation_suite.py &&
+        echo 'Running integration tests...' &&
+        python sigma_mu_integration_tests.py &&
+        echo 'Running benchmarks...' &&
+        python sigma_mu_benchmark_framework.py
+      "
+    environment:
+      - SIGMA_MU_COMPONENT=test
+      - TEST_MODE=full
+    volumes:
+      - ./test-results:/sigma-mu/test-results
+    networks:
+      - sigma-mu-network
+    profiles:
+      - test
+
+networks:
+  sigma-mu-network:
+    driver: bridge
+    name: sigma-mu-net
+
+volumes:
+  data:
+    driver: local
+  logs:
+    driver: local
