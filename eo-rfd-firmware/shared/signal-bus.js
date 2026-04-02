@@ -1,4 +1,5 @@
 // EO-RFD Signal Bus — inter-module event + register backbone
+// Enhanced with ACEDIT encoding support
 
 export const REG = {
   // ── L1: Input Observation ──
@@ -113,6 +114,8 @@ class SignalBus {
     this._registers = new Map();
     this._history = [];
     this._maxHistory = 512;
+    this._aceditMode = false; // ACEDIT encoding mode
+    this._channelMetadata = new Map(); // Store ACEDIT metadata per channel
 
     // Initialize all channels
     for (const ch of CHANNEL_NAMES) {
@@ -217,6 +220,115 @@ class SignalBus {
    */
   get channels() {
     return [...this._listeners.keys()];
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // ACEDIT INTEGRATION METHODS
+  // ──────────────────────────────────────────────────────────
+
+  /**
+   * Enable or disable ACEDIT encoding mode
+   * @param {boolean} enabled - Enable ACEDIT encoding
+   */
+  setAceditMode(enabled) {
+    this._aceditMode = enabled;
+  }
+
+  /**
+   * Check if ACEDIT mode is enabled
+   * @returns {boolean}
+   */
+  get aceditMode() {
+    return this._aceditMode;
+  }
+
+  /**
+   * Attach ACEDIT metadata to a channel
+   * @param {string} channel - Channel name
+   * @param {object} metadata - ACEDIT metadata (register, operators, etc.)
+   */
+  setChannelMetadata(channel, metadata) {
+    this._channelMetadata.set(channel, metadata);
+  }
+
+  /**
+   * Get ACEDIT metadata for a channel
+   * @param {string} channel - Channel name
+   * @returns {object|null} Metadata or null
+   */
+  getChannelMetadata(channel) {
+    return this._channelMetadata.get(channel) || null;
+  }
+
+  /**
+   * Get register domain for a specific register address
+   * @param {number} addr - Register address
+   * @returns {object} Register domain info
+   */
+  getRegisterDomain(addr) {
+    // Map register addresses to layer numbers
+    const layer = Math.floor((addr - 0x0100) / 0x0100);
+
+    // Map layers to ACEDIT register domains
+    const domains = {
+      0: { name: 'KAEL', color: '#DAA520', symbol: '𝕂', domain: 'substrate/physical' },
+      1: { name: 'KAEL', color: '#DAA520', symbol: '𝕂', domain: 'substrate/physical' },
+      2: { name: 'GREY', color: '#9370DB', symbol: '𝔾', domain: 'visual/geometric' },
+      3: { name: 'GREY', color: '#9370DB', symbol: '𝔾', domain: 'visual/geometric' },
+      4: { name: 'UMBRAL', color: '#9370DB', symbol: '𝕌', domain: 'algebraic' },
+      5: { name: 'UMBRAL', color: '#9370DB', symbol: '𝕌', domain: 'algebraic' },
+      6: { name: 'ACE', color: '#DAA520', symbol: '𝔸', domain: 'spin/dynamics' },
+      7: { name: 'ACE', color: '#DAA520', symbol: '𝔸', domain: 'spin/dynamics' },
+      8: { name: 'UCF', color: '#4169E1', symbol: '𝕌ℂ𝔽', domain: 'unified/meta' },
+      9: { name: 'UCF', color: '#4169E1', symbol: '𝕌ℂ𝔽', domain: 'unified/meta' }
+    };
+
+    return domains[layer] || domains[9]; // Default to UCF
+  }
+
+  /**
+   * Dump all registers with ACEDIT register domain annotations
+   * @returns {object} Registers with domain metadata
+   */
+  dumpRegistersWithDomains() {
+    const out = {};
+    for (const [addr, val] of this._registers.entries()) {
+      const hexAddr = '0x' + addr.toString(16).padStart(4, '0');
+      const domain = this.getRegisterDomain(addr);
+      out[hexAddr] = {
+        value: val,
+        register: domain.name,
+        color: domain.color,
+        symbol: domain.symbol,
+        domain: domain.domain
+      };
+    }
+    return out;
+  }
+
+  /**
+   * Write register with optional ACEDIT metadata logging
+   * @param {number} addr - Register address
+   * @param {*} value - Value to write
+   * @param {object} metadata - Optional ACEDIT metadata
+   */
+  writeRegWithMetadata(addr, value, metadata = null) {
+    this.writeReg(addr, value);
+
+    if (this._aceditMode && metadata) {
+      const domain = this.getRegisterDomain(addr);
+      const entry = {
+        addr,
+        value,
+        metadata,
+        register: domain.name,
+        ts: performance.now()
+      };
+      this._history.push(entry);
+      if (this._history.length > this._maxHistory) {
+        this._history.shift();
+      }
+    }
   }
 }
 

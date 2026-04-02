@@ -1,0 +1,29 @@
+{
+  "name": "acedit",
+  "version": "1.0.0",
+  "description": "ACEDIT Typographic Firmware Layer - A zero-infrastructure Unicode encoding system mapping 6 registers to 6 framework domains",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/tests/*.js",
+    "validate": "tsc --noEmit"
+  },
+  "keywords": [
+    "unicode",
+    "typography",
+    "encoding",
+    "firmware",
+    "zero-infrastructure"
+  ],
+  "author": "ACEDIT Project",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

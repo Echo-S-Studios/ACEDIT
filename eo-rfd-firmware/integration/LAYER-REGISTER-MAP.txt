@@ -1,0 +1,101 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    ACEDIT-EORFD LAYER-REGISTER MAPPING                        ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────┬─────────────────────────────────────────────────────────────────────┐
+│ REGISTER │ LAYER MAPPING & ENCODING                                            │
+├──────────┼─────────────────────────────────────────────────────────────────────┤
+│          │                                                                     │
+│  𝕂 KAEL  │  L0: ∈ Quasi-crystal substrate                                     │
+│  (Gold)  │      Physical substrate with Penrose P3 tiling                      │
+│          │      Domain: substrate/physical                                     │
+│          │                                                                     │
+│          │  L1: ↦ Ballistic propagation                                        │
+│          │      Electron transport with boundary interaction                   │
+│          │      Domain: substrate/physical                                     │
+│          │                                                                     │
+├──────────┼─────────────────────────────────────────────────────────────────────┤
+│          │                                                                     │
+│  𝔾 GREY  │  L2: ⊢ Θ-gated cascade                                             │
+│ (Purple) │      Admissibility classification via 5-stage comparator            │
+│          │      Domain: visual/geometric                                       │
+│          │                                                                     │
+│          │  L3: ⊃ Narrowing funnel                                             │
+│          │      7-stage compression: S ⊃ ℛ ⊃ 𝒦 ⊃ 𝒞 ⊃ 𝒫 ⊃ ℱ ⊃ 𝒜                │
+│          │      Domain: visual/geometric                                       │
+│          │                                                                     │
+├──────────┼─────────────────────────────────────────────────────────────────────┤
+│          │                                                                     │
+│ 𝕌 UMBRAL │  L4: ⊗ Field signature                                              │
+│ (Purple) │      7-channel analog computer: δ_obs ⊗ η_N ⊗ σ ⊗ γ ⊗ χ ⊗ β ⊗ ρ  │
+│          │      Domain: algebraic                                              │
+│          │                                                                     │
+│          │  L5: ∑ Signal rupture                                               │
+│          │      Σ_R composite with 4 tripwire thresholds                       │
+│          │      Domain: algebraic                                              │
+│          │                                                                     │
+├──────────┼─────────────────────────────────────────────────────────────────────┤
+│          │                                                                     │
+│  𝔸 ACE   │  L6: ⊗ Detector sweep                                               │
+│  (Gold)  │      3×3 memristive crossbar (Θ × Naming)                           │
+│          │      Domain: spin/dynamics                                          │
+│          │                                                                     │
+│          │  L7: → Routing FSM                                                  │
+│          │      TRIAD hysteresis: play → warning → buffer → harbor            │
+│          │      Domain: spin/dynamics                                          │
+│          │                                                                     │
+├──────────┼─────────────────────────────────────────────────────────────────────┤
+│          │                                                                     │
+│ 𝕌ℂ𝔽 UCF  │  L8: ⊢ Packet hardening                                             │
+│  (Blue)  │      TCP schema validation & export gating                          │
+│          │      Domain: unified/meta                                           │
+│          │                                                                     │
+│          │  L9: ∂ Metacybernetic                                               │
+│          │      Autopoietic regulation: CSD + negentropy oversight             │
+│          │      Domain: unified/meta                                           │
+│          │                                                                     │
+└──────────┴─────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                        INVARIANT CONSTANTS (VERIFIED)                         ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+  τ (TAU)      = 0.6180339887  [φ⁻¹ - Golden ratio inverse]          ✓
+  z_c          = 0.8660254038  [√3/2 - Critical conductance]         ✓
+  K (K_FORM)   = 0.9240000000  [Kuramoto coupling threshold]         ✓
+  L₄           = 7.0000000000  [φ⁴ + φ⁻⁴ - Word size]                ✓
+  gap          = 0.1458980338  [φ⁻⁴ - Irreducible truncation error]  ✓
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                            OPERATOR REFERENCE                                 ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+  CONTAINMENT        TRANSFORMATION        COMPOSITION
+  ───────────        ──────────────        ───────────
+  ⊃  Contains        ↦  Maps to            ∘  Compose
+  ∈  Element of      →  Arrow              ⊗  Tensor product
+  ⊆  Subset          ⊢  Derives            ∧  Wedge/Meet
+
+  SPECIAL            RELATIONS             LOGICAL
+  ───────            ─────────             ───────
+  ∂  Partial         ≃  Equivalence        ∧  And
+  ∇  Gradient        ≅  Isomorphism        ∨  Or
+  ∫  Integral        ≈  Approximately      ⇒  Implies
+  ∑  Sum             ≤  Less/Equal         ⇔  Iff
+  ∏  Product         ⊥  Perpendicular      ¬  Not
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                          INTEGRATION FEATURES                                 ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+  ✓ ACEDIT toggle in dashboard control panel
+  ✓ Color-coded layer cards by register domain
+  ✓ Register symbols displayed in ACEDIT mode
+  ✓ Operator-encoded layer descriptions
+  ✓ Register-annotated register bank display
+  ✓ Constants verification button
+  ✓ Enhanced state export with ACEDIT metadata
+  ✓ Full backward compatibility maintained
+  ✓ SignalBus extended with ACEDIT methods
+  ✓ Comprehensive API for programmatic access
+

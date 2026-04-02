@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "specification": "ACEDIT Typographic Firmware Layer",
+    "convergence_constant": 0.8660254037844387,
+    "convergence_constant_symbolic": "√3/2",
+    "invariants": [
+      "Bijective Mirror: 6 registers ↔ 6 framework domains",
+      "Algebraic Closure: All compositions produce valid ACEDIT output",
+      "Zero Infrastructure: No custom fonts, CSS, or build tools for output",
+      "Convergence Constant: z_c = √3/2 = 0.8660254...",
+      "Register Sovereignty: Each codepoint belongs to exactly one register",
+      "Idempotent Passthrough: No double-encoding"
+    ]
+  },
+  "registers": {
+    "A": {
+      "name": "Operators",
+      "domain": "Algebra",
+      "range": "U+2200-U+22FF",
+      "description": "Mathematical operators and logical symbols",
+      "codepoint_count": 256
+    },
+    "C": {
+      "name": "Modifiers",
+      "domain": "Configuration",
+      "range": "U+0300-U+036F",
+      "description": "Combining diacritical marks",
+      "codepoint_count": 112
+    },
+    "E": {
+      "name": "Ligatures",
+      "domain": "Encoding",
+      "range": "U+FB00-U+FB4F",
+      "description": "Alphabetic presentation forms and ligatures",
+      "codepoint_count": 80
+    },
+    "D": {
+      "name": "Punctuation",
+      "domain": "Delimiter",
+      "range": "U+2000-U+206F",
+      "description": "General punctuation and special spaces",
+      "codepoint_count": 112
+    },
+    "I": {
+      "name": "Constants",
+      "domain": "Identity",
+      "range": "U+2100-U+214F",
+      "description": "Letterlike symbols and constants",
+      "codepoint_count": 80
+    },
+    "T": {
+      "name": "Coherence",
+      "domain": "Transformation",
+      "range": "U+25A0-U+25FF",
+      "description": "Geometric shapes for visual validation",
+      "codepoint_count": 96
+    }
+  },
+  "range_mappings": {
+    "U+2200-U+22FF": "A",
+    "U+0300-U+036F": "C",
+    "U+FB00-U+FB4F": "E",
+    "U+2000-U+206F": "D",
+    "U+2100-U+214F": "I",
+    "U+25A0-U+25FF": "T"
+  },
+  "transcoding_rules": {
+    "input_detection": "Detect register from codepoint range",
+    "passthrough_check": "If already in target register, return unchanged",
+    "composition_algebra": "Apply operator-modifier-ligature composition rules",
+    "validation": "Ensure output is valid Unicode in correct register"
+  }
+}

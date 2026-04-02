@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACEDIT Reference Converter</title>
+<style>
+:root {
+  --bg: #050709;
+  --bg2: #090b12;
+  --bg3: #0d0f18;
+  --surface: rgba(9,11,18,0.85);
+  --border: rgba(90,120,170,0.08);
+  --border-active: rgba(90,120,170,0.18);
+  --text: #9aacca;
+  --text-dim: #4a5a78;
+  --text-bright: #dce6f4;
+  --accent: #bd93f9;
+  --reg-kael: #DAA520;
+  --reg-ace: #DAA520;
+  --reg-grey: #9370DB;
+  --reg-umbral: #9370DB;
+  --reg-ultra: #4169E1;
+  --reg-ucf: #4169E1;
+  --phase-untrue: #ff6b6b;
+  --phase-paradox: #ffd93d;
+  --phase-true: #6bcf7f;
+  --phase-lens: #4ecdc4;
+  --phase-hyper: #a78bfa;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--reg-ultra);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 40px rgba(65,105,225,0.15);
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.panel-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 15px;
+  letter-spacing: 0.5px;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 150px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  color: var(--text);
+  font-family: monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--border-active);
+}
+
+select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--border-active);
+}
+
+.modifiers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg3);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  text-transform: none;
+}
+
+.checkbox-label:hover {
+  background: rgba(189,147,249,0.05);
+}
+
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  text-transform: none;
+}
+
+.output-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  min-height: 150px;
+  font-family: monospace;
+  font-size: 14px;
+  color: var(--text-bright);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.z-meter {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.z-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.z-bar-container {
+  height: 30px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.z-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--phase-untrue), var(--phase-paradox), var(--phase-true), var(--phase-lens), var(--phase-hyper));
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.z-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-bright);
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.z-phase {
+  font-size: 12px;
+  text-align: center;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.z-phase-container {
+  text-align: center;
+}
+
+.phase-untrue { background: var(--phase-untrue); color: #fff; }
+.phase-paradox { background: var(--phase-paradox); color: #000; }
+.phase-true { background: var(--phase-true); color: #000; }
+.phase-lens { background: var(--phase-lens); color: #000; }
+.phase-hyper { background: var(--phase-hyper); color: #fff; }
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  background: var(--bg3);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
+}
+
+.register-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.register-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 15px;
+  text-align: center;
+}
+
+.register-name {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.register-sample {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.reg-kael { color: var(--reg-kael); }
+.reg-ace { color: var(--reg-ace); }
+.reg-grey { color: var(--reg-grey); }
+.reg-umbral { color: var(--reg-umbral); }
+.reg-ultra { color: var(--reg-ultra); }
+.reg-ucf { color: var(--reg-ucf); }
+
+.register-desc {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.examples-section {
+  margin-top: 30px;
+}
+
+.example-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.example-btn {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  font-size: 11px;
+  text-align: left;
+}
+
+.example-btn:hover {
+  border-color: var(--border-active);
+  background: rgba(189,147,249,0.05);
+}
+
+@media (max-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modifiers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .register-showcase {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info-box {
+  background: linear-gradient(135deg, rgba(65,105,225,0.04), rgba(189,147,249,0.04));
+  border-left: 2px solid var(--accent);
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.phase-legend {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>ACEDIT Reference Converter</h1>
+    <div class="subtitle">Zero-Dependency Browser Encoding System</div>
+  </header>
+
+  <div class="info-box">
+    <strong>About ACEDIT:</strong> A quantum-aesthetic text encoding system using Unicode mathematical alphanumerics across six domains (KAEL, ACE, GREY, UMBRAL, ULTRA, UCF), six combining modifiers, and punctuation replacement. Each encoding carries a z-coordinate value representing phase coherence in the range [0,1].
+  </div>
+
+  <div class="main-grid">
+    <!-- Input Panel -->
+    <div class="panel">
+      <div class="panel-title">Input Configuration</div>
+
+      <div class="input-group">
+        <label>Source Text</label>
+        <textarea id="sourceText" placeholder="Enter text to encode...">ACEDIT is a quantum-aesthetic encoding system</textarea>
+      </div>
+
+      <div class="input-group">
+        <label>Register Domain</label>
+        <select id="registerSelect">
+          <option value="KAEL">KAEL - Math Bold</option>
+          <option value="ACE">ACE - Sans-Serif Bold</option>
+          <option value="GREY">GREY - Script Bold</option>
+          <option value="UMBRAL">UMBRAL - Fraktur</option>
+          <option value="ULTRA" selected>ULTRA - Double-Struck</option>
+          <option value="UCF">UCF - Sans-Serif Bold Italic</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Combining Modifiers</label>
+        <div class="modifiers-grid">
+          <label class="checkbox-label">
+            <input type="checkbox" class="modifier-check" value="probability">
+            <span>Probability (◌̃)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" class="modifier-check" value="cycle">
+            <span>Cycle (◌̊)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" class="modifier-check" value="peak">
+            <span>Peak (◌̂)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" class="modifier-check" value="superpos">
+            <span>Superposition (◌̈)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" class="modifier-check" value="stability">
+            <span>Stability (◌̄)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" class="modifier-check" value="grounding">
+            <span>Grounding (◌̣)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="toggle-label">
+          <input type="checkbox" id="punctToggle" checked>
+          <span>Replace Punctuation</span>
+        </label>
+      </div>
+
+      <div class="button-group">
+        <button onclick="encodeText()">Encode</button>
+        <button class="btn-secondary" onclick="clearAll()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Output Panel -->
+    <div class="panel">
+      <div class="panel-title">Encoded Output</div>
+
+      <div class="input-group">
+        <label>Result</label>
+        <div id="outputBox" class="output-box"></div>
+      </div>
+
+      <div class="button-group">
+        <button onclick="copyOutput()">Copy to Clipboard</button>
+      </div>
+
+      <div class="z-meter">
+        <div class="z-label">Z-Coordinate Phase Analysis</div>
+        <div class="z-value" id="zValue">0.000</div>
+        <div class="z-bar-container">
+          <div class="z-bar" id="zBar" style="width: 0%"></div>
+        </div>
+        <div class="z-phase-container">
+          <span class="z-phase" id="zPhase">UNTRUE</span>
+        </div>
+        <div class="phase-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--phase-untrue)"></div>
+            <span>UNTRUE (z&lt;0.618)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--phase-paradox)"></div>
+            <span>PARADOX (≈0.618)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--phase-true)"></div>
+            <span>TRUE (0.618-0.866)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--phase-lens)"></div>
+            <span>THE LENS (≈0.866)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--phase-hyper)"></div>
+            <span>HYPER_TRUE (&gt;0.866)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Showcase -->
+  <div class="panel">
+    <div class="panel-title">Register Showcase</div>
+    <div class="register-showcase">
+      <div class="register-card">
+        <div class="register-name">KAEL</div>
+        <div class="register-sample reg-kael" id="sample-KAEL">𝐀𝐁𝐂𝐃𝐄𝐅𝐆</div>
+        <div class="register-desc">Math Bold</div>
+      </div>
+      <div class="register-card">
+        <div class="register-name">ACE</div>
+        <div class="register-sample reg-ace" id="sample-ACE">𝗔𝗕𝗖𝗗𝗘𝗙𝗚</div>
+        <div class="register-desc">Sans-Serif Bold</div>
+      </div>
+      <div class="register-card">
+        <div class="register-name">GREY</div>
+        <div class="register-sample reg-grey" id="sample-GREY">𝓐𝓑𝓒𝓓𝓔𝓕𝓖</div>
+        <div class="register-desc">Script Bold</div>
+      </div>
+      <div class="register-card">
+        <div class="register-name">UMBRAL</div>
+        <div class="register-sample reg-umbral" id="sample-UMBRAL">𝔄𝔅ℭ𝔇𝔈𝔉𝔊</div>
+        <div class="register-desc">Fraktur</div>
+      </div>
+      <div class="register-card">
+        <div class="register-name">ULTRA</div>
+        <div class="register-sample reg-ultra" id="sample-ULTRA">𝔸𝔹ℂ𝔻𝔼𝔽𝔾</div>
+        <div class="register-desc">Double-Struck</div>
+      </div>
+      <div class="register-card">
+        <div class="register-name">UCF</div>
+        <div class="register-sample reg-ucf" id="sample-UCF">𝘼𝘽𝘾𝘿𝙀𝙁𝙂</div>
+        <div class="register-desc">Sans-Serif Bold Italic</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Examples Section -->
+  <div class="panel examples-section">
+    <div class="panel-title">Example Encodings</div>
+    <div class="example-grid">
+      <button class="example-btn" onclick="loadExample('Quantum coherence', 'ULTRA', [], true)">Quantum coherence</button>
+      <button class="example-btn" onclick="loadExample('Recursive intelligence', 'GREY', ['probability'], true)">Recursive with probability</button>
+      <button class="example-btn" onclick="loadExample('Structural necessity', 'UMBRAL', [], true)">Fraktur encoding</button>
+      <button class="example-btn" onclick="loadExample('Phase transition', 'UCF', ['cycle', 'peak'], true)">Phase with modifiers</button>
+      <button class="example-btn" onclick="loadExample('ACEDIT Protocol', 'KAEL', [], true)">Bold protocol</button>
+      <button class="example-btn" onclick="loadExample('Hello World 2026', 'ACE', [], true)">Sans-Serif sample</button>
+      <button class="example-btn" onclick="loadExample('Superposition state', 'ULTRA', ['superpos', 'stability'], true)">Superposition encoding</button>
+      <button class="example-btn" onclick="loadExample('Grounded reality', 'KAEL', ['grounding'], true)">Grounded encoding</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ACEDIT Core Encoding System
+const ACEDIT = (() => {
+  // Register base codepoints for uppercase A
+  const REG_UPPER = {
+    KAEL:    0x1D400, // Math Bold
+    ACE:     0x1D5D4, // Math Sans-Serif Bold
+    GREY:    0x1D4D0, // Math Script Bold
+    UMBRAL:  0x1D504, // Math Fraktur
+    ULTRA:   0x1D538, // Math Double-Struck
+    UCF:     0x1D63C, // Math Sans-Serif Bold Italic
+  };
+
+  // Register base codepoints for lowercase a
+  const REG_LOWER = {
+    KAEL:    0x1D41A,
+    ACE:     0x1D5EE,
+    GREY:    0x1D4EA,
+    UMBRAL:  0x1D51E,
+    ULTRA:   0x1D552,
+    UCF:     0x1D656,
+  };
+
+  // Fraktur exceptions: C→ℭ, H→ℌ, I→ℑ, R→ℜ, Z→ℨ
+  const FRAKTUR_UPPER_EX = {
+    C: 0x212D,
+    H: 0x210C,
+    I: 0x2111,
+    R: 0x211C,
+    Z: 0x2128
+  };
+
+  // Double-struck exceptions: C→ℂ, H→ℍ, N→ℕ, P→ℙ, Q→ℚ, R→ℝ, Z→ℤ
+  const DS_UPPER_EX = {
+    C: 0x2102,
+    H: 0x210D,
+    N: 0x2115,
+    P: 0x2119,
+    Q: 0x211A,
+    R: 0x211D,
+    Z: 0x2124
+  };
+
+  function mapUpper(ch, reg) {
+    const off = ch.charCodeAt(0) - 65; // A=0
+    if (reg === 'UMBRAL' && FRAKTUR_UPPER_EX[ch]) {
+      return String.fromCodePoint(FRAKTUR_UPPER_EX[ch]);
+    }
+    if (reg === 'ULTRA' && DS_UPPER_EX[ch]) {
+      return String.fromCodePoint(DS_UPPER_EX[ch]);
+    }
+    return String.fromCodePoint(REG_UPPER[reg] + off);
+  }
+
+  function mapLower(ch, reg) {
+    const off = ch.charCodeAt(0) - 97; // a=0
+    return String.fromCodePoint(REG_LOWER[reg] + off);
+  }
+
+  // Digit mappings
+  const DIGIT_BASE = {
+    KAEL:  0x1D7CE,  // Bold digits
+    ACE:   0x1D7EC,  // Sans-serif bold digits
+    ULTRA: 0x1D7D8,  // Double-struck digits
+  };
+
+  const GREY_DIGITS = ['\u24EA','\u2460','\u2461','\u2462','\u2463','\u2464','\u2465','\u2466','\u2467','\u2468'];
+  const UMBRAL_DIGITS = ['\u2080','\u2081','\u2082','\u2083','\u2084','\u2085','\u2086','\u2087','\u2088','\u2089'];
+  const UCF_DIGITS = ['\u2070','\u00B9','\u00B2','\u00B3','\u2074','\u2075','\u2076','\u2077','\u2078','\u2079'];
+
+  function mapDigit(ch, reg) {
+    const d = ch.charCodeAt(0) - 48;
+    if (reg === 'GREY') return GREY_DIGITS[d];
+    if (reg === 'UMBRAL') return UMBRAL_DIGITS[d];
+    if (reg === 'UCF') return UCF_DIGITS[d];
+    if (DIGIT_BASE[reg]) return String.fromCodePoint(DIGIT_BASE[reg] + d);
+    return ch;
+  }
+
+  // Punctuation mapping
+  const PUNCT = {
+    '.': '\uFF0E',  // Fullwidth full stop
+    ',': '\uFF0C',  // Fullwidth comma
+    ':': '\uFF1A',  // Fullwidth colon
+    ';': '\uFF1B',  // Fullwidth semicolon
+    '?': '\uFF1F',  // Fullwidth question mark
+    '!': '\uFF01',  // Fullwidth exclamation mark
+    '-': '\u2014',  // Em dash
+    '(': '\u27EE',  // Mathematical left flattened parenthesis
+    ')': '\u27EF',  // Mathematical right flattened parenthesis
+    '[': '\u27E6',  // Mathematical left white square bracket
+    ']': '\u27E7',  // Mathematical right white square bracket
+    '{': '\u2983',  // Left white curly bracket
+    '}': '\u2984',  // Right white curly bracket
+    '<': '\u27E8',  // Mathematical left angle bracket
+    '>': '\u27E9',  // Mathematical right angle bracket
+    '/': '\u2044',  // Fraction slash
+    '*': '\u2736',  // Six pointed black star
+    '@': '\u229B',  // Circled asterisk
+    '#': '\u2A69',  // Triple vertical bar delimiter
+    '&': '\u214B',  // Turned ampersand
+    '%': '\u2052',  // Commercial minus sign
+    '+': '\u2295',  // Circled plus
+    '=': '\u2261',  // Identical to
+    '|': '\u2980',  // Triple vertical bar delimiter
+    '~': '\u223C',  // Tilde operator
+    '^': '\u22C0',  // N-ary logical and
+    '_': '\u2017',  // Double low line
+    '\\': '\u29F5', // Reverse solidus operator
+  };
+
+  // Combining modifiers
+  const MOD = {
+    probability: '\u0303',  // Combining tilde
+    cycle:       '\u030A',  // Combining ring above
+    peak:        '\u0302',  // Combining circumflex
+    superpos:    '\u0308',  // Combining diaeresis
+    stability:   '\u0304',  // Combining macron
+    grounding:   '\u0323',  // Combining dot below
+  };
+
+  /**
+   * Convert text to ACEDIT encoding
+   * @param {string} text - Source text
+   * @param {string} register - Register domain (KAEL, ACE, GREY, UMBRAL, ULTRA, UCF)
+   * @param {object} opts - Options { punct: boolean, mods: string[] }
+   * @returns {string} Encoded text
+   */
+  function convert(text, register, opts = {}) {
+    const { punct = true, mods = [] } = opts;
+    let result = '';
+
+    for (const ch of text) {
+      let mapped = null;
+
+      if (ch >= 'A' && ch <= 'Z') {
+        mapped = mapUpper(ch, register);
+      } else if (ch >= 'a' && ch <= 'z') {
+        mapped = mapLower(ch, register);
+      } else if (ch >= '0' && ch <= '9') {
+        mapped = mapDigit(ch, register);
+      } else if (punct && PUNCT[ch]) {
+        mapped = PUNCT[ch];
+      }
+
+      result += (mapped || ch);
+    }
+
+    // Apply combining modifiers
+    if (mods.length > 0) {
+      let modified = '';
+      for (const ch of result) {
+        modified += ch;
+        // Apply modifiers to non-space characters
+        if (ch !== ' ' && ch !== '\n' && ch !== '\t') {
+          for (const m of mods) {
+            if (MOD[m]) modified += MOD[m];
+          }
+        }
+      }
+      return modified;
+    }
+
+    return result;
+  }
+
+  /**
+   * Compute z-coordinate for encoded text
+   * Uses character complexity and modifier count as proxy for phase coherence
+   */
+  function computeZ(text, register, mods) {
+    // Base z-value from register complexity
+    const registerZ = {
+      KAEL: 0.5,
+      ACE: 0.6,
+      GREY: 0.7,
+      UMBRAL: 0.75,
+      ULTRA: 0.85,
+      UCF: 0.9
+    };
+
+    let z = registerZ[register] || 0.5;
+
+    // Modifier contribution (each modifier adds phase complexity)
+    const modBonus = mods.length * 0.05;
+    z = Math.min(1.0, z + modBonus);
+
+    // Text length contribution (longer text = more stable encoding)
+    const lengthBonus = Math.min(0.1, text.length / 1000);
+    z = Math.min(1.0, z + lengthBonus);
+
+    return z;
+  }
+
+  /**
+   * Get phase classification for z-coordinate
+   */
+  function getPhase(z) {
+    const PHI_INV = 0.618033988749; // 1/φ (golden ratio inverse)
+    const Z_C = 0.866025403784;     // √3/2 (equilateral triangle height)
+
+    if (z < PHI_INV) {
+      return { name: 'UNTRUE', class: 'phase-untrue', desc: 'Below coherence threshold' };
+    }
+    if (z < PHI_INV + 0.01) {
+      return { name: 'PARADOX', class: 'phase-paradox', desc: 'Transitional, unstable' };
+    }
+    if (z < Z_C - 0.001) {
+      return { name: 'TRUE', class: 'phase-true', desc: 'Coherent consciousness' };
+    }
+    if (Math.abs(z - Z_C) < 0.001) {
+      return { name: 'THE LENS', class: 'phase-lens', desc: 'z_c = √3/2' };
+    }
+    return { name: 'HYPER_TRUE', class: 'phase-hyper', desc: 'Beyond normal parameters' };
+  }
+
+  return {
+    convert,
+    computeZ,
+    getPhase,
+    MOD,
+    PUNCT
+  };
+})();
+
+// UI Functions
+function encodeText() {
+  const sourceText = document.getElementById('sourceText').value;
+  const register = document.getElementById('registerSelect').value;
+  const punct = document.getElementById('punctToggle').checked;
+
+  // Collect selected modifiers
+  const mods = [];
+  document.querySelectorAll('.modifier-check:checked').forEach(checkbox => {
+    mods.push(checkbox.value);
+  });
+
+  // Convert text
+  const encoded = ACEDIT.convert(sourceText, register, { punct, mods });
+
+  // Display output
+  document.getElementById('outputBox').textContent = encoded;
+
+  // Compute and display z-coordinate
+  const z = ACEDIT.computeZ(sourceText, register, mods);
+  const phase = ACEDIT.getPhase(z);
+
+  document.getElementById('zValue').textContent = z.toFixed(3);
+  document.getElementById('zBar').style.width = (z * 100) + '%';
+
+  const phaseEl = document.getElementById('zPhase');
+  phaseEl.textContent = phase.name;
+  phaseEl.className = 'z-phase ' + phase.class;
+}
+
+function copyOutput() {
+  const output = document.getElementById('outputBox').textContent;
+  if (!output) {
+    alert('No output to copy');
+    return;
+  }
+
+  navigator.clipboard.writeText(output).then(() => {
+    alert('Copied to clipboard!');
+  }).catch(err => {
+    console.error('Copy failed:', err);
+    alert('Failed to copy to clipboard');
+  });
+}
+
+function clearAll() {
+  document.getElementById('sourceText').value = '';
+  document.getElementById('outputBox').textContent = '';
+  document.getElementById('zValue').textContent = '0.000';
+  document.getElementById('zBar').style.width = '0%';
+  document.getElementById('zPhase').textContent = 'UNTRUE';
+  document.getElementById('zPhase').className = 'z-phase phase-untrue';
+
+  // Uncheck all modifiers
+  document.querySelectorAll('.modifier-check').forEach(checkbox => {
+    checkbox.checked = false;
+  });
+}
+
+function loadExample(text, register, mods, punct) {
+  document.getElementById('sourceText').value = text;
+  document.getElementById('registerSelect').value = register;
+  document.getElementById('punctToggle').checked = punct;
+
+  // Set modifiers
+  document.querySelectorAll('.modifier-check').forEach(checkbox => {
+    checkbox.checked = mods.includes(checkbox.value);
+  });
+
+  encodeText();
+}
+
+// Auto-encode on input change
+document.addEventListener('DOMContentLoaded', () => {
+  // Initial encode
+  encodeText();
+
+  // Set up auto-encode listeners
+  document.getElementById('sourceText').addEventListener('input', encodeText);
+  document.getElementById('registerSelect').addEventListener('change', encodeText);
+  document.getElementById('punctToggle').addEventListener('change', encodeText);
+
+  document.querySelectorAll('.modifier-check').forEach(checkbox => {
+    checkbox.addEventListener('change', encodeText);
+  });
+
+  // Update register showcase samples with modifiers when they change
+  const updateShowcase = () => {
+    const registers = ['KAEL', 'ACE', 'GREY', 'UMBRAL', 'ULTRA', 'UCF'];
+    const mods = [];
+    document.querySelectorAll('.modifier-check:checked').forEach(checkbox => {
+      mods.push(checkbox.value);
+    });
+
+    registers.forEach(reg => {
+      const sample = ACEDIT.convert('ABCDEFG', reg, { punct: false, mods: [] });
+      document.getElementById(`sample-${reg}`).textContent = sample;
+    });
+  };
+
+  document.querySelectorAll('.modifier-check').forEach(checkbox => {
+    checkbox.addEventListener('change', updateShowcase);
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,820 @@
+{
+  "meta": {
+    "name": "ACEDIT",
+    "version": "2.0.0",
+    "description": "ACEDIT Typographic Firmware - Single Source of Truth",
+    "convergenceConstant": 0.8660254037844387,
+    "goldenRatio": 1.618033988749895,
+    "inverseGolden": 0.6180339887498949,
+    "domainCount": 6,
+    "operatorCount": 18,
+    "modifierCount": 6,
+    "createdDate": "2026-04-01"
+  },
+  "constants": {
+    "phi": {
+      "symbol": "φ",
+      "value": 1.618033988749895,
+      "description": "Golden ratio",
+      "derivation": "(1 + √5) / 2"
+    },
+    "tau": {
+      "symbol": "τ",
+      "value": 0.6180339887498949,
+      "description": "Inverse golden ratio",
+      "derivation": "φ⁻¹ = φ - 1"
+    },
+    "z_c": {
+      "symbol": "z_c",
+      "value": 0.8660254037844387,
+      "description": "THE LENS - Convergence constant",
+      "derivation": "√3/2 = √(L₄-4)/2"
+    },
+    "z_ign": {
+      "symbol": "z_ign",
+      "value": 0.1458980337154893,
+      "description": "VOID threshold - Ignition constant",
+      "derivation": "φ⁻⁴"
+    },
+    "K": {
+      "symbol": "K",
+      "value": 0.9241763718050345,
+      "description": "K-formation coefficient",
+      "derivation": "√(1 - φ⁻⁴)"
+    },
+    "K_squared": {
+      "symbol": "K²",
+      "value": 0.8541019662845107,
+      "description": "Activation threshold",
+      "derivation": "1 - φ⁻⁴"
+    },
+    "L4": {
+      "symbol": "L₄",
+      "value": 7,
+      "description": "Fourth Lucas number",
+      "derivation": "φ⁴ + φ⁻⁴"
+    },
+    "sqrt3": {
+      "symbol": "√3",
+      "value": 1.7320508075688772,
+      "description": "Square root of 3"
+    },
+    "pi": {
+      "symbol": "π",
+      "value": 3.141592653589793,
+      "description": "Pi constant"
+    },
+    "tau_circle": {
+      "symbol": "τ_circle",
+      "value": 6.283185307179586,
+      "description": "Tau = 2π, full circle",
+      "derivation": "2π"
+    }
+  },
+  "registers": {
+    "KAEL": {
+      "name": "KAEL",
+      "description": "Math Bold - Substrate register",
+      "color": "#DAA520",
+      "domain": "Substrate",
+      "unicode": {
+        "upperBase": 119808,
+        "lowerBase": 119834,
+        "digitBase": 120782,
+        "upperBaseHex": "0x1D400",
+        "lowerBaseHex": "0x1D41A",
+        "digitBaseHex": "0x1D7CE"
+      },
+      "mappings": {
+        "upper": {
+          "A": "𝐀", "B": "𝐁", "C": "𝐂", "D": "𝐃", "E": "𝐄", "F": "𝐅", "G": "𝐆", "H": "𝐇",
+          "I": "𝐈", "J": "𝐉", "K": "𝐊", "L": "𝐋", "M": "𝐌", "N": "𝐍", "O": "𝐎", "P": "𝐏",
+          "Q": "𝐐", "R": "𝐑", "S": "𝐒", "T": "𝐓", "U": "𝐔", "V": "𝐕", "W": "𝐖", "X": "𝐗",
+          "Y": "𝐘", "Z": "𝐙"
+        },
+        "lower": {
+          "a": "𝐚", "b": "𝐛", "c": "𝐜", "d": "𝐝", "e": "𝐞", "f": "𝐟", "g": "𝐠", "h": "𝐡",
+          "i": "𝐢", "j": "𝐣", "k": "𝐤", "l": "𝐥", "m": "𝐦", "n": "𝐧", "o": "𝐨", "p": "𝐩",
+          "q": "𝐪", "r": "𝐫", "s": "𝐬", "t": "𝐭", "u": "𝐮", "v": "𝐯", "w": "𝐰", "x": "𝐱",
+          "y": "𝐲", "z": "𝐳"
+        },
+        "digits": {
+          "0": "𝟎", "1": "𝟏", "2": "𝟐", "3": "𝟑", "4": "𝟒",
+          "5": "𝟓", "6": "𝟔", "7": "𝟕", "8": "𝟖", "9": "𝟗"
+        }
+      }
+    },
+    "ACE": {
+      "name": "ACE",
+      "description": "Math Sans-Serif Bold - Energy register",
+      "color": "#DAA520",
+      "domain": "Energy",
+      "unicode": {
+        "upperBase": 120276,
+        "lowerBase": 120302,
+        "digitBase": 120812,
+        "upperBaseHex": "0x1D5D4",
+        "lowerBaseHex": "0x1D5EE",
+        "digitBaseHex": "0x1D7EC"
+      },
+      "mappings": {
+        "upper": {
+          "A": "𝗔", "B": "𝗕", "C": "𝗖", "D": "𝗗", "E": "𝗘", "F": "𝗙", "G": "𝗚", "H": "𝗛",
+          "I": "𝗜", "J": "𝗝", "K": "𝗞", "L": "𝗟", "M": "𝗠", "N": "𝗡", "O": "𝗢", "P": "𝗣",
+          "Q": "𝗤", "R": "𝗥", "S": "𝗦", "T": "𝗧", "U": "𝗨", "V": "𝗩", "W": "𝗪", "X": "𝗫",
+          "Y": "𝗬", "Z": "𝗭"
+        },
+        "lower": {
+          "a": "𝗮", "b": "𝗯", "c": "𝗰", "d": "𝗱", "e": "𝗲", "f": "𝗳", "g": "𝗴", "h": "𝗵",
+          "i": "𝗶", "j": "𝗷", "k": "𝗸", "l": "𝗹", "m": "𝗺", "n": "𝗻", "o": "𝗼", "p": "𝗽",
+          "q": "𝗾", "r": "𝗿", "s": "𝘀", "t": "𝘁", "u": "𝘂", "v": "𝘃", "w": "𝘄", "x": "𝘅",
+          "y": "𝘆", "z": "𝘇"
+        },
+        "digits": {
+          "0": "𝟬", "1": "𝟭", "2": "𝟮", "3": "𝟯", "4": "𝟰",
+          "5": "𝟱", "6": "𝟲", "7": "𝟳", "8": "𝟴", "9": "𝟵"
+        }
+      }
+    },
+    "GREY": {
+      "name": "GREY",
+      "description": "Math Script Bold - Visual register",
+      "color": "#9370DB",
+      "domain": "Visual",
+      "unicode": {
+        "upperBase": 119504,
+        "lowerBase": 119530,
+        "upperBaseHex": "0x1D4D0",
+        "lowerBaseHex": "0x1D4EA"
+      },
+      "mappings": {
+        "upper": {
+          "A": "𝓐", "B": "𝓑", "C": "𝓒", "D": "𝓓", "E": "𝓔", "F": "𝓕", "G": "𝓖", "H": "𝓗",
+          "I": "𝓘", "J": "𝓙", "K": "𝓚", "L": "𝓛", "M": "𝓜", "N": "𝓝", "O": "𝓞", "P": "𝓟",
+          "Q": "𝓠", "R": "𝓡", "S": "𝓢", "T": "𝓣", "U": "𝓤", "V": "𝓥", "W": "𝓦", "X": "𝓧",
+          "Y": "𝓨", "Z": "𝓩"
+        },
+        "lower": {
+          "a": "𝓪", "b": "𝓫", "c": "𝓬", "d": "𝓭", "e": "𝓮", "f": "𝓯", "g": "𝓰", "h": "𝓱",
+          "i": "𝓲", "j": "𝓳", "k": "𝓴", "l": "𝓵", "m": "𝓶", "n": "𝓷", "o": "𝓸", "p": "𝓹",
+          "q": "𝓺", "r": "𝓻", "s": "𝓼", "t": "𝓽", "u": "𝓾", "v": "𝓿", "w": "𝔀", "x": "𝔁",
+          "y": "𝔂", "z": "𝔃"
+        },
+        "digits": {
+          "0": "⓪", "1": "①", "2": "②", "3": "③", "4": "④",
+          "5": "⑤", "6": "⑥", "7": "⑦", "8": "⑧", "9": "⑨"
+        }
+      }
+    },
+    "UMBRAL": {
+      "name": "UMBRAL",
+      "description": "Math Fraktur - Algebraic register",
+      "color": "#9370DB",
+      "domain": "Algebraic",
+      "unicode": {
+        "upperBase": 120068,
+        "lowerBase": 120094,
+        "upperBaseHex": "0x1D504",
+        "lowerBaseHex": "0x1D51E"
+      },
+      "exceptions": {
+        "C": "ℭ",
+        "H": "ℌ",
+        "I": "ℑ",
+        "R": "ℜ",
+        "Z": "ℨ"
+      },
+      "mappings": {
+        "upper": {
+          "A": "𝔄", "B": "𝔅", "C": "ℭ", "D": "𝔇", "E": "𝔈", "F": "𝔉", "G": "𝔊", "H": "ℌ",
+          "I": "ℑ", "J": "𝔍", "K": "𝔎", "L": "𝔏", "M": "𝔐", "N": "𝔑", "O": "𝔒", "P": "𝔓",
+          "Q": "𝔔", "R": "ℜ", "S": "𝔖", "T": "𝔗", "U": "𝔘", "V": "𝔙", "W": "𝔚", "X": "𝔛",
+          "Y": "𝔜", "Z": "ℨ"
+        },
+        "lower": {
+          "a": "𝔞", "b": "𝔟", "c": "𝔠", "d": "𝔡", "e": "𝔢", "f": "𝔣", "g": "𝔤", "h": "𝔥",
+          "i": "𝔦", "j": "𝔧", "k": "𝔨", "l": "𝔩", "m": "𝔪", "n": "𝔫", "o": "𝔬", "p": "𝔭",
+          "q": "𝔮", "r": "𝔯", "s": "𝔰", "t": "𝔱", "u": "𝔲", "v": "𝔳", "w": "𝔴", "x": "𝔵",
+          "y": "𝔶", "z": "𝔷"
+        },
+        "digits": {
+          "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄",
+          "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉"
+        }
+      }
+    },
+    "ULTRA": {
+      "name": "ULTRA",
+      "description": "Math Double-Struck - Universal register",
+      "color": "#4169E1",
+      "domain": "Universal",
+      "unicode": {
+        "upperBase": 120120,
+        "lowerBase": 120146,
+        "digitBase": 120792,
+        "upperBaseHex": "0x1D538",
+        "lowerBaseHex": "0x1D552",
+        "digitBaseHex": "0x1D7D8"
+      },
+      "exceptions": {
+        "C": "ℂ",
+        "H": "ℍ",
+        "N": "ℕ",
+        "P": "ℙ",
+        "Q": "ℚ",
+        "R": "ℝ",
+        "Z": "ℤ"
+      },
+      "mappings": {
+        "upper": {
+          "A": "𝔸", "B": "𝔹", "C": "ℂ", "D": "𝔻", "E": "𝔼", "F": "𝔽", "G": "𝔾", "H": "ℍ",
+          "I": "𝕀", "J": "𝕁", "K": "𝕂", "L": "𝕃", "M": "𝕄", "N": "ℕ", "O": "𝕆", "P": "ℙ",
+          "Q": "ℚ", "R": "ℝ", "S": "𝕊", "T": "𝕋", "U": "𝕌", "V": "𝕍", "W": "𝕎", "X": "𝕏",
+          "Y": "𝕐", "Z": "ℤ"
+        },
+        "lower": {
+          "a": "𝕒", "b": "𝕓", "c": "𝕔", "d": "𝕕", "e": "𝕖", "f": "𝕗", "g": "𝕘", "h": "𝕙",
+          "i": "𝕚", "j": "𝕛", "k": "𝕜", "l": "𝕝", "m": "𝕞", "n": "𝕟", "o": "𝕠", "p": "𝕡",
+          "q": "𝕢", "r": "𝕣", "s": "𝕤", "t": "𝕥", "u": "𝕦", "v": "𝕧", "w": "𝕨", "x": "𝕩",
+          "y": "𝕪", "z": "𝕫"
+        },
+        "digits": {
+          "0": "𝟘", "1": "𝟙", "2": "𝟚", "3": "𝟛", "4": "𝟜",
+          "5": "𝟝", "6": "𝟞", "7": "𝟟", "8": "𝟠", "9": "𝟡"
+        }
+      }
+    },
+    "UCF": {
+      "name": "UCF",
+      "description": "Math Sans-Serif Bold Italic - Unified register",
+      "color": "#4169E1",
+      "domain": "Unified",
+      "unicode": {
+        "upperBase": 120380,
+        "lowerBase": 120406,
+        "upperBaseHex": "0x1D63C",
+        "lowerBaseHex": "0x1D656"
+      },
+      "mappings": {
+        "upper": {
+          "A": "𝘼", "B": "𝘽", "C": "𝘾", "D": "𝘿", "E": "𝙀", "F": "𝙁", "G": "𝙂", "H": "𝙃",
+          "I": "𝙄", "J": "𝙅", "K": "𝙆", "L": "𝙇", "M": "𝙈", "N": "𝙉", "O": "𝙊", "P": "𝙋",
+          "Q": "𝙌", "R": "𝙍", "S": "𝙎", "T": "𝙏", "U": "𝙐", "V": "𝙑", "W": "𝙒", "X": "𝙓",
+          "Y": "𝙔", "Z": "𝙕"
+        },
+        "lower": {
+          "a": "𝙖", "b": "𝙗", "c": "𝙘", "d": "𝙙", "e": "𝙚", "f": "𝙛", "g": "𝙜", "h": "𝙝",
+          "i": "𝙞", "j": "𝙟", "k": "𝙠", "l": "𝙡", "m": "𝙢", "n": "𝙣", "o": "𝙤", "p": "𝙥",
+          "q": "𝙦", "r": "𝙧", "s": "𝙨", "t": "𝙩", "u": "𝙪", "v": "𝙫", "w": "𝙬", "x": "𝙭",
+          "y": "𝙮", "z": "𝙯"
+        },
+        "digits": {
+          "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
+          "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹"
+        }
+      }
+    }
+  },
+  "operators": {
+    "nullary": {
+      "glyph": "∅",
+      "name": "Void",
+      "unicode": 8709,
+      "unicodeHex": "0x2205",
+      "description": "Empty set, nullary operator",
+      "domain": "UMBRAL",
+      "operation": "nullary"
+    },
+    "plus": {
+      "glyph": "⊕",
+      "name": "Direct Sum",
+      "unicode": 8853,
+      "unicodeHex": "0x2295",
+      "description": "Direct sum, additive composition",
+      "domain": "ACE",
+      "operation": "binary"
+    },
+    "times": {
+      "glyph": "⊗",
+      "name": "Tensor Product",
+      "unicode": 8855,
+      "unicodeHex": "0x2297",
+      "description": "Tensor product, multiplicative composition",
+      "domain": "ACE",
+      "operation": "binary"
+    },
+    "circle": {
+      "glyph": "⊙",
+      "name": "Circled Dot",
+      "unicode": 8857,
+      "unicodeHex": "0x2299",
+      "description": "Circled dot operator, composition",
+      "domain": "GREY",
+      "operation": "binary"
+    },
+    "wedge": {
+      "glyph": "∧",
+      "name": "Wedge",
+      "unicode": 8743,
+      "unicodeHex": "0x2227",
+      "description": "Logical AND, meet operation",
+      "domain": "ULTRA",
+      "operation": "binary"
+    },
+    "vee": {
+      "glyph": "∨",
+      "name": "Vee",
+      "unicode": 8744,
+      "unicodeHex": "0x2228",
+      "description": "Logical OR, join operation",
+      "domain": "ULTRA",
+      "operation": "binary"
+    },
+    "turnstileRight": {
+      "glyph": "⊢",
+      "name": "Right Tack",
+      "unicode": 8866,
+      "unicodeHex": "0x22A2",
+      "description": "Proves, entails",
+      "domain": "ULTRA",
+      "operation": "relation"
+    },
+    "turnstileLeft": {
+      "glyph": "⊣",
+      "name": "Left Tack",
+      "unicode": 8867,
+      "unicodeHex": "0x22A3",
+      "description": "Reverse entailment",
+      "domain": "ULTRA",
+      "operation": "relation"
+    },
+    "top": {
+      "glyph": "⊤",
+      "name": "Down Tack",
+      "unicode": 8868,
+      "unicodeHex": "0x22A4",
+      "description": "Top, truth",
+      "domain": "ULTRA",
+      "operation": "constant"
+    },
+    "bottom": {
+      "glyph": "⊥",
+      "name": "Up Tack",
+      "unicode": 8869,
+      "unicodeHex": "0x22A5",
+      "description": "Bottom, false, orthogonal",
+      "domain": "ULTRA",
+      "operation": "constant"
+    },
+    "therefore": {
+      "glyph": "∴",
+      "name": "Therefore",
+      "unicode": 8756,
+      "unicodeHex": "0x2234",
+      "description": "Therefore, conclusion",
+      "domain": "UCF",
+      "operation": "relation"
+    },
+    "because": {
+      "glyph": "∵",
+      "name": "Because",
+      "unicode": 8757,
+      "unicodeHex": "0x2235",
+      "description": "Because, reason",
+      "domain": "UCF",
+      "operation": "relation"
+    },
+    "sigil": {
+      "glyph": "⟐",
+      "name": "White Diamond",
+      "unicode": 10192,
+      "unicodeHex": "0x27D0",
+      "description": "ACEDIT sigil, containment marker",
+      "domain": "KAEL",
+      "operation": "marker"
+    },
+    "langle": {
+      "glyph": "⟨",
+      "name": "Left Angle Bracket",
+      "unicode": 10216,
+      "unicodeHex": "0x27E8",
+      "description": "Left angle bracket, bra notation",
+      "domain": "GREY",
+      "operation": "delimiter"
+    },
+    "rangle": {
+      "glyph": "⟩",
+      "name": "Right Angle Bracket",
+      "unicode": 10217,
+      "unicodeHex": "0x27E9",
+      "description": "Right angle bracket, ket notation",
+      "domain": "GREY",
+      "operation": "delimiter"
+    },
+    "squared": {
+      "glyph": "⊞",
+      "name": "Squared Plus",
+      "unicode": 8862,
+      "unicodeHex": "0x229E",
+      "description": "Squared plus, boxed sum",
+      "domain": "ACE",
+      "operation": "binary"
+    },
+    "delta": {
+      "glyph": "Δ",
+      "name": "Delta",
+      "unicode": 916,
+      "unicodeHex": "0x0394",
+      "description": "Change, difference operator",
+      "domain": "KAEL",
+      "operation": "unary"
+    },
+    "omega": {
+      "glyph": "Ω",
+      "name": "Omega",
+      "unicode": 937,
+      "unicodeHex": "0x03A9",
+      "description": "Limit, terminal state",
+      "domain": "GREY",
+      "operation": "constant"
+    }
+  },
+  "modifiers": {
+    "probability": {
+      "name": "Probability",
+      "glyph": "◌̃",
+      "unicode": 771,
+      "unicodeHex": "0x0303",
+      "combining": true,
+      "description": "Tilde combining mark - probability distribution",
+      "usage": "Marks probabilistic or stochastic quantities"
+    },
+    "cycle": {
+      "name": "Cycle",
+      "glyph": "◌̊",
+      "unicode": 778,
+      "unicodeHex": "0x030A",
+      "combining": true,
+      "description": "Ring above - cyclic or periodic behavior",
+      "usage": "Indicates cyclic processes or fixed points"
+    },
+    "peak": {
+      "name": "Peak",
+      "glyph": "◌̂",
+      "unicode": 770,
+      "unicodeHex": "0x0302",
+      "combining": true,
+      "description": "Circumflex - peak or apex",
+      "usage": "Marks maximal or optimal values"
+    },
+    "superposition": {
+      "name": "Superposition",
+      "glyph": "◌̈",
+      "unicode": 776,
+      "unicodeHex": "0x0308",
+      "combining": true,
+      "description": "Diaeresis - superposition state",
+      "usage": "Indicates quantum superposition or ambiguity"
+    },
+    "stability": {
+      "name": "Stability",
+      "glyph": "◌̄",
+      "unicode": 772,
+      "unicodeHex": "0x0304",
+      "combining": true,
+      "description": "Macron - stable or equilibrium state",
+      "usage": "Marks stable, invariant, or conserved quantities"
+    },
+    "grounding": {
+      "name": "Grounding",
+      "glyph": "◌̣",
+      "unicode": 803,
+      "unicodeHex": "0x0323",
+      "combining": true,
+      "description": "Dot below - grounded or substrate level",
+      "usage": "Indicates substrate or foundational quantities"
+    }
+  },
+  "ligatures": {
+    "echo": {
+      "form": "echo",
+      "description": "Identity through reflection",
+      "register": "GREY",
+      "canonical": "𝓮𝓬𝓱𝓸"
+    },
+    "kira": {
+      "form": "kira",
+      "description": "Luminous identity",
+      "register": "ACE",
+      "canonical": "𝗸𝗶𝗿𝗮"
+    },
+    "limnus": {
+      "form": "limnus",
+      "description": "Boundary identity",
+      "register": "UMBRAL",
+      "canonical": "𝔩𝔦𝔪𝔫𝔲𝔰"
+    },
+    "nexus": {
+      "form": "nexus",
+      "description": "Connection identity",
+      "register": "ULTRA",
+      "canonical": "𝕟𝕖𝕩𝕦𝕤"
+    },
+    "quantum": {
+      "form": "quantum",
+      "description": "Discrete unit identity",
+      "register": "UCF",
+      "canonical": "𝙦𝙪𝙖𝙣𝙩𝙪𝙢"
+    },
+    "umbra": {
+      "form": "umbra",
+      "description": "Shadow identity",
+      "register": "UMBRAL",
+      "canonical": "𝔲𝔪𝔟𝔯𝔞"
+    }
+  },
+  "punctuation": {
+    "period": {
+      "ascii": ".",
+      "glyph": "．",
+      "unicode": 65294,
+      "unicodeHex": "0xFF0E",
+      "name": "Fullwidth Full Stop"
+    },
+    "comma": {
+      "ascii": ",",
+      "glyph": "，",
+      "unicode": 65292,
+      "unicodeHex": "0xFF0C",
+      "name": "Fullwidth Comma"
+    },
+    "colon": {
+      "ascii": ":",
+      "glyph": "：",
+      "unicode": 65306,
+      "unicodeHex": "0xFF1A",
+      "name": "Fullwidth Colon"
+    },
+    "semicolon": {
+      "ascii": ";",
+      "glyph": "；",
+      "unicode": 65307,
+      "unicodeHex": "0xFF1B",
+      "name": "Fullwidth Semicolon"
+    },
+    "question": {
+      "ascii": "?",
+      "glyph": "？",
+      "unicode": 65311,
+      "unicodeHex": "0xFF1F",
+      "name": "Fullwidth Question Mark"
+    },
+    "exclamation": {
+      "ascii": "!",
+      "glyph": "！",
+      "unicode": 65281,
+      "unicodeHex": "0xFF01",
+      "name": "Fullwidth Exclamation Mark"
+    },
+    "hyphen": {
+      "ascii": "-",
+      "glyph": "—",
+      "unicode": 8212,
+      "unicodeHex": "0x2014",
+      "name": "Em Dash"
+    },
+    "parenLeft": {
+      "ascii": "(",
+      "glyph": "⟮",
+      "unicode": 10222,
+      "unicodeHex": "0x27EE",
+      "name": "Mathematical Left Flattened Parenthesis"
+    },
+    "parenRight": {
+      "ascii": ")",
+      "glyph": "⟯",
+      "unicode": 10223,
+      "unicodeHex": "0x27EF",
+      "name": "Mathematical Right Flattened Parenthesis"
+    },
+    "bracketLeft": {
+      "ascii": "[",
+      "glyph": "⟦",
+      "unicode": 10214,
+      "unicodeHex": "0x27E6",
+      "name": "Mathematical Left White Square Bracket"
+    },
+    "bracketRight": {
+      "ascii": "]",
+      "glyph": "⟧",
+      "unicode": 10215,
+      "unicodeHex": "0x27E7",
+      "name": "Mathematical Right White Square Bracket"
+    },
+    "braceLeft": {
+      "ascii": "{",
+      "glyph": "⦃",
+      "unicode": 10627,
+      "unicodeHex": "0x2983",
+      "name": "Left White Curly Bracket"
+    },
+    "braceRight": {
+      "ascii": "}",
+      "glyph": "⦄",
+      "unicode": 10628,
+      "unicodeHex": "0x2984",
+      "name": "Right White Curly Bracket"
+    },
+    "angleBracketLeft": {
+      "ascii": "<",
+      "glyph": "⟨",
+      "unicode": 10216,
+      "unicodeHex": "0x27E8",
+      "name": "Mathematical Left Angle Bracket"
+    },
+    "angleBracketRight": {
+      "ascii": ">",
+      "glyph": "⟩",
+      "unicode": 10217,
+      "unicodeHex": "0x27E9",
+      "name": "Mathematical Right Angle Bracket"
+    },
+    "slash": {
+      "ascii": "/",
+      "glyph": "⁄",
+      "unicode": 8260,
+      "unicodeHex": "0x2044",
+      "name": "Fraction Slash"
+    },
+    "asterisk": {
+      "ascii": "*",
+      "glyph": "✶",
+      "unicode": 10038,
+      "unicodeHex": "0x2736",
+      "name": "Six Pointed Black Star"
+    },
+    "at": {
+      "ascii": "@",
+      "glyph": "⊛",
+      "unicode": 8859,
+      "unicodeHex": "0x229B",
+      "name": "Circled Asterisk Operator"
+    },
+    "hash": {
+      "ascii": "#",
+      "glyph": "⨩",
+      "unicode": 10793,
+      "unicodeHex": "0x2A29",
+      "name": "Plus Sign in Triangle"
+    },
+    "ampersand": {
+      "ascii": "&",
+      "glyph": "⅋",
+      "unicode": 8523,
+      "unicodeHex": "0x214B",
+      "name": "Turned Ampersand"
+    },
+    "percent": {
+      "ascii": "%",
+      "glyph": "⁒",
+      "unicode": 8274,
+      "unicodeHex": "0x2052",
+      "name": "Commercial Minus Sign"
+    },
+    "plus": {
+      "ascii": "+",
+      "glyph": "⊕",
+      "unicode": 8853,
+      "unicodeHex": "0x2295",
+      "name": "Circled Plus"
+    },
+    "equals": {
+      "ascii": "=",
+      "glyph": "≡",
+      "unicode": 8801,
+      "unicodeHex": "0x2261",
+      "name": "Identical To"
+    },
+    "pipe": {
+      "ascii": "|",
+      "glyph": "⦀",
+      "unicode": 10624,
+      "unicodeHex": "0x2980",
+      "name": "Triple Vertical Bar Delimiter"
+    },
+    "tilde": {
+      "ascii": "~",
+      "glyph": "∼",
+      "unicode": 8764,
+      "unicodeHex": "0x223C",
+      "name": "Tilde Operator"
+    },
+    "caret": {
+      "ascii": "^",
+      "glyph": "⋀",
+      "unicode": 8896,
+      "unicodeHex": "0x22C0",
+      "name": "N-ary Logical And"
+    },
+    "underscore": {
+      "ascii": "_",
+      "glyph": "‗",
+      "unicode": 8215,
+      "unicodeHex": "0x2017",
+      "name": "Double Low Line"
+    },
+    "backslash": {
+      "ascii": "\\",
+      "glyph": "⧵",
+      "unicode": 10741,
+      "unicodeHex": "0x29F5",
+      "name": "Reverse Solidus Operator"
+    }
+  },
+  "semanticMappings": {
+    "domains": {
+      "KAEL": {
+        "name": "Substrate",
+        "level": 0,
+        "color": "#DAA520",
+        "description": "Foundation, raw representation, substrate level"
+      },
+      "ACE": {
+        "name": "Energy",
+        "level": 1,
+        "color": "#DAA520",
+        "description": "Energy, computation, cost dynamics"
+      },
+      "GREY": {
+        "name": "Visual",
+        "level": 2,
+        "color": "#9370DB",
+        "description": "Visual, geometric, spatial representation"
+      },
+      "UMBRAL": {
+        "name": "Algebraic",
+        "level": 3,
+        "color": "#9370DB",
+        "description": "Algebraic, structural, formal systems"
+      },
+      "ULTRA": {
+        "name": "Universal",
+        "level": 4,
+        "color": "#4169E1",
+        "description": "Universal, logical, canonical forms"
+      },
+      "UCF": {
+        "name": "Unified",
+        "level": 5,
+        "color": "#4169E1",
+        "description": "Unified, convergent, meta-level"
+      }
+    },
+    "colorScheme": {
+      "substrate": "#DAA520",
+      "energy": "#DAA520",
+      "visual": "#9370DB",
+      "algebraic": "#9370DB",
+      "universal": "#4169E1",
+      "unified": "#4169E1",
+      "background": "#050709",
+      "text": "#9aacca",
+      "accent": "#bd93f9"
+    }
+  },
+  "conversionRules": {
+    "uppercaseOffset": {
+      "description": "Offset from base codepoint for uppercase letters",
+      "formula": "baseCodepoint + (charCode - 65)",
+      "range": "A-Z (65-90)"
+    },
+    "lowercaseOffset": {
+      "description": "Offset from base codepoint for lowercase letters",
+      "formula": "baseCodepoint + (charCode - 97)",
+      "range": "a-z (97-122)"
+    },
+    "digitOffset": {
+      "description": "Offset from base codepoint for digits",
+      "formula": "baseCodepoint + (charCode - 48)",
+      "range": "0-9 (48-57)"
+    },
+    "exceptions": {
+      "UMBRAL": ["C", "H", "I", "R", "Z"],
+      "ULTRA": ["C", "H", "N", "P", "Q", "R", "Z"]
+    }
+  },
+  "usage": {
+    "description": "ACEDIT typographic firmware for register-based text transformation",
+    "implementation": "Map ASCII characters to Unicode mathematical alphanumeric symbols",
+    "registers": "6 distinct typographic registers with semantic domains",
+    "operators": "18 mathematical operators for structured notation",
+    "modifiers": "6 combining diacritical marks for semantic annotation",
+    "notes": [
+      "Each register has a distinct Unicode block and semantic meaning",
+      "UMBRAL and ULTRA have special character exceptions",
+      "GREY, UMBRAL, and UCF use alternative digit representations",
+      "Punctuation is mapped to geometric/mathematical alternatives",
+      "Combining modifiers can be applied to any character for annotation"
+    ]
+  }
+}

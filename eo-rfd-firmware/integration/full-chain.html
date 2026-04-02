@@ -23,6 +23,13 @@
       --accent-red: #ff5555;
       --accent-orange: #ffb86c;
       --phi: 1.6180339887;
+
+      /* ACEDIT Register Domain Colors */
+      --register-kael: #DAA520;
+      --register-grey: #9370DB;
+      --register-umbral: #9370DB;
+      --register-ace: #DAA520;
+      --register-ucf: #4169E1;
     }
 
     body {
@@ -222,6 +229,49 @@
       box-shadow: 0 0 20px rgba(92, 183, 255, 0.1);
     }
 
+    /* ACEDIT Register Domain Styling */
+    .layer-card[data-register="KAEL"] {
+      border-left: 3px solid var(--register-kael);
+    }
+
+    .layer-card[data-register="GREY"] {
+      border-left: 3px solid var(--register-grey);
+    }
+
+    .layer-card[data-register="UMBRAL"] {
+      border-left: 3px solid var(--register-umbral);
+    }
+
+    .layer-card[data-register="ACE"] {
+      border-left: 3px solid var(--register-ace);
+    }
+
+    .layer-card[data-register="UCF"] {
+      border-left: 3px solid var(--register-ucf);
+    }
+
+    .layer-card__register {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .layer-card.acedit-mode .layer-card__register {
+      opacity: 1;
+    }
+
+    .register-kael { color: var(--register-kael); background: rgba(218, 165, 32, 0.1); }
+    .register-grey { color: var(--register-grey); background: rgba(147, 112, 219, 0.1); }
+    .register-umbral { color: var(--register-umbral); background: rgba(147, 112, 219, 0.1); }
+    .register-ace { color: var(--register-ace); background: rgba(218, 165, 32, 0.1); }
+    .register-ucf { color: var(--register-ucf); background: rgba(65, 105, 225, 0.1); }
+
     .layer-card__header {
       display: flex;
       align-items: center;
@@ -359,7 +409,18 @@
       border-radius: 4px;
       font-size: 0.85rem;
       font-family: monospace;
+      position: relative;
     }
+
+    .register[data-register] {
+      border-left: 2px solid;
+    }
+
+    .register[data-register="KAEL"] { border-left-color: var(--register-kael); }
+    .register[data-register="GREY"] { border-left-color: var(--register-grey); }
+    .register[data-register="UMBRAL"] { border-left-color: var(--register-umbral); }
+    .register[data-register="ACE"] { border-left-color: var(--register-ace); }
+    .register[data-register="UCF"] { border-left-color: var(--register-ucf); }
 
     .register__addr {
       color: var(--text-dim);
@@ -368,6 +429,17 @@
     .register__value {
       color: var(--accent-yellow);
       font-weight: 600;
+    }
+
+    .register__domain {
+      font-size: 0.7rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      margin-left: 0.5rem;
+    }
+
+    .register.acedit-mode .register__domain {
+      opacity: 1;
     }
 
     /* Scrollbar */
@@ -467,9 +539,17 @@
           </select>
         </div>
         <div class="control-group">
+          <label class="control-label">ACEDIT Encoding</label>
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="acedit-toggle" style="width: auto;">
+            <span>Enable ACEDIT Mode</span>
+          </label>
+        </div>
+        <div class="control-group">
           <label class="control-label">Diagnostics</label>
           <button class="btn" id="btn-self-test">Run Self-Test</button>
           <button class="btn" id="btn-export">Export State</button>
+          <button class="btn" id="btn-verify-constants">Verify Constants</button>
         </div>
       </div>
     </div>
@@ -519,6 +599,9 @@
       THETA, ROUTING, SIGMA_TAU, TRI, DETECTOR_MODS, SIGMA_NEG, G0,
       clamp01, fnv1a
     } from '../shared/constants.js';
+
+    // Import ACEDIT bridge
+    import ACEDIT from './acedit-bridge.js';
 
     // ==================================================================
     // LAYER DEFINITIONS
@@ -1003,15 +1086,25 @@
         // Create layer cards
         const grid = document.getElementById('layers-grid');
         LAYERS.forEach((layer, index) => {
+          const layerNum = parseInt(layer.id.replace('L', ''));
+          const register = ACEDIT.getRegisterForLayer(layerNum);
+          const layerDesc = ACEDIT.LAYER_DESCRIPTIONS[layer.id];
+
           const card = document.createElement('div');
           card.className = 'layer-card';
           card.style.setProperty('--layer-index', index);
+          card.setAttribute('data-register', register.name);
+          card.setAttribute('data-layer', layer.id);
+
           card.innerHTML = `
             <div class="layer-card__header">
               <span class="layer-card__number">${layer.id}</span>
             </div>
+            <div class="layer-card__register register-${register.name.toLowerCase()}">${register.symbol}</div>
             <h3 class="layer-card__title">${layer.name}</h3>
-            <p class="layer-card__status">${layer.description}</p>
+            <p class="layer-card__status" data-original="${layer.description}">
+              ${layer.description}
+            </p>
             <div class="layer-card__metrics" id="${layer.id}-metrics">
               ${layer.metrics.map(m => `
                 <div class="metric">
@@ -1106,6 +1199,12 @@
         document.getElementById('btn-self-test').addEventListener('click', () => this.selfTest());
         document.getElementById('btn-export').addEventListener('click', () => this.exportState());
         document.getElementById('btn-refresh-registers').addEventListener('click', () => this.updateRegisters());
+        document.getElementById('btn-verify-constants').addEventListener('click', () => this.verifyConstants());
+
+        // ACEDIT toggle
+        document.getElementById('acedit-toggle').addEventListener('change', (e) => {
+          this.toggleAceditMode(e.target.checked);
+        });
 
         // Injection rate slider
         const rateSlider = document.getElementById('injection-rate');
@@ -1286,17 +1385,34 @@
 
       updateRegisters() {
         const grid = document.getElementById('registers-grid');
-        const registers = bus.dumpRegisters();
+        const aceditMode = bus.aceditMode;
 
-        grid.innerHTML = '';
-        for (const [addr, value] of Object.entries(registers)) {
-          const div = document.createElement('div');
-          div.className = 'register';
-          div.innerHTML = `
-            <span class="register__addr">${addr}</span>
-            <span class="register__value">${value}</span>
-          `;
-          grid.appendChild(div);
+        if (aceditMode) {
+          const registersWithDomains = bus.dumpRegistersWithDomains();
+          grid.innerHTML = '';
+          for (const [addr, data] of Object.entries(registersWithDomains)) {
+            const div = document.createElement('div');
+            div.className = aceditMode ? 'register acedit-mode' : 'register';
+            div.setAttribute('data-register', data.register);
+            div.innerHTML = `
+              <span class="register__addr">${addr}</span>
+              <span class="register__value">${data.value}</span>
+              <span class="register__domain" style="color: ${data.color};">${data.symbol}</span>
+            `;
+            grid.appendChild(div);
+          }
+        } else {
+          const registers = bus.dumpRegisters();
+          grid.innerHTML = '';
+          for (const [addr, value] of Object.entries(registers)) {
+            const div = document.createElement('div');
+            div.className = 'register';
+            div.innerHTML = `
+              <span class="register__addr">${addr}</span>
+              <span class="register__value">${value}</span>
+            `;
+            grid.appendChild(div);
+          }
         }
       }
 
@@ -1317,11 +1433,13 @@
       }
 
       exportState() {
+        const aceditMode = bus.aceditMode;
         const state = {
           timestamp: new Date().toISOString(),
           tick: this.tickCount,
+          aceditMode,
           layers: {},
-          registers: bus.dumpRegisters(),
+          registers: aceditMode ? bus.dumpRegistersWithDomains() : bus.dumpRegisters(),
           history: bus.getHistory(100)
         };
 
@@ -1332,13 +1450,65 @@
           }
         }
 
+        // Add ACEDIT layer descriptions if in ACEDIT mode
+        if (aceditMode) {
+          state.aceditLayerDescriptions = {};
+          for (let i = 0; i <= 9; i++) {
+            const layerId = `L${i}`;
+            state.aceditLayerDescriptions[layerId] = ACEDIT.LAYER_DESCRIPTIONS[layerId];
+          }
+        }
+
         const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `eo-rfd-state-${Date.now()}.json`;
+        a.download = `eo-rfd-state-${aceditMode ? 'acedit-' : ''}${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
+      }
+
+      toggleAceditMode(enabled) {
+        bus.setAceditMode(enabled);
+
+        // Update layer cards
+        document.querySelectorAll('.layer-card').forEach(card => {
+          if (enabled) {
+            card.classList.add('acedit-mode');
+            const layerId = card.getAttribute('data-layer');
+            const statusElem = card.querySelector('.layer-card__status');
+            const layerDesc = ACEDIT.LAYER_DESCRIPTIONS[layerId];
+            if (layerDesc) {
+              statusElem.textContent = layerDesc.encoding;
+            }
+          } else {
+            card.classList.remove('acedit-mode');
+            const statusElem = card.querySelector('.layer-card__status');
+            const original = statusElem.getAttribute('data-original');
+            statusElem.textContent = original;
+          }
+        });
+
+        // Update registers
+        this.updateRegisters();
+
+        console.log(`ACEDIT mode ${enabled ? 'enabled' : 'disabled'}`);
+      }
+
+      verifyConstants() {
+        const report = ACEDIT.CONSTANTS_BRIDGE.verify();
+
+        let message = 'ACEDIT Constants Verification:\n\n';
+        report.checks.forEach(check => {
+          const status = check.valid ? '✓' : '✗';
+          message += `${status} ${check.name}: ${check.actual.toFixed(4)} `;
+          message += `(expected: ${check.expected})\n`;
+        });
+
+        message += `\nOverall: ${report.valid ? 'PASS' : 'FAIL'}`;
+
+        alert(message);
+        console.log('Constants verification:', report);
       }
     }
 
